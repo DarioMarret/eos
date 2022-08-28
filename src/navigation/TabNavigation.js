@@ -21,11 +21,13 @@ const TabNavigator = () => {
                     backgroundColor: '#EA0029',
                 },
                 tabBarActiveTintColor: "#FFF",
-                tabBarInactiveTintColor: 'gray',
+                tabBarInactiveTintColor: '#FB6F6F',
                 tabBarLabelStyle: {
                     fontSize: 20,
-                    fontWeight: 'bold',
+                    fontWeight: 'normal',
                     paddingBottom: 10,
+                    textTransform: 'uppercase',
+                    
                 },
                 tabBarIcon: ({ color, size, focused }) => {
                     let iconName;
