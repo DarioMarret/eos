@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 import React from 'react';
-import { Button, View } from 'react-native';
+import { Button, Text, View } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from "@react-navigation/stack";
 import { NavigationContainer } from "@react-navigation/native";
@@ -11,18 +11,11 @@ import OdernServicio from '../screens/OdernServicio';
 function HomeScreen({ navigation }) {
     return (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Button
+            {/* <Button
           onPress={() => navigation.navigate('Notifications')}
           title="Go to notifications"
-        />
-        </View>
-    );
-}
-
-function NotificationsScreen({ navigation }) {
-    return (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            {/* <Button onPress={() => navigation.goBack()} title="Go back home" /> */}
+        /> */}
+            <Text>Hola</Text>
         </View>
     );
 }
@@ -33,18 +26,29 @@ const Drawer = createDrawerNavigator();
 export default function DrawerNavigation() {
     return (
         <NavigationContainer>
-            <Drawer.Navigator initialRouteName="Home">
-                <Drawer.Screen name="Home" component={HomeScreen} />
+            <Drawer.Navigator 
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: '#EA0029',
+                },
+                headerTintColor: '#fff',
+                headerTitleStyle: {
+                    fontWeight: 'bold',
+                },
+            }}
+            initialRouteName="Consultas"
+            >
+                <Drawer.Screen name="Consultas" component={Consultas} />
             </Drawer.Navigator>
 
-            
+
         </NavigationContainer>
-        );
-    }
+    );
+}
 
 
 
-    {/* <Stack.Navigator
+{/* <Stack.Navigator
         initialRouteName="StackCuenta"
         screenOptions={{ headerStyle: { backgroundColor: "#900C3F" } }}
     >
