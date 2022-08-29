@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import Banner from "../../components/Banner";
 
-export default function Equipo(props) {
+
+export default function Cliente(props) {
     const { navigation } = props
     return (
         <View style={styles.container}>

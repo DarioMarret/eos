@@ -1,6 +1,5 @@
 import * as React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ayer from "../screens/TabScreem/Ayer";
 import Manana from "../screens/TabScreem/Manana";
@@ -16,14 +15,14 @@ const TabNavigator = () => {
             style={styles.container}
             screenOptions={{
                 tabBarStyle: {
-                    top: 0,
+                    top: -1,
                     position: 'absolute',
                     backgroundColor: '#EA0029',
                 },
                 tabBarActiveTintColor: "#FFF",
                 tabBarInactiveTintColor: '#FB6F6F',
                 tabBarLabelStyle: {
-                    fontSize: 20,
+                    fontSize: 12,
                     fontWeight: 'normal',
                     paddingBottom: 10,
                     textTransform: 'uppercase',

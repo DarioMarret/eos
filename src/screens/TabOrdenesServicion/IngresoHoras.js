@@ -1,13 +1,15 @@
 import { StyleSheet, Text, View } from "react-native";
 import Banner from "../../components/Banner";
 
-export default function Equipo(props) {
+
+export default function IngresoHoras(props) {
     const { navigation } = props
+    
     return (
         <View style={styles.container}>
-            <Text>Equipo Screen</Text>
+            <Text>IngresoHoras Screen</Text>
             <Banner
-                navigation={navigation}
+            navigation={navigation}
             />
         </View>
     );
