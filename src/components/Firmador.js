@@ -1,15 +1,16 @@
 import { useRef } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
-import SignatureScreen from "react-native-signature-canvas";
+import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Signature from 'react-native-signature-canvas';
 import { AntDesign } from '@expo/vector-icons';
 
 
-export default function Firmador({ text, onOK }) {
+export default function Firmador({ onOK, datauser, handleCloseFirma }) {
     const ref = useRef();
 
     const handleOK = (signature) => {
+        console.log("signature")
         console.log(signature);
-        onOK(signature); // Callback from Component props
+        datauser.firma = signature
     };
 
     // Called after ref.current.readSignature() reads an empty string
@@ -19,11 +20,17 @@ export default function Firmador({ text, onOK }) {
 
     // Called after ref.current.clearSignature()
     const handleClear = () => {
-        console.log("clear success!");
+        try {
+            ref.current.clearSignature();
+            console.log("clear success!");
+        } catch (error) {
+            console.log(error);
+        }
     };
 
     // Called after end of stroke
     const handleEnd = () => {
+        console.log("End");
         ref.current.readSignature();
     };
 
@@ -33,11 +40,35 @@ export default function Firmador({ text, onOK }) {
     };
 
     const handleConfirm = () => {
+        console.log(ref.current.getData());
         console.log("end");
         ref.current.readSignature();
     };
 
-    const style = `.m-signature-pad--footer {display: none; margin: 0px; border-radius: 10px; padding:15px;}`;
+    const style = `.m-signature-pad--footer 
+    .button {
+        background-color: #FF6B00;
+        color: white;
+        border-radius: 15px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+        margin-top: 20px;
+        margin-left: 10px;
+        margin-right: 10px;
+        padding-left: 20px;
+        padding-right: 20px;
+        text-transform: uppercase;
+    }
+    .save {
+        display: block;
+    }
+    .clear {
+        display: block;
+    }
+    .description {
+        display: none;
+    }
+    `;
 
     return (
         <View style={styles.container}>
@@ -45,20 +76,25 @@ export default function Firmador({ text, onOK }) {
                 <View style={styles.header}>
                     <Text style={{ fontWeight: 'bold', paddingBottom: 10 }}>Agregar firma</Text>
                     <View style={styles.headerTitle}>
-                        <Text>nombre</Text>
-                        <Text>cargo</Text>
-                        <Text>acción</Text>
+                        <Text style={{ color: "#B2B2AF" }}>nombre</Text>
+                        <Text style={{ color: "#B2B2AF" }}>cargo</Text>
+                        <Text style={{ color: "#B2B2AF" }}>acción</Text>
                     </View>
                     <View style={styles.headreProject}>
-                        <Text style={{ fontWeight: 'bold', fontSize: 12 }}>LUIS GUZMAN - PROJECT MANAGER</Text>
-                        <AntDesign name="delete" size={20} color="red" />
+                        <Text style={{ fontWeight: 'bold', fontSize: 12 }}>{`${datauser.NombreUsuario} ${datauser.ApellidoUsuario}`}</Text>
+                        <AntDesign name="delete" size={20} color="red" onPress={handleClear} />
                     </View>
                 </View>
-                <SignatureScreen
-                    ref={ref} onOK={handleOK} webStyle={style}
-                    style={{
-                        borderRadius: 10,
-                    }}
+                <Signature
+                    ref={ref}
+                    onEnd={handleEnd}
+                    onOK={handleOK}
+                    onEmpty={handleEmpty}
+                    onClear={handleClear}
+                    descriptionText="Firma"
+                    clearText="LIMPIAR"
+                    confirmText="AGREGAR"
+                    webStyle={style}
                 />
                 <View style={styles.Inputs}>
                     <TextInput
@@ -67,20 +103,25 @@ export default function Firmador({ text, onOK }) {
                     />
                     <View style={styles.CargosCorreo}>
                         <TextInput
-                           style={{...styles.input, width: '47%', marginRight: 3}}
-                           placeholder="Cargo"
+                            style={{ ...styles.input, width: '47%', marginRight: 3 }}
+                            placeholder="Cargo"
                         />
                         <TextInput
-                            style={{...styles.input, width: '47%', marginLeft: 3}}
+                            style={{ ...styles.input, width: '47%', marginLeft: 3 }}
                             placeholder="Correo"
                         />
                     </View>
+                    <View style={{ ...styles.CargosCorreo, justifyContent: 'flex-end', margin: 10 }}>
+                        <TouchableOpacity onPress={handleConfirm}>
+                            <Text style={{ color: "#FF6B00" }}>AGREDAR FIRMA</Text>
+                        </TouchableOpacity>
+                        <View style={{ paddingHorizontal: 20 }} />
+                        <TouchableOpacity onPress={handleCloseFirma}>
+                            <Text style={{ color: "#B2B2AF" }}>CERRAR</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
-            {/* <View style={styles.row}>
-                <Button title="Clear" onPress={handleClear} />
-                <Button title="Confirm" onPress={handleConfirm} />
-            </View> */}
         </View>
     );
 }
@@ -93,10 +134,17 @@ const styles = StyleSheet.create({
     },
     circlePrimary: {
         width: "90%",
-        height: "70%",
-        borderWidth: 1,
+        height: "90%",
         borderRadius: 20,
         backgroundColor: "#FFF",
+        shadowColor: "#000000",
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.17,
+        shadowRadius: 3.05,
+        elevation: 4
     },
     header: {
         flexDirection: "column",
@@ -127,7 +175,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 0.5,
-        borderColor: '#C4C4BF',
+        borderColor: '#B2B2AF',
         borderRadius: 10,
         width: "100%",
         paddingHorizontal: '5%',
@@ -139,5 +187,9 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         width: "100%",
+    },
+    text: {
+        fontSize: 12,
+        color: '#B2B2AF',
     },
 })

@@ -16,8 +16,8 @@ const TabNavigator = () => {
             style={styles.container}
             screenOptions={{
                 tabBarStyle: {
-                    position: 'absolute',
                     top: 0,
+                    position: 'absolute',
                     backgroundColor: '#EA0029',
                 },
                 tabBarActiveTintColor: "#FFF",

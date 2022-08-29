@@ -1,14 +1,17 @@
-import { ImageBackground, StyleSheet, Text, View } from "react-native";
-import { Asset } from "expo-asset";
+import { StyleSheet, Text, View } from "react-native";
 import Banner from "../../components/Banner";
 
 
-export default function Ayer() {
+export default function Ayer(prop) {
+    const { navigation } = prop;
+
     return (
         <View style={styles.container}>
             <Text>Ayer Screen</Text>
 
-            <Banner/>
+            <Banner
+                navigation={navigation}
+            />
         </View>
     );
 }

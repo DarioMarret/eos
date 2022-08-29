@@ -1,11 +1,14 @@
 import { StyleSheet, Text, View } from "react-native";
 import Banner from "../../components/Banner";
 
-export default function Manana() {
+export default function Manana(prop) {
+    const { navigation } = prop
     return (
         <View style={styles.container}>
-        <Text>Manana Screen</Text>
-        <Banner/>
+            <Text>Manana Screen</Text>
+            <Banner
+                navigation={navigation}
+            />
         </View>
     );
 }

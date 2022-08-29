@@ -1,13 +1,15 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
 
-export default function Banner() {
+export default function Banner(props) {
+    const { navigation } = props
+    console.log("navigation", props)
     return (
         <>
             <View style={styles.circlePrimary}>
                 <View style={styles.circleSecond}>
                     <View style={styles.circleTercer}>
-                        <TouchableOpacity onPress={() => console.log("Second")}>
+                        <TouchableOpacity onPress={() => navigation.navigate("Ordenes")}>
                             <Text style={{ color: "#FFF", fontSize: 30 }}>+</Text>
                         </TouchableOpacity>
                     </View>

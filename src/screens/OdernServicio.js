@@ -2,11 +2,15 @@ import { StyleSheet, Text, View } from "react-native";
 import Banner from "../components/Banner";
 
 
-export default function OdernServicio() {
+export default function OdernServicio(prop) {
+    const { navigation  } = prop
+
     return (
         <View style={styles.container}>
             <Text>OdernServicio Screen</Text>
-            <Banner/>
+            <Banner
+                navigation={navigation}
+            />
         </View>
     );
 }
