@@ -3,7 +3,6 @@ import { Fontisto } from '@expo/vector-icons';
 
 export default function Banner(props) {
     const { navigation } = props
-    console.log("navigation", props)
     return (
         <>
             <View style={styles.circlePrimary}>
