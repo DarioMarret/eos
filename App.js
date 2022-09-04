@@ -1,15 +1,12 @@
 import NetInfo from '@react-native-community/netinfo';
-
 import Firmador from './src/components/Firmador'
 import DrawerNavigation from './src/navigation/Navigation'
 import Login from './src/screens/Login'
 import userContext from "./src/context/userContext"
 import jwtDecode from "jwt-decode"
 import { useEffect, useMemo, useState } from 'react'
-import { desLogeo, getToken, GuardarToken } from './src/service/usuario'
+import { desLogeo, getToken, GuardarToken, RefresLogin } from './src/service/usuario'
 import './src/service/Database/model'
-
-
 
 export default function App() {
 
@@ -21,11 +18,18 @@ export default function App() {
       const jwt = await getToken();
       if (jwt) {
         setToken(jwt)
-      } else { setToken(null) }
+      } else {
+        setToken(null)
+      }
     })()
   }, [])
 
   NetInfo.fetch().then(state => {
+    if (state.isConnected === true && Token) {
+        RefresLogin().then(() => {
+        console.log("Refrescado")
+      })
+    }
     console.log('Connection type', state.type);
     console.log('Is connected?', state.isConnected);
   });

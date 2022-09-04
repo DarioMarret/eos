@@ -1,15 +1,72 @@
-import { StyleSheet, Text, View } from "react-native";
-import Banner from "../../components/Banner";
+import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Picker } from '@react-native-picker/picker';
+import BannerOrderServi from "../../components/BannerOrdenServ";
+import { useState } from "react";
 
 
 export default function Datos(props) {
-    const { navigation } = props
+    const [selectedLanguage, setSelectedLanguage] = useState();
+
     return (
         <View style={styles.container}>
-            <Text>Datos Screen</Text>
-            <Banner
-                navigation={navigation}
-            />
+            <View style={styles.ContenedorCliente}>
+                <Text style={{
+                    fontSize: 20,
+                    fontWeight: "bold",
+                    color: "#FF6B00",
+                    marginTop: "5%",
+                    marginLeft: "5%",
+                }}>Ingreso de datos</Text>
+                <View style={styles.ContainerInputs}>
+                    <View style={styles.ContainetTipoModelo}>
+                        <Picker
+                            style={{ 
+                                ...styles.input, 
+                                borderWidth: 1, 
+                                borderColor: '#CECECA'
+                            }}
+                            selectedValue={selectedLanguage}
+                            onValueChange={(itemValue, itemIndex) =>
+                                console.log(itemValue)
+                            }>
+                            <Picker.Item label="Tipo" value={true} />
+
+                        </Picker>
+                    </View>
+                    <View style={{ paddingHorizontal: 20 }} />
+                    <View style={{
+                        ...styles.ContainetTipoModelo,
+                        width: "100%",
+                    }}>
+                        <Picker
+                            style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                            selectedValue={selectedLanguage}
+                            onValueChange={(itemValue, itemIndex) =>
+                                console.log(itemValue)
+                            }>
+                            <Picker.Item label="Tipo de Incidente" value={true} />
+                        </Picker>
+                    </View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Cliente"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Código equipo cliente"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Dirección"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Ciudad"
+                    />
+                </View>
+
+            </View>
+            <BannerOrderServi />
         </View>
     );
 }
@@ -19,5 +76,46 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: 'center',
         justifyContent: 'flex-end',
+    },
+    ContenedorCliente: {
+        flex: 1,
+        top: "5%",
+        width: "100%",
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+        backgroundColor: '#E5E5E5',
+        padding: 10,
+    },
+    ContainerInputs: {
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        alignItems: "flex-start",
+        padding: 10,
+        height: "20%",
+        width: "100%",
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#CECECA',
+        width: "100%",
+        height: 60,
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: "5%"
+    },
+    ContainetBuscador: {
+        flexDirection: 'row',
+        width: '100%',
+        top: "7%",
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+    },
+    ContainetTipoModelo: {
+        borderWidth: 1,
+        width: '40%',
+        borderColor: '#CECECA',
+        borderRadius: 10,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
     },
 });

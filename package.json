@@ -34,7 +34,9 @@
     "react": "18.0.0",
     "react-native": "0.69.5",
     "react-native-expo-fancy-alerts": "^2.1.0",
+    "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.5.0",
+    "react-native-local-mongodb": "^4.0.0",
     "react-native-pager-view": "5.4.24",
     "react-native-paper": "^4.7.2",
     "react-native-reanimated": "~2.9.1",
@@ -42,8 +44,8 @@
     "react-native-screens": "~3.15.0",
     "react-native-signature-canvas": "^4.4.1",
     "react-native-tab-view": "^3.0.0",
-    "react-signature-canvas": "^1.0.6",
-    "react-native-web": "~0.18.7"
+    "react-native-web": "~0.18.7",
+    "react-signature-canvas": "^1.0.6"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"

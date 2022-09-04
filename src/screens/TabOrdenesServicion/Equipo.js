@@ -1,15 +1,68 @@
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { Picker } from '@react-native-picker/picker';
-import Banner from "../../components/Banner";
-import { AntDesign } from '@expo/vector-icons';
-import { useState } from "react";
+import { Picker } from '@react-native-picker/picker'
+import { AntDesign } from '@expo/vector-icons'
+import { useCallback, useEffect, useState } from "react";
 import BannerOrderServi from "../../components/BannerOrdenServ";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { getEquiposStorage } from "../../service/equipos";
+import { getModeloEquiposStorage } from "../../service/modeloquipo";
+import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
+import db from "../../service/Database/model";
 
 export default function Equipo(props) {
     const { navigation } = props
+    const [equipo, setEquipo] = useState([])
+    const [modelo, setModelo] = useState([])
+    const [modelosub, setModeloSub] = useState([])
+    const [historialequipoSelect, setHistorialEquipoSelect] = useState([])
 
     const [selectedLanguage, setSelectedLanguage] = useState();
+    const [tipo, setTipo] = useState("tipo")
+    const [model, setModel] = useState("Modelo")
 
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                const response = await getEquiposStorage();
+                setEquipo(response);
+                const modelos = await getModeloEquiposStorage()
+                setModelo(modelos)
+                await db.exec([{
+                    sql: 'SELECT COUNT(equipo_id) FROM historialEquipo',
+                    args: []
+                }], true, (tx, results) => {
+                    console.log(tx)
+                    console.log(results)
+                })
+                // const historial = await getHistorialEquiposStorage()
+                // console.log("historial-->",historial)
+                // setHistorialEquipoSelect(historial)
+            })()
+        }, [])
+    )
+    function DropTabla() {
+        db.exec([{
+            sql: `DELETE FROM historialEquipo`,
+            args: []
+        }], false, (tx, results) => {
+            console.log("resultado tx", tx);
+            console.log("resultado al crear la tabla historialEquipo", results);
+        })
+    }
+    function onChange(item) {
+        setTipo(item)
+        const respuesta = modelo.filter(e => e.tipoEquipo === item)
+        setModeloSub(respuesta)
+        FirterOrden()
+    }
+    function onChangeModel(item) {
+        setModel(item)
+        FirterOrden()
+    }
+    function FirterOrden() {
+        const respuesta = historialequipoSelect.filter(e => e.tipoEquipo === tipo && e.modeloEquipo === model)
+        console.log(respuesta)
+    }
 
     return (
         <View style={styles.container}>
@@ -19,38 +72,32 @@ export default function Equipo(props) {
                         <View style={styles.ContainetTipoModelo}>
                             <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                selectedValue={selectedLanguage}
-                                onValueChange={(itemValue, itemIndex) =>
-                                    // setDatauser({ ...datauser, Estado: itemValue })
-                                    console.log(itemValue)
-                                }>
+                                selectedValue={tipo}
+                                onValueChange={(itemValue, itemIndex) => onChange(itemValue)}>
                                 <Picker.Item label="Tipo" value={true} />
-                                {/* {
-                                datauser.Estado === true ? (
-                                    <Picker.Item label="Activo" value={true} />
-                                ) : (
-                                    <Picker.Item label="Desabilitado" value={false} />
-                                )
-                            } */}
+                                {
+                                    equipo ?
+                                        equipo.map((item, index) => (
+                                            <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_descripcion} />
+                                        ))
+                                        : null
+                                }
                             </Picker>
                         </View>
                         <View style={{ paddingHorizontal: 20 }} />
                         <View style={styles.ContainetTipoModelo}>
                             <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                selectedValue={selectedLanguage}
-                                onValueChange={(itemValue, itemIndex) =>
-                                    // setDatauser({ ...datauser, Estado: itemValue })
-                                    console.log(itemValue)
-                                }>
+                                selectedValue={model}
+                                onValueChange={(itemValue, itemIndex) => onChangeModel(itemValue)}>
                                 <Picker.Item label="Modelo" value={true} />
-                                {/* {
-                                datauser.Estado === true ? (
-                                    <Picker.Item label="Activo" value={true} />
-                                ) : (
-                                    <Picker.Item label="Desabilitado" value={false} />
-                                )
-                            } */}
+                                {
+                                    modelosub ?
+                                        modelosub.map((item, index) => (
+                                            <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                        ))
+                                        : null
+                                }
                             </Picker>
                         </View>
                     </View>
@@ -137,8 +184,8 @@ export default function Equipo(props) {
                     height: "20%",
                     width: "100%",
                 }}>
-                    <TouchableOpacity style={styles.btn} onPress={console.log("Equipo")}>
-                    <AntDesign name="plus" size={24} color="#FFF" />
+                    <TouchableOpacity style={styles.btn} onPress={() => console.log("Crear Equipo")}>
+                        <AntDesign name="plus" size={24} color="#FFF" />
                         <Text style={{
                             fontSize: 16,
                             color: '#FFF',
@@ -146,11 +193,12 @@ export default function Equipo(props) {
                             marginLeft: "5%"
                         }}>Crear Equipo</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={{...styles.btn,
+                    <TouchableOpacity style={{
+                        ...styles.btn,
                         backgroundColor: '#FFF',
                         borderColor: '#FF6B00',
                         borderWidth: 1,
-                    }} onPress={console.log("Equipo")}>
+                    }} onPress={() => DropTabla()}>
                         <AntDesign name="close" size={24} color="#FF6B00" />
                         <Text style={{
                             fontSize: 16,
@@ -161,7 +209,7 @@ export default function Equipo(props) {
                     </TouchableOpacity>
                 </View>
             </View>
-            <BannerOrderServi/>
+            <BannerOrderServi />
         </View>
     );
 }
@@ -211,7 +259,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#FF6B00',
-        padding: 15,    
+        padding: 15,
     },
 
 });

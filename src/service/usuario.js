@@ -1,6 +1,7 @@
-import { datos_ingenieros, hostBase, token } from '../utils/constantes';
+import { datos_ingenieros, hostBase, token, USER } from '../utils/constantes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { CardaUtil } from './CargaUtil';
 
 export const GuardarToken = async (data) => {
     try {
@@ -11,12 +12,27 @@ export const GuardarToken = async (data) => {
         return null;
     }
 }
+
+export const setdataUser = async (data) => {
+    try {
+        await AsyncStorage.setItem(USER, JSON.stringify(data));
+        return true;
+    } catch (error) {
+        return null;
+    }
+}
+export const getdataUser = async () => {
+    try {
+        const result = await AsyncStorage.getItem(USER);
+        return result ? JSON.parse(result) : null;
+    } catch (error) {
+        return null;
+    }
+}
+
 export const InfoUser = async (data) => {
     try {
-        console.log("getUserInfo", JSON.stringify(data))
-        const response = await AsyncStorage.setItem(datos_ingenieros, data)
-        console.log("\n")
-        console.log("getUserInfo_2", response)
+        await AsyncStorage.setItem(datos_ingenieros, data)
         return true;
     } catch (error) {
         console.log(error)
@@ -38,14 +54,16 @@ export const getInfoUserLocal = async () => {
 export const getToken = async () => {
     try {
         const result = await AsyncStorage.getItem(token);
-        return result;
+        return result ? JSON.parse(result) : null;
     } catch (error) {
+        console.log("getToken-->", error)
         return null;
     }
 }
 export const desLogeo = async () => {
     try {
         await AsyncStorage.removeItem(token);
+        await AsyncStorage.removeItem(USER);
         return true;
     } catch (error) {
         return false;
@@ -54,18 +72,27 @@ export const desLogeo = async () => {
 
 
 
-
-
 // Login Register 
 export const LoginForm = async (formData) => {
     try {
+        console.log(formData)
         const { data, status } = await axios.post(`${hostBase}/login/authenticate`, formData)
         if (status === 200) {
             const { success } = await getUserInfo(data.userId, data.token)
             if (success) {
-                return {
-                    ...data,
-                    success: true
+                if(await GuardarToken(data)){
+                    if(await CardaUtil()){
+                        await setdataUser(formData)
+                        return {
+                            ...data,
+                            success: true
+                        }
+                    }else{
+                        return {
+                            success: false,
+                            message: "Error No se pudo obtener los datos del usuario"
+                        } 
+                    }
                 }
             } else {
                 return {
@@ -96,7 +123,7 @@ export const getUserInfo = async (userId, token) => {
         })
         if (status === 200) {
             await InfoUser(JSON.stringify(data))
-            
+
             return {
                 success: true
             }
@@ -111,5 +138,13 @@ export const getUserInfo = async (userId, token) => {
             success: false,
             message: error
         }
+    }
+}
+
+export const RefresLogin = async () => {
+    const refres = await getdataUser()
+    const { data, status } = await axios.post(`${hostBase}/login/authenticate`, refres)
+    if (status === 200) {
+        await getUserInfo(data.userId, data.token)
     }
 }
