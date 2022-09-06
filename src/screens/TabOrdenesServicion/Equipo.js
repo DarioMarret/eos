@@ -1,6 +1,6 @@
-import { FlatList, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Picker } from '@react-native-picker/picker'
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useCallback, useEffect, useState } from "react";
 import BannerOrderServi from "../../components/BannerOrdenServ";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -27,7 +27,7 @@ export default function Equipo(props) {
         useCallback(() => {
             (async () => {
                 const response = await getEquiposStorage();
-                console.log("response", response.length)
+                // console.log("response", response.length)
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
@@ -48,13 +48,21 @@ export default function Equipo(props) {
         setModeloSub(respuesta)
         await EquipoHistorial()
     }
-    function onChangeModel(item) {
-        setModel(item)
-        
-    }
-    const handleCheckboxChange = () => {
-        setChecked(!isChecked);
-    }
+
+    const handleChange = (equ_serie) => {
+        let temp = historial.map((hist) => {
+            if (equ_serie === hist.equ_serie) {
+                if (hist.isChecked === true) {
+                    return { ...hist, isChecked: false };
+                }else{
+                    return { ...hist, isChecked: true };
+                }
+            }
+            return hist;
+        });
+        setHistorial(temp);
+    };
+
     const _renderItem = ({ item, index }) => {
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -68,19 +76,26 @@ export default function Equipo(props) {
                     paddingVertical: 10,
                     borderBottomWidth: 0.5,
                     borderColor: '#858583'
-
                 }}>
-                    <View>
-                        <Text>
-                            <Checkbox 
+                        <View>
+                            <Pressable onPress={() => handleChange(item.equ_serie)} >
+                                <MaterialCommunityIcons
+                                    name={item.isChecked ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                    size={24} 
+                                    color="#FF6B00"
+                                    style={{
+                                        borderRadius: 10,
+                                    }}
+
+                                     />
+                            </Pressable>
+                            {/* <Checkbox 
                                 value={isChecked}
-                                disabled={isChecked}
-                            style={{
-                                borderRadius: 10
-                            }} 
-                            onValueChange={()=>handleCheckboxChange()} />
-                        </Text>
-                    </View>
+                                disabled={false}
+                                status={"checked"}
+                            onValueChange={handleCheckboxChange.bind(this)}
+                            /> */}
+                        </View>
                     <View style={{
                         flex: 1,
                         justifyContent: 'flex-start',
@@ -96,7 +111,7 @@ export default function Equipo(props) {
                         <Text style={{
                             fontSize: 12,
                             color: '#858583',
-                        }}>{item.equ_SitioInstalado+"/"+item.equ_areaInstalado}</Text>
+                        }}>{item.equ_SitioInstalado + "/" + item.equ_areaInstalado}</Text>
                     </View>
                     <View>
                         <Text style={{
@@ -109,6 +124,7 @@ export default function Equipo(props) {
             </View>
         )
     }
+
     async function EquipoHistorial() {
         var result = []
         console.log("tipo", tipo, "model", model, "serie", serie)
@@ -119,16 +135,15 @@ export default function Equipo(props) {
             console.log("tipo", tipo)
             result = await getHistorialEquiposStorage(tipo, "", "")
         } else if (tipo !== "" && model !== "" && serie !== "") {
-            console.log("tipo", tipo, "Model", model, "serie",serie)
+            console.log("tipo", tipo, "Model", model, "serie", serie)
             result = await getHistorialEquiposStorage(tipo, model, serie)
-        }else if (tipo !== "" && serie !== "") {
-            console.log("tipo", tipo, "serie",serie)
+        } else if (tipo !== "" && serie !== "") {
+            console.log("tipo", tipo, "serie", serie)
             result = await getHistorialEquiposStorage(tipo, "", serie)
-        }else if(tipo.length == 0 && model.length == 0 && serie.length > 0){
-            console.log("serie",serie)
+        } else if (tipo.length == 0 && model.length == 0 && serie.length > 0) {
+            console.log("serie", serie)
             result = await getHistorialEquiposStorage("", "", serie)
         }
-        console.log("result", result)
         setHistorial(result)
     }
     return (
@@ -141,7 +156,7 @@ export default function Equipo(props) {
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={tipo}
                                 onValueChange={(itemValue) => setTipo(itemValue)}
-                                >
+                            >
                                 <Picker.Item label="Tipo" value={""} />
                                 {
                                     equipo ?
@@ -190,7 +205,7 @@ export default function Equipo(props) {
                     </View>
                     {/*  */}
                     <View style={{
-                        justifyContent:'flex-start',
+                        justifyContent: 'flex-start',
                         height: "72%",
                     }}>
                         <SafeAreaView>
