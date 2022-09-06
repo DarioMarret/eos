@@ -1,4 +1,4 @@
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Picker } from '@react-native-picker/picker'
 import { AntDesign } from '@expo/vector-icons'
 import { useCallback, useEffect, useState } from "react";
@@ -7,6 +7,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getEquiposStorage } from "../../service/equipos";
 import { getModeloEquiposStorage } from "../../service/modeloquipo";
 import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
+import Checkbox from "expo-checkbox";
 import db from "../../service/Database/model";
 
 export default function Equipo(props) {
@@ -14,56 +15,124 @@ export default function Equipo(props) {
     const [equipo, setEquipo] = useState([])
     const [modelo, setModelo] = useState([])
     const [modelosub, setModeloSub] = useState([])
-    const [historialequipoSelect, setHistorialEquipoSelect] = useState([])
+    const [historial, setHistorial] = useState([])
+    const [isChecked, setChecked] = useState(false);
 
     const [selectedLanguage, setSelectedLanguage] = useState();
-    const [tipo, setTipo] = useState("tipo")
-    const [model, setModel] = useState("Modelo")
+    const [tipo, setTipo] = useState("")
+    const [model, setModel] = useState("")
+    const [serie, setSerie] = useState("")
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                const response = await getEquiposStorage();
-                setEquipo(response);
-                const modelos = await getModeloEquiposStorage()
-                setModelo(modelos)
-                await db.exec([{
-                    sql: 'SELECT COUNT(equipo_id) FROM historialEquipo',
-                    args: []
-                }], true, (tx, results) => {
-                    console.log(tx)
-                    console.log(results)
+                db.transaction(tx => {
+                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? and equ_serie = ?', [10, "002371"], (_, { rows }) => {
+                        console.log("resultado-->",rows._array)
+
+                    });
                 })
-                // const historial = await getHistorialEquiposStorage()
-                // console.log("historial-->",historial)
-                // setHistorialEquipoSelect(historial)
+                const response = await getEquiposStorage();
+                console.log("response", response.length)
+                setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
+                const modelos = await getModeloEquiposStorage()
+                setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
+
             })()
         }, [])
     )
-    function DropTabla() {
-        db.exec([{
-            sql: `DELETE FROM historialEquipo`,
-            args: []
-        }], false, (tx, results) => {
-            console.log("resultado tx", tx);
-            console.log("resultado al crear la tabla historialEquipo", results);
-        })
-    }
-    function onChange(item) {
-        setTipo(item)
-        const respuesta = modelo.filter(e => e.tipoEquipo === item)
+    useEffect(() => {
+        EquipoHistorial()
+    }, [tipo, model, serie]);
+    useEffect(() => {
+        onChange()
+    }, [tipo]);
+
+    async function onChange() {
+        setModel("")
+        const respuesta = modelo.filter(e => e.tipo_id === tipo)
         setModeloSub(respuesta)
-        FirterOrden()
+        await EquipoHistorial()
     }
     function onChangeModel(item) {
         setModel(item)
-        FirterOrden()
+        
     }
-    function FirterOrden() {
-        const respuesta = historialequipoSelect.filter(e => e.tipoEquipo === tipo && e.modeloEquipo === model)
-        console.log(respuesta)
+    const handleCheckboxChange = () => {
+        setChecked(!isChecked);
     }
+    const _renderItem = ({ item, index }) => {
+        return (
+            <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#fff',
+                    width: '100%',
+                    paddingHorizontal: 10,
+                    paddingVertical: 10,
+                    borderBottomWidth: 0.5,
+                    borderColor: '#858583'
 
+                }}>
+                    <View>
+                        <Text>
+                            <Checkbox style={{
+                                borderRadius: 10
+                            }} disabled value={isChecked} onValueChange={handleCheckboxChange} />
+                        </Text>
+                    </View>
+                    <View style={{
+                        flex: 1,
+                        justifyContent: 'flex-start',
+                        paddingHorizontal: 10
+                    }}>
+                        <Text style={{
+                            fontSize: 12,
+                            color: '#858583',
+                        }}>{item.tipo + "/" + item.modelo + "/" + item.equ_serie}</Text>
+                        <Text style={{
+                            fontWeight: 'bold',
+                        }}>{item.con_ClienteNombre}</Text>
+                        <Text style={{
+                            fontSize: 12,
+                            color: '#858583',
+                        }}>{item.equ_SitioInstalado+"/"+item.equ_areaInstalado}</Text>
+                    </View>
+                    <View>
+                        <Text style={{
+                            rotation: 90,
+                        }}>
+                            <AntDesign name="ellipsis1" size={24} color="black" />
+                        </Text>
+                    </View>
+                </View>
+            </View>
+        )
+    }
+    async function EquipoHistorial() {
+        var result = []
+        console.log("serie", serie)
+        if (tipo !== "" && model !== "") {
+            console.log("tipo", tipo, "Model", model)
+            result = await getHistorialEquiposStorage(tipo, model, "")
+        } else if (tipo !== "Tipo") {
+            console.log("tipo", tipo)
+            result = await getHistorialEquiposStorage(tipo, "", "")
+        } else if (tipo !== "" && model !== "" && serie !== "") {
+            console.log("tipo", tipo, "Model", model, "serie",serie)
+            result = await getHistorialEquiposStorage(tipo, model, serie)
+        }else if (tipo !== "" && serie !== "") {
+            console.log("tipo", tipo, "serie",serie)
+            result = await getHistorialEquiposStorage(tipo, "", serie)
+        }else if(tipo == "" && model == "" && serie !== ""){
+            console.log("serie",serie)
+            result = await getHistorialEquiposStorage("", "", serie)
+        }
+        console.log("result", result)
+        setHistorial(result)
+    }
     return (
         <View style={styles.container}>
             <View style={styles.contenedor}>
@@ -73,24 +142,26 @@ export default function Equipo(props) {
                             <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={tipo}
-                                onValueChange={(itemValue, itemIndex) => onChange(itemValue)}>
-                                <Picker.Item label="Tipo" value={true} />
+                                onValueChange={(itemValue) => setTipo(itemValue)}
+                                >
+                                <Picker.Item label="Tipo" value={""} />
                                 {
                                     equipo ?
                                         equipo.map((item, index) => (
-                                            <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_descripcion} />
+                                            <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
                                         ))
                                         : null
                                 }
                             </Picker>
                         </View>
-                        <View style={{ paddingHorizontal: 20 }} />
+                        <View style={{ paddingHorizontal: 10 }} />
                         <View style={styles.ContainetTipoModelo}>
                             <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={model}
-                                onValueChange={(itemValue, itemIndex) => onChangeModel(itemValue)}>
-                                <Picker.Item label="Modelo" value={true} />
+                                onValueChange={(itemValue, itemIndex) => setModel(itemValue)}>
+                                {/* onValueChange={(itemValue, itemIndex) => onChangeModel(itemValue)}> */}
+                                <Picker.Item label="Modelo" value={""} />
                                 {
                                     modelosub ?
                                         modelosub.map((item, index) => (
@@ -103,39 +174,47 @@ export default function Equipo(props) {
                     </View>
                     <View style={{
                         flexDirection: "row",
-                        marginTop: "15%",
+                        marginTop: "10%",
                         width: "100%",
                     }}>
                         <TextInput
                             style={{
                                 borderWidth: 1,
                                 borderColor: '#CECECA',
-                                width: "90%",
+                                width: "95%",
                                 height: 60,
                                 borderRadius: 10,
                                 padding: 10
                             }}
+                            onChangeText={text => setSerie(text)}
                             placeholder="Serie"
                         />
                     </View>
                     {/*  */}
-                    <View style={styles.ContainetBuscador}>
+                    <View style={{
+                        justifyContent:'flex-start',
+                        height: "72%",
+                    }}>
+                        <SafeAreaView>
+                            <FlatList
+                                data={historial}
+                                renderItem={_renderItem}
+                                // numColumns={numColumns}
+                                keyExtractor={(item, index) => index.toString()}
+                            />
+                        </SafeAreaView>
+                    </View>
+
+                    {/* <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>
                             <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={selectedLanguage}
                                 onValueChange={(itemValue, itemIndex) =>
-                                    // setDatauser({ ...datauser, Estado: itemValue })
                                     console.log(itemValue)
                                 }>
                                 <Picker.Item label="Marca" value={true} />
-                                {/* {
-                                datauser.Estado === true ? (
-                                    <Picker.Item label="Activo" value={true} />
-                                ) : (
-                                    <Picker.Item label="Desabilitado" value={false} />
-                                )
-                            } */}
+    
                             </Picker>
                         </View>
                         <View style={{ paddingHorizontal: 20 }} />
@@ -144,20 +223,12 @@ export default function Equipo(props) {
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={selectedLanguage}
                                 onValueChange={(itemValue, itemIndex) =>
-                                    // setDatauser({ ...datauser, Estado: itemValue })
                                     console.log(itemValue)
                                 }>
                                 <Picker.Item label="Estado" value={true} />
-                                {/* {
-                                datauser.Estado === true ? (
-                                    <Picker.Item label="Activo" value={true} />
-                                ) : (
-                                    <Picker.Item label="Desabilitado" value={false} />
-                                )
-                            } */}
                             </Picker>
                         </View>
-                    </View>
+                    </View> 
                     <View style={{
                         flexDirection: "row",
                         marginTop: "15%",
@@ -175,14 +246,16 @@ export default function Equipo(props) {
                             placeholder="Observación"
                         />
                     </View>
+                    */}
                 </View>
                 <View style={{
                     flexDirection: "row",
                     justifyContent: "space-evenly",
                     alignItems: "center",
-                    marginTop: "15%",
-                    height: "20%",
+                    marginTop: "10%",
+                    height: "15%",
                     width: "100%",
+                    backgroundColor: "#FFFFFF"
                 }}>
                     <TouchableOpacity style={styles.btn} onPress={() => console.log("Crear Equipo")}>
                         <AntDesign name="plus" size={24} color="#FFF" />
@@ -247,7 +320,7 @@ const styles = StyleSheet.create({
     },
     ContainetTipoModelo: {
         borderWidth: 1,
-        width: '40%',
+        width: '45%',
         borderColor: '#CECECA',
         borderRadius: 10,
         alignItems: 'center',

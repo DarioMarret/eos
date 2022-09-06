@@ -78,20 +78,16 @@ export const LoginForm = async (formData) => {
         console.log(formData)
         const { data, status } = await axios.post(`${hostBase}/login/authenticate`, formData)
         if (status === 200) {
+            console.log("Token obtenido-->", data.token)
             const { success } = await getUserInfo(data.userId, data.token)
             if (success) {
                 if(await GuardarToken(data)){
+                    await setdataUser(formData)
                     if(await CardaUtil()){
-                        await setdataUser(formData)
                         return {
                             ...data,
                             success: true
                         }
-                    }else{
-                        return {
-                            success: false,
-                            message: "Error No se pudo obtener los datos del usuario"
-                        } 
                     }
                 }
             } else {

@@ -1,43 +1,80 @@
 import axios from "axios";
-import { modelo, host } from "../utils/constantes";
+import { host } from "../utils/constantes";
+import db from "./Database/model";
 import { getToken } from "./usuario";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 export const getModeloEquipos = async () => {
     const url = `${host}MSCatalogo/api/ModelosEquipos`;
     try {
-        const { token, userId } = await getToken()
-        const { data, status } = await axios.get(url, {
+        const { token } = await getToken()
+        const { data } = await axios.get(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
-        if (status === 200) {
-            await setModeloEquiposStorage(JSON.stringify(data.Response))
+        return new Promise((resolve, reject) => {
+            data.Response.map(async (r, i) => {
+                await InserModeloEquipo(r)
+            })
+            resolve(true);
+        });
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function InserModeloEquipo(r) {
+    db.exec([{
+        sql: `INSERT INTO modelosEquipo (
+                modelo_id,
+                tipo_id,
+                tipoEquipo,
+                empresa_id,
+                modelo_descripcion,
+                modelo_tiempoprom_inst,
+                modelo_tiempoprom_mant,
+                modelo_estado,
+                modelo_usuarioCreacion,
+                modelo_usuarioModificacion,
+                modelo_fechaCreacion,
+                modelo_fechaModificacion
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+        args: [
+            Number(r.modelo_id),
+            Number(r.tipo_id),
+            String(r.tipoEquipo),
+            Number(r.empresa_id),
+            String(r.modelo_descripcion),
+            String(r.modelo_tiempoprom_inst),
+            String(r.modelo_tiempoprom_mant),
+            String(r.modelo_estado),
+            Number(r.modelo_usuarioCreacion),
+            Number(r.modelo_usuarioModificacion),
+            String(r.modelo_fechaCreacion),
+            String(r.modelo_fechaModificacion)]
+    }], false, (err, results) => {
+        if (err) {
+            console.log("error",err);
+        } else {
+            console.log("results modelosEquipo", results);
         }
-    } catch (error) {
-        console.log(error);
-    }
+
+    })
 }
 
-
-
-
-export const setModeloEquiposStorage = async (data) => {
-    try {
-        await AsyncStorage.setItem(modelo, data);
-        return true;
-    } catch (error) {
-        console.log(error);
-        return false;
-    }
-}
 export const getModeloEquiposStorage = async () => {
     try {
-        const result = await AsyncStorage.getItem(modelo);
-        return result ? JSON.parse(result) : null;
+
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select * from modelosEquipo', [], (_, { rows }) => {
+                    resolve(rows._array)
+                });
+            })
+        })
+
     } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
         return null;
     }
 }

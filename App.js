@@ -7,6 +7,9 @@ import jwtDecode from "jwt-decode"
 import { useEffect, useMemo, useState } from 'react'
 import { desLogeo, getToken, GuardarToken, RefresLogin } from './src/service/usuario'
 import './src/service/Database/model'
+import { GetEventosDelDia } from './src/service/OSevento';
+
+
 
 export default function App() {
 
@@ -15,6 +18,7 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+     
       const jwt = await getToken();
       if (jwt) {
         setToken(jwt)

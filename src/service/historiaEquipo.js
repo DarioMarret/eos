@@ -1,8 +1,6 @@
-import * as FileSystem from 'expo-file-system';
 import axios from "axios";
-import { equipos_ingeniero_historial, host } from "../utils/constantes";
+import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import db from './Database/model';
 
 const axinst = axios.create({
@@ -18,164 +16,141 @@ export const HistorialEquipoIngeniero = async () => {
                 'Authorization': `Bearer ${token}`
             }
         })
-        data.Response.map((r) => {
-            SelectExisteEquipo(r)
-        })
-        const delay = time => new Promise(resolveCallback => setTimeout(resolveCallback, time));
-        await delay(data.Response.length)
-        return true
+        // var new_r = []
+        return new Promise((resolve, reject) => {
+            data.Response.map(async (r, i) => {
+                await SelectExisteEquipo(r, i)
+            })
+            resolve(true);
+        });
     } catch (error) {
         console.log("errores", error);
         return false
     }
 }
 
-async function SelectExisteEquipo(r) {
-    // return new Promise((resolve, reject) => {
-    // db.transaction(tx => {
-    //     tx.executeSql(
-    //         `INSERT INTO historialEquipo (
-    //                 equipo_id,
-    //                 equ_tipoEquipo,
-    //                 tipo,
-    //                 equ_modeloEquipo,
-    //                 modelo,
-    //                 equ_serie,
-    //                 equ_SitioInstalado,
-    //                 equ_areaInstalado,
-    //                 con_ClienteNombre,
-    //                 marca,
-    //                 equ_modalidad,
-    //                 Modalidad,
-    //                 equ_fechaInstalacion,
-    //                 equ_fecIniGaranP,
-    //                 equ_fecFinGaranP,
-    //                 equ_provincia,
-    //                 equ_canton,
-    //                 equ_ingenieroResponsable,
-    //                 equ_marca,
-    //                 equ_estado,
-    //                 id_equipoContrato,
-    //                 localidad_id,
-    //                 historial
-    //                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-    //         , [
-    //             Number(r.equipo_id),
-    //             Number(r.equ_tipoEquipo),
-    //             String(r.tipo),
-    //             Number(r.equ_modeloEquipo),
-    //             String(r.modelo),
-    //             String(r.equ_serie),
-    //             String(r.equ_SitioInstalado),
-    //             String(r.equ_areaInstalado),
-    //             String(r.con_ClienteNombre),
-    //             String(r.marca),
-    //             String(r.equ_modalidad),
-    //             String(r.Modalidad),
-    //             String(r.equ_fechaInstalacion),
-    //             String(r.equ_fecIniGaranP),
-    //             String(r.equ_fecFinGaranP),
-    //             String(r.equ_provincia),
-    //             String(r.equ_canton),
-    //             String(r.equ_ingenieroResponsable),
-    //             String(r.equ_marca),
-    //             String(r.equ_estado),
-    //             String(r.id_equipoContrato),
-    //             String(r.localidad_id),
-    //             String(JSON.stringify(r.historial))],
-    //         (tx, results) => {
-    //             console.log("results", results);
-    //             // resolve(results)
-    //         },
-    //         (tx, error) => {
-    //             // axios.post(`http://192.168.101.4:3000/`, { r })
-    //             console.log("error", error);
-    //             // reject(error)
-    //         }
-    //     );
-    // });
-    db.exec([{
-        sql: `INSERT INTO historialEquipo (
-                equipo_id,
-                equ_tipoEquipo,
-                tipo,
-                equ_modeloEquipo,
-                modelo,
-                equ_serie,
-                equ_SitioInstalado,
-                equ_areaInstalado,
-                con_ClienteNombre,
-                marca,
-                equ_modalidad,
-                Modalidad,
-                equ_fechaInstalacion,
-                equ_fecIniGaranP,
-                equ_fecFinGaranP,
-                equ_provincia,
-                equ_canton,
-                equ_ingenieroResponsable,
-                equ_marca,
-                equ_estado,
-                id_equipoContrato,
-                localidad_id,
-                historial
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        args: [
-            Number(r.equipo_id),
-            Number(r.equ_tipoEquipo),
-            String(r.tipo),
-            Number(r.equ_modeloEquipo),
-            String(r.modelo),
-            String(r.equ_serie),
-            String(r.equ_SitioInstalado),
-            String(r.equ_areaInstalado),
-            String(r.con_ClienteNombre),
-            String(r.marca),
-            String(r.equ_modalidad),
-            String(r.Modalidad),
-            String(r.equ_fechaInstalacion),
-            String(r.equ_fecIniGaranP),
-            String(r.equ_fecFinGaranP),
-            String(r.equ_provincia),
-            String(r.equ_canton),
-            String(r.equ_ingenieroResponsable),
-            String(r.equ_marca),
-            String(r.equ_estado),
-            String(r.id_equipoContrato),
-            String(r.localidad_id),
-            String(JSON.stringify(r.historial))]
-    }], false, (err, results) => {
-        if (err) {
-            axios.post(`http://192.168.101.4:3000/`, { r:err })
-        } else {
-            console.log("results", results);
+async function SelectExisteEquipo(r, i) {
+    return new Promise((resolve, reject) => {
+        try {
+            db.exec([{
+                sql: `INSERT INTO historialEquipo (
+                             equipo_id,
+                             equ_tipoEquipo,
+                             tipo,
+                             equ_modeloEquipo,
+                             modelo,
+                             equ_serie,
+                             equ_SitioInstalado,
+                             equ_areaInstalado,
+                             con_ClienteNombre,
+                             marca,
+                             equ_modalidad,
+                             Modalidad,
+                             equ_fechaInstalacion,
+                             equ_fecIniGaranP,
+                             equ_fecFinGaranP,
+                             equ_provincia,
+                             equ_canton,
+                             equ_ingenieroResponsable,
+                             equ_marca,
+                             equ_estado,
+                             id_equipoContrato,
+                             localidad_id,
+                             historial
+                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                args: [
+                    r.equipo_id || "null",
+                    r.equ_tipoEquipo || "null",
+                    String(r.tipo) || "null",
+                    r.equ_modeloEquipo || "null",
+                    String(r.modelo) || "null",
+                    String(r.equ_serie) || "null",
+                    String(r.equ_SitioInstalado) || "null",
+                    String(r.equ_areaInstalado) || "null",
+                    String(r.con_ClienteNombre) || "null",
+                    String(r.marca) || "null",
+                    String(r.equ_modalidad) || "null",
+                    String(r.Modalidad) || "null",
+                    String(r.equ_fechaInstalacion) || "null",
+                    String(r.equ_fecIniGaranP) || "null",
+                    String(r.equ_fecFinGaranP) || "null",
+                    String(r.equ_provincia) || "null",
+                    String(r.equ_canton) || "null",
+                    String(r.equ_ingenieroResponsable) || "null",
+                    String(r.equ_marca) || "null",
+                    String(r.equ_estado) || "null",
+                    String(r.id_equipoContrato) || "null",
+                    String(r.localidad_id) || "null",
+                    JSON.stringify(r.historial) || "null"
+                ],
+            }], false, (err, results) => {
+                if (err) {
+                    console.log("error", err);
+                } else {
+                    resolve(true)
+                    const { error } = results[0];
+                    if (error) {
+
+                        console.log("results historialEquipo", results);
+                        console.log("iterador", i);
+                    }
+                }
+            })
+        } catch (error) {
+            console.log("error al insertar--->", error);
         }
-        
     })
 }
 
-export const setHistorialEquiposStorage = async (data) => {
+export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
     try {
-        console.log("data")
-        await AsyncStorage.setItem(equipos_ingeniero_historial, data);
-        return true;
-    } catch (error) {
-        console.log("setHistorialEquiposStorage-->", error);
-        return null;
-    }
-}
+        if (tipo === "" && modelo === "" && serie === "") {
+            return []
+        } else if (tipo !== "" && modelo === "" && serie === "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? ', [tipo], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
+                })
+            })
+        } else if (tipo !== "" && modelo !== "" && serie === "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? and modelo = ?', [tipo, modelo], (_, { rows }) => {
+                        resolve(rows._array)
 
-export const getHistorialEquiposStorage = async () => {
-    try {
-        // console.log("getHistorialEquiposStorage-db-->", db)
+                    });
+                })
+            })
+        } else if (tipo !== "" && modelo !== "" && serie !== "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? and modelo = ? and equ_serie = ?', [tipo, modelo, Number(serie)], (_, { rows }) => {
+                        resolve(rows._array)
 
-        // const result = await AsyncStorage.getItem(equipos_ingeniero_historial);
-        // return result ? JSON.parse(result) : null;
-        db.transaction(tx => {
-            tx.executeSql('select * from historialEquipo', [], (_, { rows }) =>
-                console.log(JSON.stringify(rows))
-            );
-        })
+                    });
+                })
+            })
+        } else if (tipo !== "" && modelo === "" && serie !== "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? and equ_serie = ?', [tipo, serie], (_, { rows }) => {
+                        resolve(rows._array)
+
+                    });
+                })
+            })
+        } else if (serie !== "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from historialEquipo where equ_serie = ?', [serie], (_, { rows }) => {
+                        resolve(rows._array)
+
+                    });
+                })
+            })
+        }
     } catch (error) {
         console.log("getHistorialEquiposStorage-->", error);
         return null;

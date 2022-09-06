@@ -1,18 +1,44 @@
 import { Button, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Banner from "../../components/Banner";
+import moment from "moment";
+import { GetEventos, GetEventosDelDia } from "../../service/OSevento";
+import { useCallback, useEffect } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { getToken } from "../../service/usuario";
+import db from "../../service/Database/model";
 
 
-const Orden = [
-    {
-        "nombre": "Dario",
-        "ciudad": "Salinas",
-        "estado": "pendiente"
-    }
-]
+
 export default function Hoy(props) {
 
     const { navigation } = props
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                var date = moment().utcOffset('+03:00').format('YYYY-MM-DD');
+                console.log(date)
+                const respuesta = await GetEventos("2022-09-01T00:00:00")
+                console.log(respuesta)
+                db.transaction((tx) => {
+                    tx.executeSql(
+                        'SELECT * FROM historialEquipo',
+                        [],
+                        (tx, results) => {
+                            var len = results.rows.length;
+                            console.log('len', len);
+                            if (len > 0) {
+                                var row = results.rows.item(0);
+                                console.log('row', row);
+                            } else {
+                                console.log('No user found');
+                            }
+                        }
+                    );
+                })
 
+            })()
+        }, [])
+    )
 
     function _renderItem({ item, index }) {
         return [

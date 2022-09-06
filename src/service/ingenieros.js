@@ -1,45 +1,81 @@
-import { ingenieros, host } from "../utils/constantes";
+import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
+import db from "./Database/model";
 
 
 export const getIngenieros = async () => {
     const url = `${host}MSCatalogo/api/ClienteByNombre`;
     try {
-        const { token, userId } = await getToken()
+        const { token } = await getToken()
         const { data, status } = await axios.get(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
-        if (status === 200) {
-            console.log(data);
-            await setIngenierosStorage(JSON.stringify(data.Response))
+        return new Promise((resolve, reject) => {
+            data.Response.map(async (r, i) => {
+                await InserIngenieros(r)
+            })
+            resolve(true);
+        });
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+async function InserIngenieros(r) {
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `INSERT INTO ingenieros (
+                IdUsuario,
+                NombreUsuario,
+                cedula,
+                adicional) VALUES (?,?,?,?)`,
+            args: [
+                Number(r.IdUsuario),
+                String(r.NombreUsuario),
+                String(r.cedula),
+                Number(r.adicional)]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                resolve(true)
+                console.log("results ingenieros", results);
+            }
+        })
+    })
+}
+
+export const getIngenierosStorage = async (IdUsuario, NombreUsuario) => {
+    try {
+        if (IdUsuario === "" && NombreUsuario === "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from ingenieros', [], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
+                });
+            });
+        } else if (IdUsuario !== "" && NombreUsuario === "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from ingenieros where IdUsuario = ?', [IdUsuario], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
+                });
+            });
+        } else if (IdUsuario === "" && NombreUsuario !== "") {
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    tx.executeSql('select * from ingenieros where NombreUsuario = ?', [NombreUsuario], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
+                });
+            });
         }
     } catch (error) {
         console.log(error);
-    }
-}
-
-
-
-
-
-export const setIngenierosStorage = async (data) => {
-    try {
-        await AsyncStorage.setItem(ingenieros, data);
-        return true;
-    } catch (error) {
-        console.log(error);
-        return false;
-    }
-}
-export const getIngenierosStorage = async () => {
-    try {
-        const result = await AsyncStorage.getItem(ingenieros);
-        return result ? JSON.parse(result) : null;
-    } catch (error) {
-        return null;
     }
 }

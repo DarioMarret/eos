@@ -3,22 +3,26 @@ import { getEquipos } from "./equipos";
 import { HistorialEquipoIngeniero } from "./historiaEquipo";
 import { getIngenieros } from "./ingenieros";
 import { getModeloEquipos } from "./modeloquipo";
+import { GetEventosDelDia } from "./OSevento";
+import { getToken } from "./usuario";
 
 
 export const CardaUtil = async () => {
     try {
-        if(await HistorialEquipoIngeniero()){
-            return true
-        }else{
-            return false
+        const { token } = await getToken()
+        if (token) {
+            return new Promise( async (resolve, reject) => {
+                await HistorialEquipoIngeniero();
+                await getEquipos();
+                await getModeloEquipos();
+                await getClientes();
+                // await getIngenieros();
+                // await GetEventosDelDia()
+                resolve(true);
+            })
         }
-        // await getModeloEquipos()
-        // await getIngenieros()
-        // await getClientes()
-        // await getEquipos()
-        
     } catch (error) {
-        console.log("CardaUtil-->",error)
-        return null;
+        console.log("CardaUtil-->", error)
+        return false
     }
 }
