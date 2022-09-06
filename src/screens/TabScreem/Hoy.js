@@ -21,7 +21,7 @@ export default function Hoy(props) {
                 console.log(respuesta)
                 db.transaction((tx) => {
                     tx.executeSql(
-                        'SELECT * FROM historialEquipo',
+                        'SELECT * FROM OrdenesServicio',
                         [],
                         (tx, results) => {
                             var len = results.rows.length;

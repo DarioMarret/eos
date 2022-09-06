@@ -143,8 +143,10 @@ export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
             })
         } else if (serie !== "") {
             return new Promise((resolve, reject) => {
+                console.log("serie----------->", String(serie));
                 db.transaction(tx => {
-                    tx.executeSql('select * from historialEquipo where equ_serie = ?', [serie], (_, { rows }) => {
+                    tx.executeSql(`select * from historialEquipo where equ_serie like '%${serie}%'`, [], (_, { rows }) => {
+                        console.log("rows", rows);
                         resolve(rows._array)
 
                     });

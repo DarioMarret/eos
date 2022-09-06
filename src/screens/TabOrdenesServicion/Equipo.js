@@ -26,12 +26,6 @@ export default function Equipo(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                db.transaction(tx => {
-                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? and equ_serie = ?', [10, "002371"], (_, { rows }) => {
-                        console.log("resultado-->",rows._array)
-
-                    });
-                })
                 const response = await getEquiposStorage();
                 console.log("response", response.length)
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
@@ -78,9 +72,13 @@ export default function Equipo(props) {
                 }}>
                     <View>
                         <Text>
-                            <Checkbox style={{
+                            <Checkbox 
+                                value={isChecked}
+                                disabled={isChecked}
+                            style={{
                                 borderRadius: 10
-                            }} disabled value={isChecked} onValueChange={handleCheckboxChange} />
+                            }} 
+                            onValueChange={()=>handleCheckboxChange()} />
                         </Text>
                     </View>
                     <View style={{
@@ -113,11 +111,11 @@ export default function Equipo(props) {
     }
     async function EquipoHistorial() {
         var result = []
-        console.log("serie", serie)
+        console.log("tipo", tipo, "model", model, "serie", serie)
         if (tipo !== "" && model !== "") {
             console.log("tipo", tipo, "Model", model)
             result = await getHistorialEquiposStorage(tipo, model, "")
-        } else if (tipo !== "Tipo") {
+        } else if (tipo.length > 0) {
             console.log("tipo", tipo)
             result = await getHistorialEquiposStorage(tipo, "", "")
         } else if (tipo !== "" && model !== "" && serie !== "") {
@@ -126,7 +124,7 @@ export default function Equipo(props) {
         }else if (tipo !== "" && serie !== "") {
             console.log("tipo", tipo, "serie",serie)
             result = await getHistorialEquiposStorage(tipo, "", serie)
-        }else if(tipo == "" && model == "" && serie !== ""){
+        }else if(tipo.length == 0 && model.length == 0 && serie.length > 0){
             console.log("serie",serie)
             result = await getHistorialEquiposStorage("", "", serie)
         }
