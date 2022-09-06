@@ -9,6 +9,7 @@ import { getModeloEquiposStorage } from "../../service/modeloquipo";
 import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
 import Checkbox from "expo-checkbox";
 import db from "../../service/Database/model";
+import isEmpty from "just-is-empty";
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -16,9 +17,7 @@ export default function Equipo(props) {
     const [modelo, setModelo] = useState([])
     const [modelosub, setModeloSub] = useState([])
     const [historial, setHistorial] = useState([])
-    const [isChecked, setChecked] = useState(false);
 
-    const [selectedLanguage, setSelectedLanguage] = useState();
     const [tipo, setTipo] = useState("")
     const [model, setModel] = useState("")
     const [serie, setSerie] = useState("")
@@ -54,7 +53,7 @@ export default function Equipo(props) {
             if (equ_serie === hist.equ_serie) {
                 if (hist.isChecked === true) {
                     return { ...hist, isChecked: false };
-                }else{
+                } else {
                     return { ...hist, isChecked: true };
                 }
             }
@@ -77,25 +76,15 @@ export default function Equipo(props) {
                     borderBottomWidth: 0.5,
                     borderColor: '#858583'
                 }}>
-                        <View>
-                            <Pressable onPress={() => handleChange(item.equ_serie)} >
-                                <MaterialCommunityIcons
-                                    name={item.isChecked ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
-                                    size={24} 
-                                    color="#FF6B00"
-                                    style={{
-                                        borderRadius: 10,
-                                    }}
-
-                                     />
-                            </Pressable>
-                            {/* <Checkbox 
-                                value={isChecked}
-                                disabled={false}
-                                status={"checked"}
-                            onValueChange={handleCheckboxChange.bind(this)}
-                            /> */}
-                        </View>
+                    <View>
+                        <Pressable onPress={() => handleChange(item.equ_serie)} >
+                            <MaterialCommunityIcons
+                                name={item.isChecked ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                size={24}
+                                color={item.isChecked ? "#FF6B00" : "#858583"}
+                            />
+                        </Pressable>
+                    </View>
                     <View style={{
                         flex: 1,
                         justifyContent: 'flex-start',
@@ -131,7 +120,7 @@ export default function Equipo(props) {
         if (tipo !== "" && model !== "") {
             console.log("tipo", tipo, "Model", model)
             result = await getHistorialEquiposStorage(tipo, model, "")
-        } else if (tipo.length > 0) {
+        } else if (tipo !== "") {
             console.log("tipo", tipo)
             result = await getHistorialEquiposStorage(tipo, "", "")
         } else if (tipo !== "" && model !== "" && serie !== "") {
@@ -140,12 +129,13 @@ export default function Equipo(props) {
         } else if (tipo !== "" && serie !== "") {
             console.log("tipo", tipo, "serie", serie)
             result = await getHistorialEquiposStorage(tipo, "", serie)
-        } else if (tipo.length == 0 && model.length == 0 && serie.length > 0) {
+        } else if (tipo == "" && model == "" && serie != "") {
             console.log("serie", serie)
             result = await getHistorialEquiposStorage("", "", serie)
         }
         setHistorial(result)
     }
+
     return (
         <View style={styles.container}>
             <View style={styles.contenedor}>

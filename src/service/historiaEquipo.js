@@ -106,11 +106,12 @@ export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
     try {
         if (tipo === "" && modelo === "" && serie === "") {
             return []
-        } else if (tipo !== "" && modelo === "" && serie === "") {
+        } else if (tipo !== "" && modelo == "" && serie == "") {
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
                     tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? ', [tipo], (_, { rows }) => {
                         resolve(rows._array)
+                        console.log("rows", rows._array);
                     });
                 })
             })
@@ -141,14 +142,11 @@ export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
                     });
                 })
             })
-        } else if (serie !== "") {
+        } else if (serie.length > 0) {
             return new Promise((resolve, reject) => {
-                console.log("serie----------->", String(serie));
                 db.transaction(tx => {
                     tx.executeSql(`select * from historialEquipo where equ_serie like '%${serie}%'`, [], (_, { rows }) => {
-                        console.log("rows", rows);
                         resolve(rows._array)
-
                     });
                 })
             })
