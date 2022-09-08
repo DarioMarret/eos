@@ -9,18 +9,23 @@ import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
+import { getIngenierosStorageById } from "../../service/ingenieros";
+import { getToken } from "../../service/usuario";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
     const { navigation } = props
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                const { token, userId } = await getToken()
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
+                console.log(await getIngenierosStorageById(userId))
             })()
         }, [])
     )
@@ -46,13 +51,13 @@ export default function Hoy(props) {
         return [
             <View key={index}>
                 <TouchableOpacity
-                onPress={() => navigation.navigate("Ordenes")}
-                >
+                    onPress={() => navigation.navigate("Ordenes", { item })}>
+
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        backgroundColor: bg,
+                        backgroundColor: item.ev_estado == "PENDIENTE" ? "#FFECDE" : bg,
                         width: '100%',
                         minHeight: 100,
                         paddingHorizontal: 20,
@@ -77,18 +82,23 @@ export default function Hoy(props) {
                                     fontSize: 12,
                                     color: '#858583'
                                 }}
-                            >{item.tck_descripcionProblema}</Text>
+                            >{item.ev_descripcion}</Text>
                         </View>
 
                         <View style={styles.calendar}>
-                            <Text>{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)}</Text>
                             <Image source={typeImage()} style={{ width: 30, height: 30 }} />
+                            <Text
+                                style={{
+                                    fontSize: 10
+                                }}
+                            >{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)} - {moment().format(item.ev_horaAsignadaHasta).substring(0, 5)}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
             </View>,
         ]
     }
+
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
@@ -101,6 +111,7 @@ export default function Hoy(props) {
                 </SafeAreaView>
             </View>
             <Banner
+                {...props}
                 navigation={navigation}
             />
         </View>

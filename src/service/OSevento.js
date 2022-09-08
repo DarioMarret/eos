@@ -15,12 +15,11 @@ export const GetEventosDelDia = async () => {
         })
         return new Promise((resolve, reject) => {
             data.Response.map(async (r) => {
-                if (r.ev_estado !== "CANCELADO") {
-                    await InserEventosDiarios(r)
-                }
+                await InserEventosDiarios(r)
             })
             resolve(true);
-        });
+        })
+
     } catch (error) {
         console.log("errores", error);
         return false
@@ -42,6 +41,7 @@ async function InserEventosDiarios(r) {
                 ev_fechaAsignadaDesde,
                 ev_fechaAsignadaHasta,
                 ev_horaAsignadaDesde,
+                ev_horaAsignadaHasta,
                 ev_estado,
                 tck_direccion,
                 tck_canton,
@@ -57,7 +57,7 @@ async function InserEventosDiarios(r) {
                 tipoIncidencia,
                 OrdenServicioID,
                 estado_local
-                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
             args: [
                 r.evento_id,
                 r.ticket_id,
@@ -70,6 +70,7 @@ async function InserEventosDiarios(r) {
                 r.ev_fechaAsignadaDesde,
                 r.ev_fechaAsignadaHasta,
                 r.ev_horaAsignadaDesde,
+                r.ev_horaAsignadaHasta,
                 r.ev_estado,
                 r.tck_direccion,
                 r.tck_canton,
@@ -92,7 +93,7 @@ async function InserEventosDiarios(r) {
                 resolve(true);
                 console.log("results OrdenesServicio", results);
             }
-    
+
         })
     })
 }

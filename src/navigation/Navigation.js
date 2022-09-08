@@ -61,7 +61,7 @@ function Menu(prop) {
     )
 }
 
-export default function DrawerNavigation() {
+export default function DrawerNavigation(props) {
     return (
         <NavigationContainer>
             <Drawer.Navigator
@@ -87,7 +87,6 @@ export default function DrawerNavigation() {
                 <Drawer.Screen name="Ordenes" component={OdernServicio} />
                 <Drawer.Screen name="Perfil" component={Perfil} />
             </Drawer.Navigator>
-
 
         </NavigationContainer>
     );

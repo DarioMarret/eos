@@ -7,12 +7,15 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getEquiposStorage } from "../../service/equipos";
 import { getModeloEquiposStorage } from "../../service/modeloquipo";
 import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
-import Checkbox from "expo-checkbox";
-import db from "../../service/Database/model";
-import isEmpty from "just-is-empty";
+
 
 export default function Equipo(props) {
-    const { navigation } = props
+    const { navigation, route } = props
+    const { name, params } = route
+
+    console.log(params)
+
+
     const [equipo, setEquipo] = useState([])
     const [modelo, setModelo] = useState([])
     const [modelosub, setModeloSub] = useState([])
@@ -30,11 +33,9 @@ export default function Equipo(props) {
         useCallback(() => {
             (async () => {
                 const response = await getEquiposStorage();
-                // console.log("response", response.length)
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
-
             })()
         }, [])
     )
@@ -64,7 +65,7 @@ export default function Equipo(props) {
             return hist;
         });
         setHistorial(temp);
-        console.log(equ_serie,"a")
+        console.log(equ_serie, "a")
     };
     const showCoso = (index) => {
         setItemIndex(index)
@@ -73,7 +74,7 @@ export default function Equipo(props) {
         console.log(type)
     }
     const _renderItem = ({ item, index, isClick }) => {
-        if(!isVisible) return null
+        if (!isVisible) return null
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{
@@ -116,7 +117,7 @@ export default function Equipo(props) {
                         }}>{item.equ_SitioInstalado + "/" + item.equ_areaInstalado}</Text>
                     </View>
                     <View >
-                        <Text onPress={()=>showCoso(index)} style={{
+                        <Text onPress={() => showCoso(index)} style={{
                             rotation: 90,
                             padding: 10
                         }}>
@@ -124,9 +125,9 @@ export default function Equipo(props) {
                         </Text>
                     </View>
                 </View>
-                
+
                 {
-                    isVisible && index === itemIndex && 
+                    isVisible && index === itemIndex &&
                     (<View style={styles.boxOptions} >
                         <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('history')}>
                             <Text style={styles.boxOptionsText}>Historial de Equipo
@@ -137,7 +138,7 @@ export default function Equipo(props) {
                             </Text>
                         </TouchableOpacity>
                     </View>)
-                    
+
                 }
             </View>
         )
@@ -162,8 +163,11 @@ export default function Equipo(props) {
             console.log("serie", serie)
             result = await getHistorialEquiposStorage("", "", serie)
         }
-        setHistorial(result)
+        console.log("resultado de busqueda-->",result)
+        // setHistorial(result)
     }
+
+
 
     return (
         <View style={styles.container}>
@@ -192,7 +196,6 @@ export default function Equipo(props) {
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={model}
                                 onValueChange={(itemValue, itemIndex) => setModel(itemValue)}>
-                                {/* onValueChange={(itemValue, itemIndex) => onChangeModel(itemValue)}> */}
                                 <Picker.Item label="Modelo" value={""} />
                                 {
                                     modelosub ?
@@ -231,7 +234,6 @@ export default function Equipo(props) {
                             <FlatList
                                 data={historial}
                                 renderItem={_renderItem}
-                                // numColumns={numColumns}
                                 keyExtractor={(item, index) => index.toString()}
                             />
                         </SafeAreaView>
@@ -317,7 +319,7 @@ export default function Equipo(props) {
             <BannerOrderServi
                 {...props}
                 navigation={navigation}
-             />
+            />
         </View>
     );
 }
@@ -369,10 +371,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#FF6B00',
         padding: 15,
     },
-    boxOptions:{
-        width:'auto',
-        height:'auto',
-        backgroundColor:'#ffffff',
+    boxOptions: {
+        width: 'auto',
+        height: 'auto',
+        backgroundColor: '#ffffff',
         position: 'absolute',
         right: 30,
         top: 'auto',
@@ -380,14 +382,14 @@ const styles = StyleSheet.create({
         zIndex: 10,
 
         shadowColor: '#171717',
-        shadowOffset: { width: 4, height: 4},
+        shadowOffset: { width: 4, height: 4 },
         shadowOpacity: 1,
         shadowRadius: 4,
         elevation: 5,
     },
-    boxOptionsText:{
+    boxOptionsText: {
         fontsize: 18,
         padding: 5,
-        zIndex:10
+        zIndex: 10
     }
 });

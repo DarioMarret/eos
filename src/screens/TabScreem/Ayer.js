@@ -46,12 +46,12 @@ export default function Ayer(prop) {
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={() => navigation.navigate("1-EQUIPO", { item })}>
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        backgroundColor: bg,
+                        backgroundColor: item.ev_estado == "PENDIENTE" ? "#FFECDE" : bg,
                         width: '100%',
                         minHeight: 100,
                         paddingHorizontal: 20,
@@ -76,7 +76,7 @@ export default function Ayer(prop) {
                                     fontSize: 12,
                                     color: '#858583'
                                 }}
-                            >{item.tck_descripcionProblema}</Text>
+                            >{item.ev_descripcion}</Text>
                         </View>
 
                         <View style={styles.calendar}>

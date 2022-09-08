@@ -3,6 +3,9 @@ import { Fontisto } from '@expo/vector-icons';
 
 export default function Banner(props) {
     const { navigation } = props
+    console.log("props",props)
+
+
     return (
         <>
             <View style={styles.circlePrimary}>
@@ -18,11 +21,13 @@ export default function Banner(props) {
                     </TouchableOpacity>
                 </View>
             </View>
-            <View style={styles.banner}>
-                <Fontisto name="cloud-refresh" size={25} color="#FFF" />
-                <Text style={{ marginStart: 10, color: "#FFF", fontSize: 12 }}>
-                    SINCRONIZANDO...
-                </Text>
+
+            <View style={{ ...styles.banner, paddingLeft: 20 }}>
+                <TouchableOpacity
+                    onPress={() => console.log("hola")}
+                >
+                    <Fontisto name="cloud-refresh" size={25} color="#FFF" />
+                </TouchableOpacity>
             </View>
         </>
     );

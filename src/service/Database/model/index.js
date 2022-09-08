@@ -244,6 +244,7 @@ db.exec([{
         ev_fechaAsignadaDesde INTEGER NULL,
         ev_fechaAsignadaHasta INTEGER NULL,
         ev_horaAsignadaDesde TEXT NULL,
+        ev_horaAsignadaHasta TEXT NULL,
         ev_estado TEXT NULL,
         tck_direccion TEXT NULL,
         tck_canton TEXT NULL,
@@ -264,6 +265,66 @@ db.exec([{
 }], false, (tx, results) => {
     console.log("resultado tx", tx);
     console.log("resultado al crear la tabla OrdenesServicio", results);
+})
+
+//CREATE TABLA EQUIPOTICKET
+db.exec([{
+    sql: `CREATE TABLE IF NOT EXISTS equipoTicket (
+        id_equipoContrato INTEGER PRIMARY KEY AUTOINCREMENT,
+        con_ClienteNombre TEXT NULL,
+        id_equipo INTEGER NULL,
+        id_contrato INTEGER NULL,
+        empresa_id INTEGER NULL,
+        eqc_conRepuesto TEXT NULL,
+        eqc_frecuenciaVisita TEXT NULL,
+        eqc_periodo TEXT NULL,
+        eqc_tiempoVisita TEXT NULL,
+        eqc_horarioAtencionDesde TEXT NULL,
+        eqc_horarioAtencionHasta TEXT NULL,
+        eqc_lunes TEXT NULL,
+        eqc_martes TEXT NULL,
+        eqc_miercoles TEXT NULL,
+        eqc_jueves TEXT NULL,
+        eqc_viernes TEXT NULL,
+        eqc_sabado TEXT NULL,
+        eqc_domingo TEXT NULL,
+        eqc_monto TEXT NULL,
+        eqc_usuarioCreacion INTEGER NULL,
+        eqc_UsuarioModificacion TEXT NULL,
+        eqc_fechaCreacion TEXT NULL,
+        eqc_fechaModificacion TEXT NULL,
+        localidad_id TEXT NULL,
+        eqc_estado TEXT NULL,
+        eqc_tiempoServicio TEXT NULL,
+        eqc_frecuenciaServicio TEXT NULL,
+        eqc_manoObra TEXT NULL,
+        eqc_estadoProgramado TEXT NULL,
+        eqc_fechaIniGaranC TEXT NULL,
+        eqc_fechaFinGaranC TEXT NULL,
+        eqc_fechaServicio TEXT NULL,
+        eqc_fechaServicioFin TEXT NULL,
+        eqc_oldContract TEXT NULL,
+        eqc_tiempoRepuestos TEXT NULL,
+        eqc_tiempoManoObra TEXT NULL,
+        eqc_consumibles TEXT NULL,
+        eqc_tiempoConsumibles TEXT NULL,
+        eqc_fungibles TEXT NULL,
+        eqc_tiempoFungibles TEXT NULL,
+        eqc_kitMantenimiento TEXT NULL,
+        eqc_fechaKitMantenimiento TEXT NULL,
+        eqc_rutaAdjunto TEXT NULL,
+        eqc_rucComodato TEXT NULL,
+        eqc_codComodato TEXT NULL,
+        eqc_frecVisSitePlan TEXT NULL,
+        eqc_periodoSitePlan TEXT NULL,
+        eqc_observacion TEXT NULL,
+        Equipo TEXT NULL,
+        estado_local TEXT NULL
+    );`,
+    args: []
+}], false, (tx, results) => {
+    console.log("resultado tx", tx);
+    console.log("resultado al crear la tabla equipoTicket", results);
 })
 
 

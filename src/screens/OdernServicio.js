@@ -9,10 +9,23 @@ import Datos from "../screens/TabOrdenesServicion/Datos";
 import Componentes from "../screens/TabOrdenesServicion/Componentes";
 import Adjuntos from "../screens/TabOrdenesServicion/Adjuntos";
 import IngresoHoras from "../screens/TabOrdenesServicion/IngresoHoras";
-
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 
 const Tab = createBottomTabNavigator();
-export default function OdernServicio(prop) {
+export default function OdernServicio(props) {
+    const { navigation, route } = props
+    const { name, params } = route
+
+    // console.log(params.item)
+    useFocusEffect(
+        React.useCallback(() => {
+            (async () => {
+                if (name === "Ordenes") {
+                    navigation.navigate("1-EQUIPO", { ...params.item })
+                }
+            })()
+        }, [])
+    )
 
     return (
         <Tab.Navigator
@@ -45,13 +58,17 @@ export default function OdernServicio(prop) {
                 }
             }}
         >
-            <Tab.Screen name="1-EQUIPO" component={Equipo}
+            <Tab.Screen
+                name="1-EQUIPO"
+                component={Equipo}
+
                 options={{
                     // tabBarIcon: ({ color }) => (
                     //     <MaterialCommunityIcons name="book-open" color={color} size={26} />
                     // ),
                     headerShown: false
                 }}
+                params={params}
             />
             <Tab.Screen name="2-CLIENTE" component={Cliente}
                 options={{
@@ -93,7 +110,7 @@ export default function OdernServicio(prop) {
                     headerShown: false
                 }}
             />
-        </Tab.Navigator> 
+        </Tab.Navigator>
     );
 }
 const styles = StyleSheet.create({

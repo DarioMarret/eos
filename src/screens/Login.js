@@ -1,14 +1,12 @@
 import { useCallback, useState } from 'react';
 import Checkbox from 'expo-checkbox';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Image, ImageBackground, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Asset } from "expo-asset";
 import logo from '../../assets/logo_eos.png';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { AntDesign } from '@expo/vector-icons';
 import useUser from '../hook/useUser';
 import { LoginForm } from '../service/usuario';
-import { FancyAlert } from 'react-native-expo-fancy-alerts';
 
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
@@ -53,22 +51,19 @@ export default function Login() {
         <StatusBar style="auto" />
         <ScrollView>
 
-          <FancyAlert
+          <Modal
+            animationType="slide"
             visible={visible}
-            icon={<View style={{
-              flex: 1,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'red',
-              borderRadius: 50,
-              width: '100%',
-            }}><ActivityIndicator size="large" color="#B2B2AF" /></View>}
-            // }}><Text>🤓</Text></View>}
+            transparent={true}
             style={{ backgroundColor: 'white' }}
           >
-            <Text style={{ marginTop: -16, marginBottom: 32 }}>Cargando...</Text>
-          </FancyAlert>
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <ActivityIndicator size={100} color="#FF6B00" />
+                <Text style={{ marginTop: 16, marginBottom: 32 }}>Cargando...</Text>
+              </View>
+            </View>
+          </Modal>
 
           <View style={styles.contentLogin}>
             <View style={styles.logo}>
@@ -92,7 +87,7 @@ export default function Login() {
               />
             </View>
 
-            <View style={{
+            {/* <View style={{
               width: '80%',
               justifyContent: 'flex-start',
               alignItems: 'flex-start',
@@ -101,7 +96,7 @@ export default function Login() {
                 <Checkbox style={styles.checkbox} disabled value={isChecked} onValueChange={handleCheckboxChange} />
                 <Text style={styles.paragraph}>Recordarme</Text>
               </View>
-            </View>
+            </View> */}
 
             <View style={styles.section}>
               <TouchableOpacity
@@ -149,8 +144,8 @@ const styles = StyleSheet.create({
     width: '90%',
     height: 550,
     margin: 20,
-    marginTop: '50%',
-    marginBottom: '10%',
+    marginTop: '30%',
+    // marginBottom: '10%',
     borderRadius: 25,
     shadowOffset: {
       width: 0,
@@ -197,5 +192,40 @@ const styles = StyleSheet.create({
   },
   checkbox: {
     margin: 8,
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  modalView: {
+    justifyContent: 'center',
+    alignItems: 'center',
+
+    width: '90%',
+    height: '30%',
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 9,
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });

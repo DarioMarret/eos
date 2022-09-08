@@ -6,8 +6,6 @@ export default function BannerOrderServi(props) {
     const { navigation, route } = props
     const { name, params } = route
 
-    // console.log(navigation)
-
 
     return (
         <>
@@ -16,6 +14,7 @@ export default function BannerOrderServi(props) {
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    paddingLeft: 10,
                 }}>
                     <Fontisto name="cloud-refresh" size={25} color="#FFF" />
                 </View>
@@ -28,7 +27,7 @@ export default function BannerOrderServi(props) {
                     {
                         name !== "1-EQUIPO" ?
                             <TouchableOpacity style={styles.volver}>
-                                <AntDesign name="arrowleft" size={24} color="#FFFFFF" />
+                                <AntDesign name="arrowleft" size={20} color="#FFFFFF" />
                                 <Text style={{ color: "#FFF", fontSize: 12 }}>
                                     VOLVER
                                 </Text>
@@ -40,7 +39,7 @@ export default function BannerOrderServi(props) {
                         <Text style={{ color: "#FFF", fontSize: 12 }}>
                             SIGUIENTE
                         </Text>
-                        <AntDesign name="arrowright" size={24} color="#FFFFFF" />
+                        <AntDesign name="arrowright" size={20} color="#FFFFFF" />
                     </TouchableOpacity>
                 </View>
             </View>

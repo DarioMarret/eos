@@ -12,12 +12,12 @@ export const CardaUtil = async () => {
         const { token } = await getToken()
         if (token) {
             return new Promise( async (resolve, reject) => {
+                await getIngenieros();
                 await GetEventosDelDia()
                 await HistorialEquipoIngeniero();
                 await getEquipos();
                 await getModeloEquipos();
                 // await getClientes();
-                // await getIngenieros();
                 resolve(true);
             })
         }
