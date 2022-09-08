@@ -7,7 +7,6 @@ export const GetEventosDelDia = async () => {
 
     try {
         const { token, userId } = await getToken()
-        console.log(token, "\n", userId)
         const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}`;
         const { data, status } = await axios.get(url, {
             headers: {
@@ -109,11 +108,11 @@ export const GetEventos = async (ev_fechaAsignadaDesde) => {
                 })
             })
         } else if (ev_fechaAsignadaDesde !== "") {
-            ev_fechaAsignadaDesde + "T00:00:00"
+            ev_fechaAsignadaDesde
             console.log("ev_fechaAsignadaDesde", ev_fechaAsignadaDesde);
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
-                    tx.executeSql('select * from OrdenesServicio', [], (_, { rows }) => {
+                    tx.executeSql('select * from OrdenesServicio where ev_fechaAsignadaDesde = ?', [ev_fechaAsignadaDesde], (_, { rows }) => {
                         console.log("rows", rows._array);
                         resolve(rows._array)
                     });

@@ -1,44 +1,26 @@
-import { Button, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Button, FlatList, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { GetEventos, GetEventosDelDia } from "../../service/OSevento";
+import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import Banner from "../../components/Banner";
 import moment from "moment";
-import { GetEventos, GetEventosDelDia } from "../../service/OSevento";
-import { useCallback, useEffect } from "react";
-import { useFocusEffect } from "@react-navigation/native";
-import { getToken } from "../../service/usuario";
-import db from "../../service/Database/model";
-
 
 
 export default function Hoy(props) {
+    const [eventos, setEventos] = useState([]);
 
     const { navigation } = props
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                var date = moment().utcOffset('+03:00').format('YYYY-MM-DD');
+                var date = moment().format('YYYY-MM-DD');
                 console.log(date)
-                const respuesta = await GetEventos("2022-09-01T00:00:00")
-                console.log(respuesta)
-                db.transaction((tx) => {
-                    tx.executeSql(
-                        'SELECT * FROM OrdenesServicio',
-                        [],
-                        (tx, results) => {
-                            var len = results.rows.length;
-                            console.log('len', len);
-                            if (len > 0) {
-                                var row = results.rows.item(0);
-                                console.log('row', row);
-                            } else {
-                                console.log('No user found');
-                            }
-                        }
-                    );
-                })
-
+                const respuesta = await GetEventos(`${date}T00:00:00`)
+                setEventos(respuesta)
             })()
         }, [])
     )
+
 
     function _renderItem({ item, index }) {
         return [
@@ -60,14 +42,14 @@ export default function Hoy(props) {
     }
     return (
         <View style={styles.container}>
-            <View style={styles.flexlist}>
-                {/* <ScrollView>
+            <View style={{...styles.flexlist, marginTop: "15%"}}>
+                <SafeAreaView>
                     <FlatList
-                        data={Orden}
+                        data={eventos}
                         renderItem={_renderItem}
                         keyExtractor={(item, index) => index.toString()}
                     />
-                </ScrollView> */}
+                </SafeAreaView>
             </View>
             <Banner
                 navigation={navigation}
