@@ -1,4 +1,4 @@
-import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
 import { Picker } from '@react-native-picker/picker'
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useCallback, useEffect, useState } from "react";
@@ -22,7 +22,9 @@ export default function Equipo(props) {
     const [model, setModel] = useState("")
     const [serie, setSerie] = useState("")
 
-    const [showMenu, setShowMenu] = useState(false)
+    const [infoModal, setInfoModal] = useState(null)
+    const [showPopup, setShowPopup] = useState(false)
+    const [typeInfo, setTypeInfo] = useState("")
     const [itemIndex, setItemIndex] = useState(null)
     const [isVisible, setIsVisible] = useState(false)
 
@@ -66,14 +68,46 @@ export default function Equipo(props) {
         setHistorial(temp);
         console.log(equ_serie,"a")
     };
-    const showCoso = (index) => {
+    const showSelect = (index, item) => {
+        console.log("item",item,"item")
         setItemIndex(index)
     }
-    const showModal = (type) => {
-        console.log(type)
+    const showModal = (type, item) => {
+        let body
+        console.log("item",item,"item")
+        if(type=== 'history'){
+            body = item.historial !== 'null' ? JSON.parse(item.historial)[0] : 
+            {
+            ingenieroResp: "",
+            OrdenServicioID: "",
+            Fecha: "",
+            ComentarioUpgrade: "",
+            Sintomas: "",
+            Causas: "",
+            Diagnostico: "",
+            Acciones: "",
+            ObservacionIngeniero: ""
+            }
+        }else if(type=== 'details'){
+            body = {
+                tipo: item.tipo,
+                modelo: item.modelo,
+                serie: item.equ_serie,
+                estado: item.equ_estado,
+                sitio:item.equ_SitioInstalado,
+                area:item.equ_areaInstalado,
+                marca:item.marca,
+                cliente:item.con_ClienteNombre,
+                sucursal:item.localidad_id,
+            }
+        }
+        setShowPopup(true)
+        setTypeInfo(type)
+        setInfoModal(body)
+        
+        setIsVisible(false)
     }
     const _renderItem = ({ item, index, isClick }) => {
-        if(!isVisible) return null
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{
@@ -116,7 +150,7 @@ export default function Equipo(props) {
                         }}>{item.equ_SitioInstalado + "/" + item.equ_areaInstalado}</Text>
                     </View>
                     <View >
-                        <Text onPress={()=>showCoso(index)} style={{
+                        <Text onPress={()=>{showSelect(index, item); setIsVisible(!isVisible)}} style={{
                             rotation: 90,
                             padding: 10
                         }}>
@@ -128,11 +162,11 @@ export default function Equipo(props) {
                 {
                     isVisible && index === itemIndex && 
                     (<View style={styles.boxOptions} >
-                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('history')}>
+                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('history', item)}>
                             <Text style={styles.boxOptionsText}>Historial de Equipo
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('team')}>
+                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('details', item)}>
                             <Text style={styles.boxOptionsText}>Detalles de Equipo
                             </Text>
                         </TouchableOpacity>
@@ -314,6 +348,41 @@ export default function Equipo(props) {
                     </TouchableOpacity>
                 </View>
             </View>
+            {showPopup && 
+                <ScrollView style={styles.modalInfo}>
+                    <View style={{ padding: 25 }}>
+                        {typeInfo==="details" ? 
+                        <View>
+                            <Text style={styles.titleModalInfo}>Detalles de Equipo</Text>
+                            <Text style={styles.textModalInfo}>Tipo: {infoModal.tipo}</Text>
+                            <Text style={styles.textModalInfo}>Modelo: {infoModal.modelo}</Text>
+                            <Text style={styles.textModalInfo}>Serie: {infoModal.equ_serie}</Text>
+                            <Text style={styles.textModalInfo}>Estado: {infoModal.equ_estado}</Text>
+                            <Text style={styles.textModalInfo}>Sitio instalado: {infoModal.equ_SitioInstalado}</Text>
+                            <Text style={styles.textModalInfo}>Área instalada: {infoModal.equ_areaInstalado}</Text>
+                            <Text style={styles.textModalInfo}>Marca: {infoModal.marca}</Text>
+                            <Text style={styles.textModalInfo}>Cliente: {infoModal.con_ClienteNombre}</Text>
+                            <Text style={styles.textModalInfo}>Sucursal: {infoModal.localidad_id}</Text>
+                        </View>
+                        : 
+                        <View>
+                            <Text style={styles.titleModalInfo}>Ultimo Historial del Equipo</Text>
+                            <Text style={styles.textModalInfo}>Ingeniero Resp.: {infoModal.ingenieroResp}</Text>
+                            <Text style={styles.textModalInfo}>Id Orden Servicio: {infoModal.OrdenServicioID}</Text>
+                            <Text style={styles.textModalInfo}>Fecha evento: {infoModal.Fecha}</Text>
+                            <Text style={styles.textModalInfo}>Upgrade: {infoModal.ComentarioUpgrade}</Text>
+                            <Text style={styles.textModalInfo}>Síntomas: {infoModal.Sintomas}</Text>
+                            <Text style={styles.textModalInfo}>Causas: {infoModal.Causas}</Text>
+                            <Text style={styles.textModalInfo}>Diagnóstico: {infoModal.Diagnostico}</Text>
+                            <Text style={styles.textModalInfo}>Acciones: {infoModal.Acciones}</Text>
+                            <Text style={styles.textModalInfo}>Comentarios: {infoModal.ObservacionIngeniero}</Text>
+                        </View>
+                        }
+                        <Text style={{ paddingTop: 20, textAlign: 'right',fontSize: 18, color:'#FF6B00' }} onPress={() =>setShowPopup(false)}>
+                        CERRAR</Text>
+                    </View>
+                </ScrollView>
+            }
             <BannerOrderServi />
         </View>
     );
@@ -325,6 +394,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-end',
         backgroundColor: '#E5E5E5',
+        position: 'relative'
     },
     contenedor: {
         flex: 1,
@@ -371,11 +441,11 @@ const styles = StyleSheet.create({
         height:'auto',
         backgroundColor:'#ffffff',
         position: 'absolute',
-        right: 30,
+        right: 50,
         top: 'auto',
         padding: 10,
         zIndex: 10,
-
+        
         shadowColor: '#171717',
         shadowOffset: { width: 4, height: 4},
         shadowOpacity: 1,
@@ -386,5 +456,31 @@ const styles = StyleSheet.create({
         fontsize: 18,
         padding: 5,
         zIndex:10
+    },
+    modalInfo:{
+        width: '80%',
+        height: 'auto',
+        backgroundColor: '#ffffff',
+        position: 'absolute',
+        zIndex: 10,
+        top: 0,
+        left: 0,
+        transform:[ {translate:[50,100]}],
+        shadowColor: '#171717',
+        shadowOffset: { width: 10, height: 10},
+        shadowOpacity: 1,
+        shadowRadius: 20,
+        elevation: 15,
+        borderRadius: 20,
+    },
+    titleModalInfo:{
+        fontWeight: '700',
+        color: '#000000',
+        fontSize: 16,
+        paddingBottom: 5
+    },
+    textModalInfo:{
+        fontSize: 16,
+        color: '#666666'
     }
 });
