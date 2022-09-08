@@ -22,6 +22,10 @@ export default function Equipo(props) {
     const [model, setModel] = useState("")
     const [serie, setSerie] = useState("")
 
+    const [showMenu, setShowMenu] = useState(false)
+    const [itemIndex, setItemIndex] = useState(null)
+    const [isVisible, setIsVisible] = useState(false)
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -60,9 +64,16 @@ export default function Equipo(props) {
             return hist;
         });
         setHistorial(temp);
+        console.log(equ_serie,"a")
     };
-
-    const _renderItem = ({ item, index }) => {
+    const showCoso = (index) => {
+        setItemIndex(index)
+    }
+    const showModal = (type) => {
+        console.log(type)
+    }
+    const _renderItem = ({ item, index, isClick }) => {
+        if(!isVisible) return null
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
                 <View style={{
@@ -71,10 +82,12 @@ export default function Equipo(props) {
                     alignItems: 'center',
                     backgroundColor: '#fff',
                     width: '100%',
+                    minHeight: 100,
                     paddingHorizontal: 10,
                     paddingVertical: 10,
                     borderBottomWidth: 0.5,
-                    borderColor: '#858583'
+                    borderColor: '#858583',
+                    position: 'relative'
                 }}>
                     <View>
                         <Pressable onPress={() => handleChange(item.equ_serie)} >
@@ -102,14 +115,30 @@ export default function Equipo(props) {
                             color: '#858583',
                         }}>{item.equ_SitioInstalado + "/" + item.equ_areaInstalado}</Text>
                     </View>
-                    <View>
-                        <Text style={{
+                    <View >
+                        <Text onPress={()=>showCoso(index)} style={{
                             rotation: 90,
+                            padding: 10
                         }}>
                             <AntDesign name="ellipsis1" size={24} color="black" />
                         </Text>
                     </View>
                 </View>
+                
+                {
+                    isVisible && index === itemIndex && 
+                    (<View style={styles.boxOptions} >
+                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('history')}>
+                            <Text style={styles.boxOptionsText}>Historial de Equipo
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('team')}>
+                            <Text style={styles.boxOptionsText}>Detalles de Equipo
+                            </Text>
+                        </TouchableOpacity>
+                    </View>)
+                    
+                }
             </View>
         )
     }
@@ -337,5 +366,25 @@ const styles = StyleSheet.create({
         backgroundColor: '#FF6B00',
         padding: 15,
     },
+    boxOptions:{
+        width:'auto',
+        height:'auto',
+        backgroundColor:'#ffffff',
+        position: 'absolute',
+        right: 30,
+        top: 'auto',
+        padding: 10,
+        zIndex: 10,
 
+        shadowColor: '#171717',
+        shadowOffset: { width: 4, height: 4},
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    boxOptionsText:{
+        fontsize: 18,
+        padding: 5,
+        zIndex:10
+    }
 });
