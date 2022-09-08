@@ -7,16 +7,20 @@ export default function Banner(props) {
         <>
             <View style={styles.circlePrimary}>
                 <View style={styles.circleSecond}>
-                    <View style={styles.circleTercer}>
-                        <TouchableOpacity onPress={() => navigation.navigate("Ordenes")}>
-                            <Text style={{ color: "#FFF", fontSize: 30 }}>+</Text>
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity
+                        style={{
+                            ...styles.circleTercer,
+                            opacity: 1,
+                        }}
+
+                        onPress={() => navigation.navigate("Ordenes")}>
+                        <Text style={{ color: "#FFF", fontSize: 30 }}>+</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
             <View style={styles.banner}>
                 <Fontisto name="cloud-refresh" size={25} color="#FFF" />
-                <Text style={{ marginStart: 10, color: "#FFF", fontSize: 12}}>
+                <Text style={{ marginStart: 10, color: "#FFF", fontSize: 12 }}>
                     SINCRONIZANDO...
                 </Text>
             </View>

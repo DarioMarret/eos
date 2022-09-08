@@ -16,7 +16,7 @@ export const CardaUtil = async () => {
                 await HistorialEquipoIngeniero();
                 await getEquipos();
                 await getModeloEquipos();
-                await getClientes();
+                // await getClientes();
                 // await getIngenieros();
                 resolve(true);
             })

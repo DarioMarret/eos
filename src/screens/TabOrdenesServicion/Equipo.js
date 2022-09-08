@@ -314,7 +314,10 @@ export default function Equipo(props) {
                     </TouchableOpacity>
                 </View>
             </View>
-            <BannerOrderServi />
+            <BannerOrderServi
+                {...props}
+                navigation={navigation}
+             />
         </View>
     );
 }

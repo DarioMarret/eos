@@ -1,4 +1,4 @@
-import { Button, FlatList,Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Button, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { GetEventos, GetEventosDelDia } from "../../service/OSevento";
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
@@ -19,7 +19,6 @@ export default function Hoy(props) {
         useCallback(() => {
             (async () => {
                 var date = moment().format('YYYY-MM-DD');
-                console.log(date)
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
             })()
@@ -27,16 +26,16 @@ export default function Hoy(props) {
     )
 
     const typeImage = () => {
-        if(typeCalentar === 0){
+        if (typeCalentar === 0) {
             setBg("#FFECDE")
             return calreq
-        }else if(typeCalentar === 1){
+        } else if (typeCalentar === 1) {
             setBg("#E2FAE0")
             return calok
-        }else if(typeCalentar === 2){
+        } else if (typeCalentar === 2) {
             setBg("#EFDEE1")
             return calsync
-        }else{
+        } else {
             setBg("#FFFFFF")
             return calwait
         }
@@ -45,8 +44,10 @@ export default function Hoy(props) {
 
     function _renderItem({ item, index }) {
         return [
-            <View>
-                <TouchableOpacity>
+            <View key={index}>
+                <TouchableOpacity
+                onPress={() => navigation.navigate("Ordenes")}
+                >
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
@@ -55,19 +56,32 @@ export default function Hoy(props) {
                         width: '100%',
                         minHeight: 100,
                         paddingHorizontal: 20,
-                        paddingVertical: 10,
                         borderBottomWidth: 0.5,
                         borderColor: '#858583'
                     }}>
                         <View>
-                            <Text># ID FUTURO - DEMO / CONGRESOS</Text>
-                            <Text>A & A NORDIKA S:A</Text>
-                            <Text>Este evento se crear y finalizara cuando tenga conexion.</Text>
+                            <Text
+                                style={{
+                                    fontSize: 12,
+                                    color: '#858583'
+                                }}
+                            >{"#" + item.ticket_id + " - " + item.tck_tipoTicket.toUpperCase()} </Text>
+                            <Text
+                                style={{
+                                    fontSize: 16,
+                                    fontWeight: 'bold',
+                                }}
+                            >{item.tck_cliente}</Text>
+                            <Text
+                                style={{
+                                    fontSize: 12,
+                                    color: '#858583'
+                                }}
+                            >{item.tck_descripcionProblema}</Text>
                         </View>
-                        {/* <View>
-                            <Text>Icono Calendario</Text>
-                        </View> */}
+
                         <View style={styles.calendar}>
+                            <Text>{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)}</Text>
                             <Image source={typeImage()} style={{ width: 30, height: 30 }} />
                         </View>
                     </View>
@@ -77,7 +91,7 @@ export default function Hoy(props) {
     }
     return (
         <View style={styles.container}>
-            <View style={{...styles.flexlist, marginTop: "15%"}}>
+            <View style={{ ...styles.flexlist, marginTop: "10%" }}>
                 <SafeAreaView>
                     <FlatList
                         data={eventos}
@@ -94,7 +108,7 @@ export default function Hoy(props) {
 }
 
 const styles = StyleSheet.create({
-    consult:{
+    consult: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -106,8 +120,10 @@ const styles = StyleSheet.create({
         borderBottomWidth: 0.5,
         borderColor: '#858583',
     },
-    calendar:{
-
+    calendar: {
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     container: {
         flex: 1,

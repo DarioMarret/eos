@@ -1,7 +1,12 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 
-export default function BannerOrderServi() {
+export default function BannerOrderServi(props) {
+    const { navigation, route } = props
+    const { name, params } = route
+
+    // console.log(navigation)
 
 
     return (
@@ -13,9 +18,30 @@ export default function BannerOrderServi() {
                     alignItems: 'center',
                 }}>
                     <Fontisto name="cloud-refresh" size={25} color="#FFF" />
-                    <Text style={{ marginStart: 10, color: "#FFF", fontSize: 12 }}>
-                        SINCRONIZANDO...
-                    </Text>
+                </View>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: name !== "1-EQUIPO" ? 'space-between' : 'flex-end',
+                    alignItems: 'center',
+                    width: '70%',
+                }}>
+                    {
+                        name !== "1-EQUIPO" ?
+                            <TouchableOpacity style={styles.volver}>
+                                <AntDesign name="arrowleft" size={24} color="#FFFFFF" />
+                                <Text style={{ color: "#FFF", fontSize: 12 }}>
+                                    VOLVER
+                                </Text>
+                            </TouchableOpacity>
+                            : null
+                    }
+
+                    <TouchableOpacity style={styles.volver}>
+                        <Text style={{ color: "#FFF", fontSize: 12 }}>
+                            SIGUIENTE
+                        </Text>
+                        <AntDesign name="arrowright" size={24} color="#FFFFFF" />
+                    </TouchableOpacity>
                 </View>
             </View>
         </>
@@ -33,4 +59,14 @@ const styles = StyleSheet.create({
         alignItems: "center",
         padding: 10,
     },
+    volver: {
+        flexDirection: 'row',
+        borderRadius: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FF6B00',
+        padding: 10,
+        paddingHorizontal: 20,
+        marginHorizontal: 10,
+    }
 })
