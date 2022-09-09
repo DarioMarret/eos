@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import Banner from "../../components/Banner";
+import BannerOrderServi from "../../components/BannerOrdenServ";
 
 
 export default function Adjuntos(props) {
@@ -7,7 +7,7 @@ export default function Adjuntos(props) {
     return (
         <View style={styles.container}>
             <Text>Abjuntos Screen</Text>
-            <Banner
+            <BannerOrderServi
                 {...props}
                 navigation={navigation}
                 screen={"5-ADJUNTOS"}

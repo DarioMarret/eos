@@ -6,7 +6,9 @@ import { useState } from "react";
 
 export default function Datos(props) {
     const [selectedLanguage, setSelectedLanguage] = useState();
+    const { navigation, route } = props
 
+    
     return (
         <View style={styles.container}>
             <View style={styles.ContenedorCliente}>

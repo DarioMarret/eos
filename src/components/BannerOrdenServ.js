@@ -5,7 +5,7 @@ import { AntDesign } from '@expo/vector-icons';
 export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
     const { name, params } = route
-    const tab = ["1-EQUIPO", "2-CLIENTE", "3-DATOS", "4-COMPONENTES", "5-ADJUNTOS", "6-INGRESO HORAS"]
+    const tab = ["1-EQUIPO", "2-CLIENTE", "3-DATOS", "4-COMPONENTES", "5-ADJUNTOS", "6-INGRESO HORAS", "7-RESUMEN"]
 
     function changeScreenSiguiente() {
         tab.includes(name) ? navigation.navigate(tab[tab.indexOf(name) + 1]) : navigation.navigate("1-EQUIPO")

@@ -87,7 +87,7 @@ export default function OdernServicio(props) {
                     headerShown: false
                 }}
             />
-            <Tab.Screen name="7-INGRESO FECHAS" component={IngresoHoras}
+            <Tab.Screen name="6-INGRESO HORAS" component={IngresoHoras}
                 options={{
                     headerShown: false
                 }}

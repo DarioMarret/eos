@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import Banner from "../../components/Banner";
+import BannerOrderServi from "../../components/BannerOrdenServ";
 
 
 export default function Componentes(props) {
@@ -7,7 +7,7 @@ export default function Componentes(props) {
     return (
         <View style={styles.container}>
             <Text>Componentes Screen</Text>
-            <Banner
+            <BannerOrderServi
                 {...props}
                 navigation={navigation}
                 screen={"4-COMPONENTES"}
