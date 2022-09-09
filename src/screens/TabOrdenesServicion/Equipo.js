@@ -29,7 +29,9 @@ export default function Equipo(props) {
     const [model, setModel] = useState("")
     const [serie, setSerie] = useState("")
 
-    const [showMenu, setShowMenu] = useState(false)
+    const [infoModal, setInfoModal] = useState(null)
+    const [showPopup, setShowPopup] = useState(false)
+    const [typeInfo, setTypeInfo] = useState("")
     const [itemIndex, setItemIndex] = useState(null)
     const [isVisible, setIsVisible] = useState(false)
 
@@ -96,11 +98,45 @@ export default function Equipo(props) {
         });
         setHistorial(temp);
     };
-    const showCoso = (index) => {
+    
+    const showSelect = (index, item) => {
+        console.log("item",item,"item")
         setItemIndex(index)
     }
-    const showModal = (type) => {
-        console.log(type)
+    const showModal = (type, item) => {
+        let body
+        console.log("item",item,"item")
+        if(type=== 'history'){
+            body = item.historial !== 'null' ? JSON.parse(item.historial)[0] : 
+            {
+            ingenieroResp: "",
+            OrdenServicioID: "",
+            Fecha: "",
+            ComentarioUpgrade: "",
+            Sintomas: "",
+            Causas: "",
+            Diagnostico: "",
+            Acciones: "",
+            ObservacionIngeniero: ""
+            }
+        }else if(type=== 'details'){
+            body = {
+                tipo: item.tipo,
+                modelo: item.modelo,
+                serie: item.equ_serie,
+                estado: item.equ_estado,
+                sitio:item.equ_SitioInstalado,
+                area:item.equ_areaInstalado,
+                marca:item.marca,
+                cliente:item.con_ClienteNombre,
+                sucursal:item.localidad_id,
+            }
+        }
+        setShowPopup(true)
+        setTypeInfo(type)
+        setInfoModal(body)
+        
+        setIsVisible(false)
     }
     const _renderItem = ({ item, index }) => {
         return (
@@ -158,11 +194,11 @@ export default function Equipo(props) {
                 {
                     isVisible && index === itemIndex &&
                     (<View style={styles.boxOptions} >
-                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('history')}>
+                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('history', item)}>
                             <Text style={styles.boxOptionsText}>Historial de Equipo
                             </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('team')}>
+                        <TouchableOpacity style={styles.boxOptionsText} onPress={() => showModal('details', item)}>
                             <Text style={styles.boxOptionsText}>Detalles de Equipo
                             </Text>
                         </TouchableOpacity>
@@ -386,6 +422,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-end',
         backgroundColor: '#E5E5E5',
+        position: 'relative'
     },
     contenedor: {
         flex: 1,
@@ -432,11 +469,11 @@ const styles = StyleSheet.create({
         height: 'auto',
         backgroundColor: '#ffffff',
         position: 'absolute',
-        right: 30,
+        right: 50,
         top: 'auto',
         padding: 10,
         zIndex: 10,
-
+        
         shadowColor: '#171717',
         shadowOffset: { width: 4, height: 4 },
         shadowOpacity: 1,
