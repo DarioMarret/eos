@@ -1,10 +1,27 @@
+import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
+import moment from "moment";
+import { GetEventosDelDia } from "../service/OSevento";
 
 export default function Banner(props) {
     const { navigation } = props
-    console.log("props",props)
+    console.log("props", props)
 
+    const [update, setupdate] = useState(false)
+
+    async function ActualizarEventos() {
+        // var date = moment().format('YYYY-MM-DD');
+        setupdate(true)
+        await GetEventosDelDia()
+        setupdate(false)
+        // const respuesta = await GetEventos(`${date}T00:00:00`)
+        // setEventos(respuesta)
+        // const ticket_id = await GetEventosByTicket()
+        // ticket_id.map(async ( r ) => {
+        //     await EquipoTicket(r.ticket_id)
+        // })
+    }
 
     return (
         <>
@@ -24,9 +41,18 @@ export default function Banner(props) {
 
             <View style={{ ...styles.banner, paddingLeft: 20 }}>
                 <TouchableOpacity
-                    onPress={() => console.log("hola")}
+                    onPress={ActualizarEventos}
                 >
-                    <Fontisto name="cloud-refresh" size={25} color="#FFF" />
+                    <Fontisto name="cloud-refresh" size={25} color={!update ? "#FFF" : "#099E15"} />
+                    {
+                        update ? <Text
+                            style={{
+                                color: !update ? "#FFF" : "#099E15",
+                                fontSize: 10,
+                            }}
+                        >Actualizando...</Text> : null
+                    }
+
                 </TouchableOpacity>
             </View>
         </>

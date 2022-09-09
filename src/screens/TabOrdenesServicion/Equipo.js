@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
 import { Picker } from '@react-native-picker/picker'
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useCallback, useEffect, useState } from "react";
@@ -7,23 +7,20 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getEquiposStorage } from "../../service/equipos";
 import { getModeloEquiposStorage } from "../../service/modeloquipo";
 import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
+import Checkbox from "expo-checkbox";
 import db from "../../service/Database/model";
-import { getEquipoTicketStorage } from "../../service/equipoTicketID";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import isEmpty from "just-is-empty";
 import { ticketID } from "../../utils/constantes";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Equipo(props) {
-    const { navigation, route } = props
-
+    const { navigation } = props
     const [equipo, setEquipo] = useState([])
     const [modelo, setModelo] = useState([])
     const [modelosub, setModeloSub] = useState([])
     const [historial, setHistorial] = useState([])
 
     const [isdisabel, setDisable] = useState(true)
-
-    const [isLoading, setIsLoading] = useState(false)
 
     const [tipo, setTipo] = useState("")
     const [model, setModel] = useState("")
@@ -39,6 +36,7 @@ export default function Equipo(props) {
         useCallback(() => {
             (async () => {
                 const response = await getEquiposStorage();
+                // console.log("response", response.length)
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
@@ -48,27 +46,23 @@ export default function Equipo(props) {
                     })
                 })
                 let ticket_id = await AsyncStorage.getItem(ticketID)
-                console.log(ticket_id)
+                console.log("ticket_id", ticket_id)
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                        console.log("rows", rows)
-                        setIsLoading(true)
-                        var EquipoDes = JSON.parse(rows._array[0].Equipo)
-                        setHistorial([{
-                            id: rows._array[0].id_equipoContrato,
-                            con_ClienteNombre: rows._array[0].con_ClienteNombre,
-                            tipo: EquipoDes.equ_tipo_desc,
-                            modelo: EquipoDes.equ_modelo_desc,
-                            equ_serie: EquipoDes.equ_serie,
-                            equ_SitioInstalado: EquipoDes.equ_SitioInstalado,
-                            equ_areaInstalado: EquipoDes.equ_areaInstalado,
-                        }])
+                        var EquipoDes = JSON.parse(rows._array[0].Equipo).equipo_id
+                        console.log("EquipoDes", EquipoDes)
+                        db.transaction(tx => {
+                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [EquipoDes], (_, { rows }) => {
+                                console.log("row", rows._array.length)
+                                setHistorial(rows._array)
+                            })
+                        })
                     })
                 })
+
             })()
         }, [])
     )
-
     useEffect(() => {
         EquipoHistorial()
     }, [tipo, model, serie]);
@@ -97,14 +91,21 @@ export default function Equipo(props) {
             return hist;
         });
         setHistorial(temp);
+        console.log(equ_serie, "a")
     };
+<<<<<<< HEAD
     
     const showSelect = (index, item) => {
         console.log("item",item,"item")
+=======
+    const showSelect = (index, item) => {
+        console.log("item", item, "item")
+>>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
         setItemIndex(index)
     }
     const showModal = (type, item) => {
         let body
+<<<<<<< HEAD
         console.log("item",item,"item")
         if(type=== 'history'){
             body = item.historial !== 'null' ? JSON.parse(item.historial)[0] : 
@@ -120,41 +121,69 @@ export default function Equipo(props) {
             ObservacionIngeniero: ""
             }
         }else if(type=== 'details'){
+=======
+        console.log("item", item, "item")
+        if (type === 'history') {
+            body = item.historial !== 'null' ? JSON.parse(item.historial)[0] :
+                {
+                    ingenieroResp: "",
+                    OrdenServicioID: "",
+                    Fecha: "",
+                    ComentarioUpgrade: "",
+                    Sintomas: "",
+                    Causas: "",
+                    Diagnostico: "",
+                    Acciones: "",
+                    ObservacionIngeniero: ""
+                }
+        } else if (type === 'details') {
+>>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
             body = {
                 tipo: item.tipo,
                 modelo: item.modelo,
                 serie: item.equ_serie,
                 estado: item.equ_estado,
+<<<<<<< HEAD
                 sitio:item.equ_SitioInstalado,
                 area:item.equ_areaInstalado,
                 marca:item.marca,
                 cliente:item.con_ClienteNombre,
                 sucursal:item.localidad_id,
+=======
+                sitio: item.equ_SitioInstalado,
+                area: item.equ_areaInstalado,
+                marca: item.marca,
+                cliente: item.con_ClienteNombre,
+                sucursal: item.localidad_id,
+>>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
             }
         }
         setShowPopup(true)
         setTypeInfo(type)
         setInfoModal(body)
+<<<<<<< HEAD
         
+=======
+
+>>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
         setIsVisible(false)
     }
-    const _renderItem = ({ item, index }) => {
+    const _renderItem = ({ item, index, isClick }) => {
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <View
-                    style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        backgroundColor: '#fff',
-                        width: '100%',
-                        minHeight: 100,
-                        paddingHorizontal: 10,
-                        paddingVertical: 10,
-                        borderBottomWidth: 0.5,
-                        borderColor: '#858583',
-                        position: 'relative'
-                    }}>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    backgroundColor: '#fff',
+                    width: '100%',
+                    minHeight: 100,
+                    paddingHorizontal: 10,
+                    paddingVertical: 10,
+                    borderBottomWidth: 0.5,
+                    borderColor: '#858583',
+                    position: 'relative'
+                }}>
                     <View>
                         <Pressable onPress={() => handleChange(item.equ_serie)} >
                             <MaterialCommunityIcons
@@ -182,7 +211,7 @@ export default function Equipo(props) {
                         }}>{item.equ_SitioInstalado + "/" + item.equ_areaInstalado}</Text>
                     </View>
                     <View >
-                        <Text onPress={() => showCoso(index)} style={{
+                        <Text onPress={() => { showSelect(index, item); setIsVisible(!isVisible) }} style={{
                             rotation: 90,
                             padding: 10
                         }}>
@@ -228,11 +257,8 @@ export default function Equipo(props) {
             console.log("serie", serie)
             result = await getHistorialEquiposStorage("", "", serie)
         }
-        console.log("resultado de busqueda-->", result)
         setHistorial(result)
     }
-
-
 
     return (
         <View style={styles.container}>
@@ -302,7 +328,6 @@ export default function Equipo(props) {
                             }}
                             onChangeText={text => setSerie(text)}
                             placeholder="Serie"
-                            editable={isdisabel}
                         />
                     </View>
                     {/*  */}
@@ -310,23 +335,14 @@ export default function Equipo(props) {
                         justifyContent: 'flex-start',
                         height: "72%",
                     }}>
-                        {
-                            isLoading ?
-                                <SafeAreaView>
-                                    <FlatList
-                                        data={historial}
-                                        renderItem={_renderItem}
-                                        keyExtractor={(item, index) => index.toString()}
-                                    />
-                                </SafeAreaView>
-                                :
-                                <ActivityIndicator
-                                    size={50}
-                                    color="#FF6B00"
-                                    style={{ marginTop: 10 }}
-                                    animating={!isLoading}
-                                />
-                        }
+                        <SafeAreaView>
+                            <FlatList
+                                data={historial}
+                                renderItem={_renderItem}
+                                // numColumns={numColumns}
+                                keyExtractor={(item, index) => index.toString()}
+                            />
+                        </SafeAreaView>
                     </View>
 
                     {/* <View style={styles.ContainetBuscador}>
@@ -395,8 +411,7 @@ export default function Equipo(props) {
                         backgroundColor: '#FFF',
                         borderColor: '#FF6B00',
                         borderWidth: 1,
-                    }}
-                        onPress={() => navigation.navigate("Consultas")}>
+                    }} onPress={() => navigation.navigate("Consultas")}>
                         <AntDesign name="close" size={24} color="#FF6B00" />
                         <Text style={{
                             fontSize: 16,
@@ -407,6 +422,52 @@ export default function Equipo(props) {
                     </TouchableOpacity>
                 </View>
             </View>
+            {showPopup &&
+                <Modal
+                    animationType="slide"
+                    visible={true}
+                    transparent={true}
+                >
+                    <View style={{
+                        flex: 1,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginTop: 22,
+                    }}>
+                        {typeInfo === "details" ?
+                            <View style={styles.modalInfo}>
+                                <Text style={styles.titleModalInfo}>Detalles de Equipo</Text>
+                                <Text style={styles.textModalInfo}>Tipo: {infoModal.tipo}</Text>
+                                <Text style={styles.textModalInfo}>Modelo: {infoModal.modelo}</Text>
+                                <Text style={styles.textModalInfo}>Serie: {infoModal.equ_serie}</Text>
+                                <Text style={styles.textModalInfo}>Estado: {infoModal.equ_estado}</Text>
+                                <Text style={styles.textModalInfo}>Sitio instalado: {infoModal.equ_SitioInstalado}</Text>
+                                <Text style={styles.textModalInfo}>Área instalada: {infoModal.equ_areaInstalado}</Text>
+                                <Text style={styles.textModalInfo}>Marca: {infoModal.marca}</Text>
+                                <Text style={styles.textModalInfo}>Cliente: {infoModal.con_ClienteNombre}</Text>
+                                <Text style={styles.textModalInfo}>Sucursal: {infoModal.localidad_id}</Text>
+                            </View>
+                            :
+                            <View
+                                style={styles.modalInfo}
+                            >
+                                <Text style={styles.titleModalInfo}>Ultimo Historial del Equipo</Text>
+                                <Text style={styles.textModalInfo}>Ingeniero Resp.: {infoModal.ingenieroResp}</Text>
+                                <Text style={styles.textModalInfo}>Id Orden Servicio: {infoModal.OrdenServicioID}</Text>
+                                <Text style={styles.textModalInfo}>Fecha evento: {infoModal.Fecha}</Text>
+                                <Text style={styles.textModalInfo}>Upgrade: {infoModal.ComentarioUpgrade}</Text>
+                                <Text style={styles.textModalInfo}>Síntomas: {infoModal.Sintomas}</Text>
+                                <Text style={styles.textModalInfo}>Causas: {infoModal.Causas}</Text>
+                                <Text style={styles.textModalInfo}>Diagnóstico: {infoModal.Diagnostico}</Text>
+                                <Text style={styles.textModalInfo}>Acciones: {infoModal.Acciones}</Text>
+                                <Text style={styles.textModalInfo}>Comentarios: {infoModal.ObservacionIngeniero}</Text>
+                            </View>
+                        }
+                        <Text style={{ paddingTop: 20, textAlign: 'right', fontSize: 18, color: '#FF6B00' }} onPress={() => setShowPopup(false)}>
+                            CERRAR</Text>
+                    </View>
+                </Modal>
+            }
             <BannerOrderServi
                 {...props}
                 navigation={navigation}
@@ -484,5 +545,35 @@ const styles = StyleSheet.create({
         fontsize: 18,
         padding: 5,
         zIndex: 10
+    },
+    modalInfo: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        width: '90%',
+        height: '50%',
+        margin: 20,
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 20,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 9,
+    },
+    titleModalInfo: {
+        fontWeight: '700',
+        color: '#000000',
+        fontSize: 16,
+        paddingBottom: 5
+    },
+    textModalInfo: {
+        fontSize: 16,
+        color: '#666666'
     }
 });

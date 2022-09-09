@@ -16,15 +16,16 @@ const Tab = createBottomTabNavigator();
 export default function OdernServicio(props) {
     const { navigation, route } = props
     const { name, params } = route
-    const { ticket_id } = params
-
+    
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                navigation.setOptions({ title: params.ticket_id })
-                await AsyncStorage.removeItem(ticketID)
-                await AsyncStorage.setItem(ticketID, (ticket_id).toString())
-                // navigation.navigate("1-EQUIPO")
+                if("ticket_id" in params){
+                    const { ticket_id } = params
+                    navigation.setOptions({ title: params.ticket_id })
+                    await AsyncStorage.removeItem(ticketID)
+                    await AsyncStorage.setItem(ticketID, (ticket_id).toString())
+                }
             })()
         }, [])
     )

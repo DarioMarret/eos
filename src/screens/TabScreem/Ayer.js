@@ -24,6 +24,7 @@ export default function Ayer(prop) {
             (async () => {
                 var date = moment().add(-1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
+                console.log("respuesta", respuesta)
                 setEventos(respuesta)
             })()
         }, [])

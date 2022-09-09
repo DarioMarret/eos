@@ -7,6 +7,7 @@ export const GetEventosDelDia = async () => {
 
     try {
         const { token, userId } = await getToken()
+        console.log("TOKEN----> ",token,"\n", userId)
         const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}`;
         const { data, status } = await axios.get(url, {
             headers: {
