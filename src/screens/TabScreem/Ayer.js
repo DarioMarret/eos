@@ -24,8 +24,16 @@ export default function Ayer(prop) {
             (async () => {
                 var date = moment().add(-1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
-                console.log("respuesta", respuesta)
                 setEventos(respuesta)
+                const ticket_id = await GetEventosByTicket()
+                ticket_id.map(async ( r ) => {
+                    await EquipoTicket(r.ticket_id)
+                })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
+                        console.log("rows",rows.length)
+                    })
+                })
             })()
         }, [])
     )

@@ -430,41 +430,73 @@ export default function Equipo(props) {
                 >
                     <View style={{
                         flex: 1,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        marginTop: 22,
+                        justifyContent: "center",
+                        alignItems: "center",
+                        width: "100%",
+                        height: "100%",
+                        // backgroundColor: "#000000AA"
                     }}>
                         {typeInfo === "details" ?
                             <View style={styles.modalInfo}>
-                                <Text style={styles.titleModalInfo}>Detalles de Equipo</Text>
-                                <Text style={styles.textModalInfo}>Tipo: {infoModal.tipo}</Text>
-                                <Text style={styles.textModalInfo}>Modelo: {infoModal.modelo}</Text>
-                                <Text style={styles.textModalInfo}>Serie: {infoModal.equ_serie}</Text>
-                                <Text style={styles.textModalInfo}>Estado: {infoModal.equ_estado}</Text>
-                                <Text style={styles.textModalInfo}>Sitio instalado: {infoModal.equ_SitioInstalado}</Text>
-                                <Text style={styles.textModalInfo}>Área instalada: {infoModal.equ_areaInstalado}</Text>
-                                <Text style={styles.textModalInfo}>Marca: {infoModal.marca}</Text>
-                                <Text style={styles.textModalInfo}>Cliente: {infoModal.con_ClienteNombre}</Text>
-                                <Text style={styles.textModalInfo}>Sucursal: {infoModal.localidad_id}</Text>
+                                <View>
+                                    <Text style={styles.titleModalInfo}>Detalles de Equipo</Text>
+                                    <Text style={styles.textModalInfo}>Tipo: {infoModal.tipo}</Text>
+                                    <Text style={styles.textModalInfo}>Modelo: {infoModal.modelo}</Text>
+                                    <Text style={styles.textModalInfo}>Serie: {infoModal.equ_serie}</Text>
+                                    <Text style={styles.textModalInfo}>Estado: {infoModal.equ_estado}</Text>
+                                    <Text style={styles.textModalInfo}>Sitio instalado: {infoModal.equ_SitioInstalado}</Text>
+                                    <Text style={styles.textModalInfo}>Área instalada: {infoModal.equ_areaInstalado}</Text>
+                                    <Text style={styles.textModalInfo}>Marca: {infoModal.marca}</Text>
+                                    <Text style={styles.textModalInfo}>Cliente: {infoModal.con_ClienteNombre}</Text>
+                                    <Text style={styles.textModalInfo}>Sucursal: {infoModal.localidad_id}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setShowPopup(false)}
+                                    style={{
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        borderRadius: 20,
+                                        marginTop: 10,
+                                        paddingHorizontal: 30,
+                                        paddingVertical: 10,
+                                        backgroundColor: '#FF6B00',
+                                        padding: 5,
+                                    }}>
+                                    <Text style={{ fontSize: 18, color: '#FFF' }} >
+                                        CERRAR</Text>
+                                </TouchableOpacity>
                             </View>
                             :
-                            <View
-                                style={styles.modalInfo}
-                            >
-                                <Text style={styles.titleModalInfo}>Ultimo Historial del Equipo</Text>
-                                <Text style={styles.textModalInfo}>Ingeniero Resp.: {infoModal.ingenieroResp}</Text>
-                                <Text style={styles.textModalInfo}>Id Orden Servicio: {infoModal.OrdenServicioID}</Text>
-                                <Text style={styles.textModalInfo}>Fecha evento: {infoModal.Fecha}</Text>
-                                <Text style={styles.textModalInfo}>Upgrade: {infoModal.ComentarioUpgrade}</Text>
-                                <Text style={styles.textModalInfo}>Síntomas: {infoModal.Sintomas}</Text>
-                                <Text style={styles.textModalInfo}>Causas: {infoModal.Causas}</Text>
-                                <Text style={styles.textModalInfo}>Diagnóstico: {infoModal.Diagnostico}</Text>
-                                <Text style={styles.textModalInfo}>Acciones: {infoModal.Acciones}</Text>
-                                <Text style={styles.textModalInfo}>Comentarios: {infoModal.ObservacionIngeniero}</Text>
+                            <View style={styles.modalInfo} >
+                                <View>
+                                    <Text style={styles.titleModalInfo}>Ultimo Historial del Equipo</Text>
+                                    <Text style={styles.textModalInfo}>Ingeniero Resp.: {infoModal.ingenieroResp}</Text>
+                                    <Text style={styles.textModalInfo}>Id Orden Servicio: {infoModal.OrdenServicioID}</Text>
+                                    <Text style={styles.textModalInfo}>Fecha evento: {infoModal.Fecha}</Text>
+                                    <Text style={styles.textModalInfo}>Upgrade: {infoModal.ComentarioUpgrade}</Text>
+                                    <Text style={styles.textModalInfo}>Síntomas: {infoModal.Sintomas}</Text>
+                                    <Text style={styles.textModalInfo}>Causas: {infoModal.Causas}</Text>
+                                    <Text style={styles.textModalInfo}>Diagnóstico: {infoModal.Diagnostico}</Text>
+                                    <Text style={styles.textModalInfo}>Acciones: {infoModal.Acciones}</Text>
+                                    <Text style={styles.textModalInfo}>Comentarios: {infoModal.ObservacionIngeniero}</Text>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={() => setShowPopup(false)}
+                                    style={{
+                                        justifyContent: "center",
+                                        alignItems: "center",
+                                        borderRadius: 20,
+                                        marginTop: 10,
+                                        paddingHorizontal: 30,
+                                        paddingVertical: 10,
+                                        backgroundColor: '#FF6B00',
+                                        padding: 5,
+                                    }}>
+                                    <Text style={{ fontSize: 18, color: '#FFF' }} >
+                                        CERRAR</Text>
+                                </TouchableOpacity>
                             </View>
                         }
-                        <Text style={{ paddingTop: 20, textAlign: 'right', fontSize: 18, color: '#FF6B00' }} onPress={() => setShowPopup(false)}>
-                            CERRAR</Text>
                     </View>
                 </Modal>
             }
@@ -473,7 +505,7 @@ export default function Equipo(props) {
                 navigation={navigation}
                 screen={"2-CLIENTE"}
             />
-        </View>
+        </View >
     );
 }
 
@@ -547,16 +579,13 @@ const styles = StyleSheet.create({
         zIndex: 10
     },
     modalInfo: {
-        flex: 1,
         justifyContent: 'center',
-        alignItems: 'flex-start',
-        width: '90%',
-        height: '50%',
+        alignItems: 'center',
         margin: 20,
         backgroundColor: 'white',
-        borderRadius: 20,
+        borderRadius: 10,
         padding: 20,
-        alignItems: 'center',
+        minWidth: '40%',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -564,7 +593,7 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-        elevation: 9,
+        elevation: 11,
     },
     titleModalInfo: {
         fontWeight: '700',
