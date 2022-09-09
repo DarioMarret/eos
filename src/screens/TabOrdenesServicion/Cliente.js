@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
         width: "100%",
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#FFFFFF',
         padding: 10,
     },
     ContainerInputs: {
