@@ -1,4 +1,4 @@
-import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Picker } from '@react-native-picker/picker'
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useCallback, useEffect, useState } from "react";
@@ -23,6 +23,8 @@ export default function Equipo(props) {
 
     const [isdisabel, setDisable] = useState(true)
 
+    const [isLoading, setIsLoading] = useState(false)
+
     const [tipo, setTipo] = useState("")
     const [model, setModel] = useState("")
     const [serie, setSerie] = useState("")
@@ -44,9 +46,11 @@ export default function Equipo(props) {
                     })
                 })
                 let ticket_id = await AsyncStorage.getItem(ticketID)
-
+                console.log(ticket_id)
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                        console.log("rows", rows)
+                        setIsLoading(true)
                         var EquipoDes = JSON.parse(rows._array[0].Equipo)
                         setHistorial([{
                             id: rows._array[0].id_equipoContrato,
@@ -56,8 +60,6 @@ export default function Equipo(props) {
                             equ_serie: EquipoDes.equ_serie,
                             equ_SitioInstalado: EquipoDes.equ_SitioInstalado,
                             equ_areaInstalado: EquipoDes.equ_areaInstalado,
-                            // equ_serie: EquipoDes.equ_tipo_desc,
-                            // equ_serie: EquipoDes.equ_tipo_desc,
                         }])
                     })
                 })
@@ -272,13 +274,23 @@ export default function Equipo(props) {
                         justifyContent: 'flex-start',
                         height: "72%",
                     }}>
-                        <SafeAreaView>
-                            <FlatList
-                                data={historial}
-                                renderItem={_renderItem}
-                                keyExtractor={(item, index) => index.toString()}
-                            />
-                        </SafeAreaView>
+                        {
+                            isLoading ?
+                                <SafeAreaView>
+                                    <FlatList
+                                        data={historial}
+                                        renderItem={_renderItem}
+                                        keyExtractor={(item, index) => index.toString()}
+                                    />
+                                </SafeAreaView>
+                                :
+                                <ActivityIndicator
+                                    size={50}
+                                    color="#FF6B00"
+                                    style={{ marginTop: 10 }}
+                                    animating={!isLoading}
+                                />
+                        }
                     </View>
 
                     {/* <View style={styles.ContainetBuscador}>
@@ -362,6 +374,7 @@ export default function Equipo(props) {
             <BannerOrderServi
                 {...props}
                 navigation={navigation}
+                screen={"2-CLIENTE"}
             />
         </View>
     );

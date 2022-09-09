@@ -1,8 +1,7 @@
 import React, { useCallback } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { StyleSheet, Text, View } from "react-native";
-import Banner from "../components/Banner";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import Equipo from "../screens/TabOrdenesServicion/Equipo";
 import Cliente from "../screens/TabOrdenesServicion/Cliente";
 import Datos from "../screens/TabOrdenesServicion/Datos";
@@ -23,8 +22,9 @@ export default function OdernServicio(props) {
         useCallback(() => {
             (async () => {
                 navigation.setOptions({ title: params.ticket_id })
+                await AsyncStorage.removeItem(ticketID)
                 await AsyncStorage.setItem(ticketID, (ticket_id).toString())
-                navigation.navigate("1-EQUIPO")
+                // navigation.navigate("1-EQUIPO")
             })()
         }, [])
     )
@@ -61,55 +61,34 @@ export default function OdernServicio(props) {
                 }
             }}
         >
-            <Tab.Screen
-                name="1-EQUIPO"
-                component={Equipo}
 
+            <Tab.Screen name="1-EQUIPO" component={Equipo}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="book-open" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
-                params={params}
             />
             <Tab.Screen name="2-CLIENTE" component={Cliente}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />
             <Tab.Screen name="3-DATOS" component={Datos}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />
             <Tab.Screen name="4-COMPONENTES" component={Componentes}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />
             <Tab.Screen name="5-ADJUNTOS" component={Adjuntos}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />
             <Tab.Screen name="7-INGRESO FECHAS" component={IngresoHoras}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />

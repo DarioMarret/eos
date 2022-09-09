@@ -66,7 +66,11 @@ export default function Datos(props) {
                 </View>
 
             </View>
-            <BannerOrderServi />
+            <BannerOrderServi
+                {...props}
+                navigation={navigation}
+                screen={"3-DATOS"}
+            />
         </View>
     );
 }

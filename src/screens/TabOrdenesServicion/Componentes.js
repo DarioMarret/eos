@@ -8,7 +8,9 @@ export default function Componentes(props) {
         <View style={styles.container}>
             <Text>Componentes Screen</Text>
             <Banner
+                {...props}
                 navigation={navigation}
+                screen={"4-COMPONENTES"}
             />
         </View>
     );

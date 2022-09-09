@@ -1,5 +1,4 @@
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import Banner from "../../components/Banner";
 import BannerOrderServi from "../../components/BannerOrdenServ";
 
 
@@ -35,7 +34,11 @@ export default function Cliente(props) {
                 </View>
 
             </View>
-            <BannerOrderServi />
+            <BannerOrderServi
+                {...props}
+                navigation={navigation}
+                screen={"3-DATOS"}
+            />
         </View>
     );
 }
@@ -59,7 +62,7 @@ const styles = StyleSheet.create({
         flexDirection: "column",
         justifyContent: "flex-start",
         alignItems: "flex-start",
-        padding: 10,   
+        padding: 10,
         height: "20%",
         width: "100%",
     },

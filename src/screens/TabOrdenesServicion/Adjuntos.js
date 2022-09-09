@@ -8,7 +8,9 @@ export default function Adjuntos(props) {
         <View style={styles.container}>
             <Text>Abjuntos Screen</Text>
             <Banner
+                {...props}
                 navigation={navigation}
+                screen={"5-ADJUNTOS"}
             />
         </View>
     );

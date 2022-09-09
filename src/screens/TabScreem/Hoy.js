@@ -12,6 +12,7 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import { getIngenierosStorageById } from "../../service/ingenieros";
 import { getToken } from "../../service/usuario";
 import { EquipoTicket } from "../../service/equipoTicketID";
+import db from "../../service/Database/model";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -26,9 +27,14 @@ export default function Hoy(props) {
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                const ticket_id = await GetEventosByTicket()
-                ticket_id.map(async ( r ) => {
-                    await EquipoTicket(r.ticket_id)
+                // const ticket_id = await GetEventosByTicket()
+                // ticket_id.map(async ( r ) => {
+                //     await EquipoTicket(r.ticket_id)
+                // })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
+                        console.log("rows",rows.length)
+                    })
                 })
             })()
         }, [])

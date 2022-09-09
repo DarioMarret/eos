@@ -3,9 +3,17 @@ import { Fontisto } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 
 export default function BannerOrderServi(props) {
-    const { navigation, route } = props
+    const { navigation, route, screen } = props
     const { name, params } = route
+    const tab = ["1-EQUIPO", "2-CLIENTE", "3-DATOS", "4-COMPONENTES", "5-ADJUNTOS", "6-INGRESO HORAS"]
 
+    function changeScreenSiguiente() {
+        tab.includes(name) ? navigation.navigate(tab[tab.indexOf(name) + 1]) : navigation.navigate("1-EQUIPO")
+
+    }
+    function changeScreenAnterior() {
+        tab.includes(name) ? navigation.navigate(tab[tab.indexOf(name) - 1]) : navigation.navigate("1-EQUIPO")
+    }
 
     return (
         <>
@@ -26,7 +34,7 @@ export default function BannerOrderServi(props) {
                 }}>
                     {
                         name !== "1-EQUIPO" ?
-                            <TouchableOpacity style={styles.volver}>
+                            <TouchableOpacity style={styles.volver} onPress={changeScreenAnterior}>
                                 <AntDesign name="arrowleft" size={20} color="#FFFFFF" />
                                 <Text style={{ color: "#FFF", fontSize: 12 }}>
                                     VOLVER
@@ -35,7 +43,7 @@ export default function BannerOrderServi(props) {
                             : null
                     }
 
-                    <TouchableOpacity style={styles.volver}>
+                    <TouchableOpacity style={styles.volver} onPress={changeScreenSiguiente}>
                         <Text style={{ color: "#FFF", fontSize: 12 }}>
                             SIGUIENTE
                         </Text>

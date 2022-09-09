@@ -26,7 +26,7 @@ const TabNavigator = () => {
                     fontWeight: 'normal',
                     paddingBottom: 10,
                     textTransform: 'uppercase',
-                    
+
                 },
                 tabBarIcon: ({ color, size, focused }) => {
                     let iconName;
@@ -41,26 +41,17 @@ const TabNavigator = () => {
         >
             <Tab.Screen name="Ayer" component={Ayer}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="book-open" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />
             <Tab.Screen name="Hoy" component={Hoy}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
                     headerShown: false
                 }}
             />
             <Tab.Screen name="Mañana" component={Manana}
                 options={{
-                    // tabBarIcon: ({ color }) => (
-                    //     <MaterialCommunityIcons name="cart-arrow-right" color={color} size={26} />
-                    // ),
-                    headerShown: false
+                    headerShown: false,
                 }}
             />
         </Tab.Navigator>
