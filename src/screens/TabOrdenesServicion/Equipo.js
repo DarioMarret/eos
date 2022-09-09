@@ -93,35 +93,12 @@ export default function Equipo(props) {
         setHistorial(temp);
         console.log(equ_serie, "a")
     };
-<<<<<<< HEAD
-    
-    const showSelect = (index, item) => {
-        console.log("item",item,"item")
-=======
     const showSelect = (index, item) => {
         console.log("item", item, "item")
->>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
         setItemIndex(index)
     }
     const showModal = (type, item) => {
         let body
-<<<<<<< HEAD
-        console.log("item",item,"item")
-        if(type=== 'history'){
-            body = item.historial !== 'null' ? JSON.parse(item.historial)[0] : 
-            {
-            ingenieroResp: "",
-            OrdenServicioID: "",
-            Fecha: "",
-            ComentarioUpgrade: "",
-            Sintomas: "",
-            Causas: "",
-            Diagnostico: "",
-            Acciones: "",
-            ObservacionIngeniero: ""
-            }
-        }else if(type=== 'details'){
-=======
         console.log("item", item, "item")
         if (type === 'history') {
             body = item.historial !== 'null' ? JSON.parse(item.historial)[0] :
@@ -137,35 +114,21 @@ export default function Equipo(props) {
                     ObservacionIngeniero: ""
                 }
         } else if (type === 'details') {
->>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
             body = {
                 tipo: item.tipo,
                 modelo: item.modelo,
                 serie: item.equ_serie,
                 estado: item.equ_estado,
-<<<<<<< HEAD
-                sitio:item.equ_SitioInstalado,
-                area:item.equ_areaInstalado,
-                marca:item.marca,
-                cliente:item.con_ClienteNombre,
-                sucursal:item.localidad_id,
-=======
                 sitio: item.equ_SitioInstalado,
                 area: item.equ_areaInstalado,
                 marca: item.marca,
                 cliente: item.con_ClienteNombre,
                 sucursal: item.localidad_id,
->>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
             }
         }
         setShowPopup(true)
         setTypeInfo(type)
         setInfoModal(body)
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> c2dd9aa (sincronizador de ayer hoy mañna)
         setIsVisible(false)
     }
     const _renderItem = ({ item, index, isClick }) => {
