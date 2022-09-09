@@ -125,3 +125,18 @@ export const GetEventos = async (ev_fechaAsignadaDesde) => {
         return null;
     }
 }
+
+export const GetEventosByTicket = async (ticket_id) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select ticket_id from OrdenesServicio where ev_estado != "FINALIZADO"', [], (_, { rows }) => {
+                    resolve(rows._array)
+                });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}

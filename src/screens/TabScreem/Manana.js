@@ -47,7 +47,7 @@ export default function Manana(prop) {
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity onPress={() => navigation.navigate("1-EQUIPO", { item })}>
+                <TouchableOpacity onPress={() => navigation.navigate("Ordenes", { ticket_id:item.ticket_id })}>
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',

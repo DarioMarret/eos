@@ -7,19 +7,21 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getEquiposStorage } from "../../service/equipos";
 import { getModeloEquiposStorage } from "../../service/modeloquipo";
 import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
+import db from "../../service/Database/model";
+import { getEquipoTicketStorage } from "../../service/equipoTicketID";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ticketID } from "../../utils/constantes";
 
 
 export default function Equipo(props) {
     const { navigation, route } = props
-    const { name, params } = route
-
-    console.log(params)
-
 
     const [equipo, setEquipo] = useState([])
     const [modelo, setModelo] = useState([])
     const [modelosub, setModeloSub] = useState([])
     const [historial, setHistorial] = useState([])
+
+    const [isdisabel, setDisable] = useState(true)
 
     const [tipo, setTipo] = useState("")
     const [model, setModel] = useState("")
@@ -36,9 +38,33 @@ export default function Equipo(props) {
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
+                        console.log(rows._array.length)
+                    })
+                })
+                let ticket_id = await AsyncStorage.getItem(ticketID)
+
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                        var EquipoDes = JSON.parse(rows._array[0].Equipo)
+                        setHistorial([{
+                            id: rows._array[0].id_equipoContrato,
+                            con_ClienteNombre: rows._array[0].con_ClienteNombre,
+                            tipo: EquipoDes.equ_tipo_desc,
+                            modelo: EquipoDes.equ_modelo_desc,
+                            equ_serie: EquipoDes.equ_serie,
+                            equ_SitioInstalado: EquipoDes.equ_SitioInstalado,
+                            equ_areaInstalado: EquipoDes.equ_areaInstalado,
+                            // equ_serie: EquipoDes.equ_tipo_desc,
+                            // equ_serie: EquipoDes.equ_tipo_desc,
+                        }])
+                    })
+                })
             })()
         }, [])
     )
+
     useEffect(() => {
         EquipoHistorial()
     }, [tipo, model, serie]);
@@ -57,15 +83,16 @@ export default function Equipo(props) {
         let temp = historial.map((hist) => {
             if (equ_serie === hist.equ_serie) {
                 if (hist.isChecked === true) {
+                    setDisable(!isdisabel)
                     return { ...hist, isChecked: false };
                 } else {
+                    setDisable(!isdisabel)
                     return { ...hist, isChecked: true };
                 }
             }
             return hist;
         });
         setHistorial(temp);
-        console.log(equ_serie, "a")
     };
     const showCoso = (index) => {
         setItemIndex(index)
@@ -73,23 +100,23 @@ export default function Equipo(props) {
     const showModal = (type) => {
         console.log(type)
     }
-    const _renderItem = ({ item, index, isClick }) => {
-        if (!isVisible) return null
+    const _renderItem = ({ item, index }) => {
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    backgroundColor: '#fff',
-                    width: '100%',
-                    minHeight: 100,
-                    paddingHorizontal: 10,
-                    paddingVertical: 10,
-                    borderBottomWidth: 0.5,
-                    borderColor: '#858583',
-                    position: 'relative'
-                }}>
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        backgroundColor: '#fff',
+                        width: '100%',
+                        minHeight: 100,
+                        paddingHorizontal: 10,
+                        paddingVertical: 10,
+                        borderBottomWidth: 0.5,
+                        borderColor: '#858583',
+                        position: 'relative'
+                    }}>
                     <View>
                         <Pressable onPress={() => handleChange(item.equ_serie)} >
                             <MaterialCommunityIcons
@@ -163,8 +190,8 @@ export default function Equipo(props) {
             console.log("serie", serie)
             result = await getHistorialEquiposStorage("", "", serie)
         }
-        console.log("resultado de busqueda-->",result)
-        // setHistorial(result)
+        console.log("resultado de busqueda-->", result)
+        setHistorial(result)
     }
 
 
@@ -175,36 +202,50 @@ export default function Equipo(props) {
                 <View style={styles.ContainetEquipo}>
                     <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>
-                            <Picker
-                                style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                selectedValue={tipo}
-                                onValueChange={(itemValue) => setTipo(itemValue)}
-                            >
-                                <Picker.Item label="Tipo" value={""} />
-                                {
-                                    equipo ?
-                                        equipo.map((item, index) => (
-                                            <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
-                                        ))
-                                        : null
-                                }
-                            </Picker>
+                            {
+                                isdisabel ?
+                                    <Picker
+                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                        selectedValue={tipo}
+                                        onValueChange={(itemValue) => setTipo(itemValue)}
+                                    >
+                                        <Picker.Item label="Tipo" value={""} />
+                                        {
+                                            equipo ?
+                                                equipo.map((item, index) => (
+                                                    <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
+                                                ))
+                                                : null
+                                        }
+                                    </Picker>
+                                    :
+                                    <Picker style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}>
+                                        <Picker.Item label="Tipo" value={""} />
+                                    </Picker>
+                            }
                         </View>
                         <View style={{ paddingHorizontal: 10 }} />
                         <View style={styles.ContainetTipoModelo}>
-                            <Picker
-                                style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                selectedValue={model}
-                                onValueChange={(itemValue, itemIndex) => setModel(itemValue)}>
-                                <Picker.Item label="Modelo" value={""} />
-                                {
-                                    modelosub ?
-                                        modelosub.map((item, index) => (
-                                            <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
-                                        ))
-                                        : null
-                                }
-                            </Picker>
+                            {
+                                isdisabel ?
+                                    <Picker
+                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                        selectedValue={model}
+                                        onValueChange={(itemValue, itemIndex) => setModel(itemValue)}>
+                                        <Picker.Item label="Modelo" value={""} />
+                                        {
+                                            modelosub ?
+                                                modelosub.map((item, index) => (
+                                                    <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                                ))
+                                                : null
+                                        }
+                                    </Picker>
+                                    :
+                                    <Picker style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}>
+                                        <Picker.Item label="Modelo" value={""} />
+                                    </Picker>
+                            }
                         </View>
                     </View>
                     <View style={{
@@ -223,6 +264,7 @@ export default function Equipo(props) {
                             }}
                             onChangeText={text => setSerie(text)}
                             placeholder="Serie"
+                            editable={isdisabel}
                         />
                     </View>
                     {/*  */}
@@ -305,7 +347,8 @@ export default function Equipo(props) {
                         backgroundColor: '#FFF',
                         borderColor: '#FF6B00',
                         borderWidth: 1,
-                    }} onPress={() => DropTabla()}>
+                    }}
+                        onPress={() => navigation.navigate("Consultas")}>
                         <AntDesign name="close" size={24} color="#FF6B00" />
                         <Text style={{
                             fontSize: 16,

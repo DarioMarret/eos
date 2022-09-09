@@ -40,8 +40,17 @@ export default function Login() {
       });
       return;
     } else {
-      await login(data)
-      setVisible(!visible);
+      const r = await login(data)
+      if (r == false) {
+        setVisible(!visible);
+        setUserData({
+          username: "",
+          password: ""
+        });
+        return;
+      }else{
+        setVisible(!visible);
+      }
     }
   }
 

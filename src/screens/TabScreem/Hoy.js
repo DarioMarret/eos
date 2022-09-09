@@ -1,5 +1,5 @@
 import { Button, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { GetEventos, GetEventosDelDia } from "../../service/OSevento";
+import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import Banner from "../../components/Banner";
@@ -11,6 +11,7 @@ import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
 import { getIngenierosStorageById } from "../../service/ingenieros";
 import { getToken } from "../../service/usuario";
+import { EquipoTicket } from "../../service/equipoTicketID";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -21,11 +22,14 @@ export default function Hoy(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                const { token, userId } = await getToken()
+                const { token, userId, IdUsuario } = await getToken()
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                console.log(await getIngenierosStorageById(userId))
+                const ticket_id = await GetEventosByTicket()
+                ticket_id.map(async ( r ) => {
+                    await EquipoTicket(r.ticket_id)
+                })
             })()
         }, [])
     )
@@ -51,7 +55,7 @@ export default function Hoy(props) {
         return [
             <View key={index}>
                 <TouchableOpacity
-                    onPress={() => navigation.navigate("Ordenes", { item })}>
+                    onPress={() => navigation.navigate("Ordenes", { ticket_id:item.ticket_id })}>
 
                     <View style={{
                         flexDirection: 'row',

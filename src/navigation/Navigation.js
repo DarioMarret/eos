@@ -29,34 +29,27 @@ function Menu(prop) {
                 <Text style={{ fontSize: 12, color: "#FFF" }}>soporte@eos.med.ec</Text>
             </View>
             <Separador />
-            <View style={styles.MenuIten}>
-                <TouchableOpacity onPress={() => prop.navigation.navigate("Consultas")}>
-                    <View style={styles.item}>
-                        <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Inicia</Text>
-                        <MaterialCommunityIcons name="home-floor-g" size={24} color="#B2B2AF" />
-                    </View>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.MenuIten} onPress={() => prop.navigation.navigate("Consultas")}>
+                <View style={styles.item}>
+                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Inicia</Text>
+                    <MaterialCommunityIcons name="home-floor-g" size={24} color="#B2B2AF" />
+                </View>
+            </TouchableOpacity>
             <Separador />
-            <View style={styles.MenuIten}>
-                <TouchableOpacity onPress={() => prop.navigation.navigate("Perfil")}>
-                    <View style={styles.item}>
-                        <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Perfil</Text>
-                        <MaterialIcons name="supervised-user-circle" size={24} color="#B2B2AF" />
-                    </View>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.MenuIten} onPress={() => prop.navigation.navigate("Perfil")}>
+                <View style={styles.item}>
+                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Perfil</Text>
+                    <MaterialIcons name="supervised-user-circle" size={24} color="#B2B2AF" />
+                </View>
+            </TouchableOpacity>
             <Separador />
-            <View style={styles.MenuIten}>
-                <TouchableOpacity onPress={handleLogout}>
-                    <View style={styles.item}>
-                        <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Cerrar</Text>
-                        <MaterialCommunityIcons name="close-circle" size={24} color="#B2B2AF" />
-                    </View>
-                </TouchableOpacity>
-            </View>
+            <TouchableOpacity style={styles.MenuIten} onPress={handleLogout}>
+                <View style={styles.item}>
+                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Cerrar</Text>
+                    <MaterialCommunityIcons name="close-circle" size={24} color="#B2B2AF" />
+                </View>
+            </TouchableOpacity>
             <Separador />
-
         </View>
     )
 }

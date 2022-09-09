@@ -1,4 +1,4 @@
-import * as React from "react";
+import React, { useCallback } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StyleSheet, Text, View } from "react-native";
@@ -10,22 +10,25 @@ import Componentes from "../screens/TabOrdenesServicion/Componentes";
 import Adjuntos from "../screens/TabOrdenesServicion/Adjuntos";
 import IngresoHoras from "../screens/TabOrdenesServicion/IngresoHoras";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ticketID } from "../utils/constantes";
 
 const Tab = createBottomTabNavigator();
 export default function OdernServicio(props) {
     const { navigation, route } = props
     const { name, params } = route
+    const { ticket_id } = params
 
-    // console.log(params.item)
     useFocusEffect(
-        React.useCallback(() => {
+        useCallback(() => {
             (async () => {
-                if (name === "Ordenes") {
-                    navigation.navigate("1-EQUIPO", { ...params.item })
-                }
+                navigation.setOptions({ title: params.ticket_id })
+                await AsyncStorage.setItem(ticketID, (ticket_id).toString())
+                navigation.navigate("1-EQUIPO")
             })()
         }, [])
     )
+
 
     return (
         <Tab.Navigator

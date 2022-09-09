@@ -9,14 +9,15 @@ const axinst = axios.create({
 export const HistorialEquipoIngeniero = async () => {
 
     try {
-        const { token, userId } = await getToken()
-        const url = `${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${userId}`;
+        const { token,  IdUsuario } = await getToken()
+        console.log("token", IdUsuario);
+
+        const url = `${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`;
         const { data, status } = await axinst.get(url, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
-        // var new_r = []
         return new Promise((resolve, reject) => {
             data.Response.map(async (r, i) => {
                 await SelectExisteEquipo(r, i)
@@ -59,29 +60,29 @@ async function SelectExisteEquipo(r, i) {
                              historial
                              ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
-                    r.equipo_id || "null",
-                    r.equ_tipoEquipo || "null",
-                    String(r.tipo) || "null",
-                    r.equ_modeloEquipo || "null",
-                    String(r.modelo) || "null",
-                    String(r.equ_serie) || "null",
-                    String(r.equ_SitioInstalado) || "null",
-                    String(r.equ_areaInstalado) || "null",
-                    String(r.con_ClienteNombre) || "null",
-                    String(r.marca) || "null",
-                    String(r.equ_modalidad) || "null",
-                    String(r.Modalidad) || "null",
-                    String(r.equ_fechaInstalacion) || "null",
-                    String(r.equ_fecIniGaranP) || "null",
-                    String(r.equ_fecFinGaranP) || "null",
-                    String(r.equ_provincia) || "null",
-                    String(r.equ_canton) || "null",
-                    String(r.equ_ingenieroResponsable) || "null",
-                    String(r.equ_marca) || "null",
-                    String(r.equ_estado) || "null",
-                    String(r.id_equipoContrato) || "null",
-                    String(r.localidad_id) || "null",
-                    JSON.stringify(r.historial) || "null"
+                    Number(r.equipo_id),
+                    Number(r.equ_tipoEquipo),
+                    String(r.tipo),
+                    Number(r.equ_modeloEquipo),
+                    String(r.modelo),
+                    String(r.equ_serie),
+                    String(r.equ_SitioInstalado),
+                    String(r.equ_areaInstalado),
+                    String(r.con_ClienteNombre),
+                    String(r.marca),
+                    String(r.equ_modalidad),
+                    String(r.Modalidad),
+                    String(r.equ_fechaInstalacion),
+                    String(r.equ_fecIniGaranP),
+                    String(r.equ_fecFinGaranP),
+                    String(r.equ_provincia),
+                    String(r.equ_canton),
+                    String(r.equ_ingenieroResponsable),
+                    String(r.equ_marca),
+                    String(r.equ_estado),
+                    String(r.id_equipoContrato),
+                    String(r.localidad_id),
+                    JSON.stringify(r.historial)
                 ],
             }], false, (err, results) => {
                 if (err) {

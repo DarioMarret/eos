@@ -319,7 +319,8 @@ db.exec([{
         eqc_periodoSitePlan TEXT NULL,
         eqc_observacion TEXT NULL,
         Equipo TEXT NULL,
-        estado_local TEXT NULL
+        estado_local TEXT NULL,
+        ticket_id INTEGER NULL
     );`,
     args: []
 }], false, (tx, results) => {

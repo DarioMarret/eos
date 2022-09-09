@@ -10,6 +10,7 @@ const axinst = axios.create({
 export const EquipoTicket = async (ticket_id) => {
 
     try {
+        console.log("EquipoTicket-->", ticket_id)
         const { token } = await getToken()
         const url = `${host}MSOrdenServicio/equipoTicket?ticketId=${ticket_id}`;
         const { data, status } = await axinst.get(url, {
@@ -18,8 +19,8 @@ export const EquipoTicket = async (ticket_id) => {
             }
         })
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
-                await SelectEquipoTicket(r)
+            data.Response.EquipoContrato.map(async (r) => {
+                await SelectEquipoTicket(r, data.Response.con_ClienteNombre, ticket_id)
             })
             resolve(true);
         });
@@ -29,7 +30,7 @@ export const EquipoTicket = async (ticket_id) => {
     }
 }
 
-async function SelectEquipoTicket(r) {
+async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
     return new Promise((resolve, reject) => {
         try {
             db.exec([{
@@ -83,11 +84,12 @@ async function SelectEquipoTicket(r) {
                     eqc_periodoSitePlan,
                     eqc_observacion,
                     Equipo,
-                    estado_local
-                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                    estado_local,
+                    ticket_id
+                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
                     Number(r.id_equipoContrato),
-                    String(r.con_ClienteNombre),
+                    String(con_ClienteNombre),
                     Number(r.id_equipo),
                     Number(r.id_contrato),
                     Number(r.empresa_id),
@@ -135,7 +137,8 @@ async function SelectEquipoTicket(r) {
                     String(r.eqc_periodoSitePlan),
                     String(r.eqc_observacion),
                     String(JSON.stringify(r.Equipo)),
-                    "SIN"
+                    "SIN",
+                    ticket_id
                 ],
             }], false, (err, results) => {
                 if (err) {
@@ -146,7 +149,7 @@ async function SelectEquipoTicket(r) {
                     if (error) {
 
                         console.log("results historialEquipo", results);
-                        console.log("iterador", i);
+                        console.log("iterador", error);
                     }
                 }
             })
@@ -161,7 +164,7 @@ export const getEquipoTicketStorage = async (ticket_id) => {
         const result = await db.select({
             table: "equipoTicket",
             where: {
-                id_equipoContrato: ticket_id
+                ticket_id: ticket_id
             }
         })
         return result;
