@@ -13,7 +13,7 @@ export default function Cliente(props) {
                     fontWeight: "bold",
                     color: "#FF6B00",
                     marginTop: "5%",
-                    marginLeft: "5%",
+                    marginLeft: 10,
                 }}>Datos del Cliente</Text>
                 <View style={styles.ContainerInputs}>
                     <TextInput
