@@ -9,10 +9,10 @@ import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
-import { getIngenierosStorageById } from "../../service/ingenieros";
-import { getToken } from "../../service/usuario";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
+import { ticketID } from "../../utils/constantes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -23,8 +23,7 @@ export default function Hoy(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                const { token, userId, IdUsuario } = await getToken()
-                var date = moment().format('YYYY-MM-DD');
+                var date = moment().add(-1,'days').format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
                 const ticket_id = await GetEventosByTicket()
@@ -57,11 +56,18 @@ export default function Hoy(props) {
     }
 
 
+    async function Ordene(ticket_id) {
+        console.log("ticket_id", ticket_id)
+        await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.setItem(ticketID, ticket_id)
+        navigation.navigate("Ordenes")
+    }
+
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
                 <TouchableOpacity
-                    onPress={() => navigation.navigate("Ordenes", { ticket_id:item.ticket_id })}>
+                    onPress={() => Ordene(String(item.ticket_id))}>
 
                     <View style={{
                         flexDirection: 'row',

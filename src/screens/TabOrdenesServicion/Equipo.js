@@ -63,9 +63,11 @@ export default function Equipo(props) {
             })()
         }, [])
     )
+
     useEffect(() => {
         EquipoHistorial()
     }, [tipo, model, serie]);
+
     useEffect(() => {
         onChange()
     }, [tipo]);
@@ -92,11 +94,13 @@ export default function Equipo(props) {
         });
         setHistorial(temp);
         console.log(equ_serie, "a")
-    };
+    }
+
     const showSelect = (index, item) => {
         console.log("item", item, "item")
         setItemIndex(index)
     }
+
     const showModal = (type, item) => {
         let body
         console.log("item", item, "item")
@@ -131,6 +135,7 @@ export default function Equipo(props) {
         setInfoModal(body)
         setIsVisible(false)
     }
+
     const _renderItem = ({ item, index, isClick }) => {
         return (
             <View style={{ flex: 1, padding: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -223,6 +228,14 @@ export default function Equipo(props) {
         setHistorial(result)
     }
 
+    async function CancelarEvento(){
+        await AsyncStorage.removeItem(ticketID)
+        setTipo("")
+        setModel("")
+        setSerie("")
+        setHistorial([])
+        navigation.navigate("Consultas")
+    }
     return (
         <View style={styles.container}>
             <View style={styles.contenedor}>
@@ -374,7 +387,7 @@ export default function Equipo(props) {
                         backgroundColor: '#FFF',
                         borderColor: '#FF6B00',
                         borderWidth: 1,
-                    }} onPress={() => navigation.navigate("Consultas")}>
+                    }} onPress={CancelarEvento}>
                         <AntDesign name="close" size={24} color="#FF6B00" />
                         <Text style={{
                             fontSize: 16,
@@ -529,7 +542,7 @@ const styles = StyleSheet.create({
         top: 'auto',
         padding: 10,
         zIndex: 10,
-        
+
         shadowColor: '#171717',
         shadowOffset: { width: 4, height: 4 },
         shadowOpacity: 1,

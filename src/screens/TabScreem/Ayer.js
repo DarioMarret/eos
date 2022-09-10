@@ -2,7 +2,7 @@ import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View
 import Banner from "../../components/Banner";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { GetEventos } from "../../service/OSevento";
+import { GetEventos, GetEventosByTicket } from "../../service/OSevento";
 import moment from "moment";
 
 
@@ -10,6 +10,9 @@ import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ticketID } from "../../utils/constantes";
+import { EquipoTicket } from "../../service/equipoTicketID";
 
 
 
@@ -22,7 +25,7 @@ export default function Ayer(prop) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                var date = moment().add(-1, "days").format('YYYY-MM-DD');
+                var date = moment().add(-2, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
                 const ticket_id = await GetEventosByTicket()
@@ -52,10 +55,16 @@ export default function Ayer(prop) {
             return calwait
         }
     }
+    async function Ordene(ticket_id) {
+        await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.setItem(ticketID, ticket_id)
+        navigation.navigate("Ordenes")
+    }
+
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity onPress={() => navigation.navigate("Ordenes", { ticket_id:item.ticket_id })}>
+                <TouchableOpacity onPress={() => Ordene(String(item.ticket_id))}>
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
@@ -89,12 +98,16 @@ export default function Ayer(prop) {
                         </View>
 
                         <View style={styles.calendar}>
-                            <Text>{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)}</Text>
                             <Image source={typeImage()} style={{ width: 30, height: 30 }} />
+                            <Text
+                                style={{
+                                    fontSize: 10
+                                }}
+                            >{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)} - {moment().format(item.ev_horaAsignadaHasta).substring(0, 5)}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
-            </View>,
+            </View>
         ]
     }
 

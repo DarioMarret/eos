@@ -9,6 +9,9 @@ import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
+import { EquipoTicket } from "../../service/equipoTicketID";
+import { ticketID } from "../../utils/constantes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 
@@ -26,12 +29,12 @@ export default function Manana(prop) {
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
                 const ticket_id = await GetEventosByTicket()
-                ticket_id.map(async ( r ) => {
+                ticket_id.map(async (r) => {
                     await EquipoTicket(r.ticket_id)
                 })
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("rows",rows.length)
+                        console.log("rows", rows.length)
                     })
                 })
             })()
@@ -53,10 +56,17 @@ export default function Manana(prop) {
             return calwait
         }
     }
+
+    async function Ordene(ticket_id) {
+        await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.setItem(ticketID, ticket_id)
+        navigation.navigate("Ordenes")
+    }
+
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity onPress={() => navigation.navigate("Ordenes", { ticket_id:item.ticket_id })}>
+                <TouchableOpacity onPress={() => Ordene(String(item.ticket_id))}>
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',

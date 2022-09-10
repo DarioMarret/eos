@@ -8,9 +8,9 @@ import { AntDesign } from '@expo/vector-icons';
 import Consultas from '../screens/Consultas';
 import OdernServicio from '../screens/OdernServicio';
 import Separador from "../components/Separador";
-import Perfil from "../screens/TabScreem/Perfil";
 import { MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons/build/Icons";
 import useUser from "../hook/useUser";
+import TicketsOS from "../screens/TabScreem/TicketsOS";
 
 const Drawer = createDrawerNavigator();
 
@@ -33,13 +33,6 @@ function Menu(prop) {
                 <View style={styles.item}>
                     <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Inicia</Text>
                     <MaterialCommunityIcons name="home-floor-g" size={24} color="#B2B2AF" />
-                </View>
-            </TouchableOpacity>
-            <Separador />
-            <TouchableOpacity style={styles.MenuIten} onPress={() => prop.navigation.navigate("Perfil")}>
-                <View style={styles.item}>
-                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Perfil</Text>
-                    <MaterialIcons name="supervised-user-circle" size={24} color="#B2B2AF" />
                 </View>
             </TouchableOpacity>
             <Separador />
@@ -78,7 +71,8 @@ export default function DrawerNavigation(props) {
             >
                 <Drawer.Screen name="Consultas" component={Consultas} />
                 <Drawer.Screen name="Ordenes" component={OdernServicio} />
-                <Drawer.Screen name="Perfil" component={Perfil} />
+                <Drawer.Screen name="Ticket" component={TicketsOS} />
+                {/* <Drawer.Screen name="Perfil" component={Perfil} /> */}
             </Drawer.Navigator>
 
         </NavigationContainer>
