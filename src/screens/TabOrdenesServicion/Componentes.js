@@ -18,7 +18,7 @@ export default function Componentes(props) {
                     fontWeight: "bold",
                     color: "#FF6B00",
                     marginTop: "5%",
-                }}>Ingreso de datos</Text>
+                }}>Agregar componentes</Text>
                 <View style={{
                     width: "100%",
                     height:60,
