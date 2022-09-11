@@ -5,6 +5,7 @@ import { useState } from "react";
 
 
 export default function Datos(props) {
+    const { navigation } = props
     const [selectedLanguage, setSelectedLanguage] = useState();
     const [isEnabled, setIsEnabled] = useState(false);
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
@@ -209,7 +210,11 @@ export default function Datos(props) {
 
             </View>
             </ScrollView>
-            <BannerOrderServi />
+            <BannerOrderServi
+                {...props}
+                navigation={navigation}
+                screen={"3-DATOS"}
+            />
         </View>
     );
 }

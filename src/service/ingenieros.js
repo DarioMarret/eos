@@ -5,7 +5,7 @@ import db from "./Database/model";
 
 
 export const getIngenieros = async () => {
-    const url = `${host}MSCatalogo/api/ClienteByNombre`;
+    const url = `${host}webApiSegura/api/customers/ingeniero`;
     try {
         const { token } = await getToken()
         const { data, status } = await axios.get(url, {
@@ -75,6 +75,20 @@ export const getIngenierosStorage = async (IdUsuario, NombreUsuario) => {
                 });
             });
         }
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+export const getIngenierosStorageById = async (adicional) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select * from ingenieros where adicional = ?', [adicional], (_, { rows }) => {
+                    resolve(rows._array[0])
+                });
+            });
+        });
     } catch (error) {
         console.log(error);
     }

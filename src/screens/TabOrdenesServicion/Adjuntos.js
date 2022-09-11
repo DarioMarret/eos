@@ -12,6 +12,7 @@ import { useState } from "react";
 import Banner from "../../components/Banner";
 import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
+import BannerOrderServi from "../../components/BannerOrdenServ";
 
 export default function Adjuntos(props) {
   const { navigation } = props;
@@ -23,7 +24,6 @@ export default function Adjuntos(props) {
     console.log(result.uri);
     console.log(result);
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.ContenedorCliente}>
@@ -114,7 +114,11 @@ export default function Adjuntos(props) {
           </View>
         </ScrollView>
       </View>
-      <Banner navigation={navigation} />
+      <BannerOrderServi
+        {...props}
+        navigation={navigation}
+        screen={"5-ADJUNTOS"}
+      />
     </View>
   );
 }

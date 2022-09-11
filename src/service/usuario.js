@@ -1,7 +1,7 @@
 import { datos_ingenieros, hostBase, token, USER } from '../utils/constantes';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { CardaUtil } from './CargaUtil';
+// import { CardaUtil } from './CargaUtil';
 
 export const GuardarToken = async (data) => {
     try {
@@ -70,7 +70,29 @@ export const desLogeo = async () => {
     }
 }
 
+export const Byingeniero = async (userId, token) => {
+    try {
+        var config = {
+            method: 'get',
+            url: 'https://technical.eos.med.ec/webApiSegura/api/customers/ingeniero',
+            headers: {
+                'Authorization': 'Bearer '+token
+            }
+        };
 
+        const { data:{Response} } = await axios(config)
+        return new Promise((resolve, reject) => {
+            Response.map(async (r, i) => {
+                if (r.adicional == userId) {
+                    resolve(r.IdUsuario)
+                }
+            })
+        })
+    } catch (error) {
+        console.log("Byingeniero errores", error)
+        return null;
+    }
+}
 
 // Login Register 
 export const LoginForm = async (formData) => {
@@ -79,15 +101,18 @@ export const LoginForm = async (formData) => {
         const { data, status } = await axios.post(`${hostBase}/login/authenticate`, formData)
         if (status === 200) {
             console.log("Token obtenido-->", data.token)
+            console.log("\n")
+            const IdUsuario = await Byingeniero(data.userId, data.token)
             const { success } = await getUserInfo(data.userId, data.token)
             if (success) {
-                if(await GuardarToken(data)){
+                console.log("IdUsuario-->", IdUsuario)
+                console.log("\n")
+                let info = { ...data, IdUsuario }
+                if (await GuardarToken(info)) {
                     await setdataUser(formData)
-                    if(await CardaUtil()){
-                        return {
-                            ...data,
-                            success: true
-                        }
+                    return {
+                        ...data,
+                        success: true
                     }
                 }
             } else {
@@ -109,6 +134,7 @@ export const LoginForm = async (formData) => {
         }
     }
 }
+
 export const getUserInfo = async (userId, token) => {
     try {
         const { data, status } = await axios.get(`${hostBase}/customers/customer/${userId}`, {

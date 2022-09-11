@@ -3,6 +3,7 @@ import { Picker } from '@react-native-picker/picker';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useState } from "react";
 import Banner from "../../components/Banner";
+import BannerOrderServi from "../../components/BannerOrdenServ";
 
 
 export default function Componentes(props) {
@@ -10,6 +11,8 @@ export default function Componentes(props) {
     const [isEnabled, setIsEnabled] = useState(false);
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const { navigation } = props
+
+
     return (
         <View style={styles.container}>
             <View style={styles.ContenedorCliente}>
@@ -144,9 +147,10 @@ export default function Componentes(props) {
                     </TouchableOpacity>
                 </View>
             </View>
-
-            <Banner
+            <BannerOrderServi
+                {...props}
                 navigation={navigation}
+                screen={"4-COMPONENTES"}
             />
         </View>
     );

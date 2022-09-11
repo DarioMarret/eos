@@ -12,6 +12,8 @@ import { AntDesign } from "@expo/vector-icons";
 import { useState } from "react";
 import Moment from 'moment';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import BannerOrderServi from "../../components/BannerOrdenServ";
+
 
 export default function IngresoHoras(props) {
   const { navigation } = props;
@@ -183,7 +185,11 @@ export default function IngresoHoras(props) {
           />
         </View>
       </View>
-      <Banner navigation={navigation} />
+      <BannerOrderServi
+            {...props}
+            navigation={navigation}
+            screen={"6-INGRESO HORAS"}
+        />
     </View>
   );
 }
