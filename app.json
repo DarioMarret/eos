@@ -87,10 +87,8 @@
         "INSTALL_LOCATION_PROVIDER",
         "INSTALL_PACKAGES",
         "INSTALL_SHORTCUT"
-
-
-
-      ]
+      ],
+      "package": "com.djmarrett.eos"
     },
     "web": {
       "favicon": "./assets/favicon.png"

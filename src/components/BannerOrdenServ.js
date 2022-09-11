@@ -1,18 +1,53 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
+import tabNavigation from "../hook/tabNavigation";
+import { getHistorialEquiposStorageChecked } from "../service/historiaEquipo";
 
 export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
     const { name, params } = route
-    const tab = ["1-EQUIPO", "2-CLIENTE", "3-DATOS", "4-COMPONENTES", "5-ADJUNTOS", "6-INGRESO HORAS", "7-RESUMEN"]
 
-    function changeScreenSiguiente() {
-        tab.includes(name) ? navigation.navigate(tab[tab.indexOf(name) + 1]) : navigation.navigate("1-EQUIPO")
+    const { TabTitle } = tabNavigation()
+    
 
+    const tab = ["1-EQUIPO", "2-CLIENTE", "3-DATOS", "4-COMPONENTES", "5-ADJUNTOS", "6-INGRESO HORAS",]
+
+
+    async function changeScreenSiguiente() {
+        console.log("screen", name)
+        console.log("existe tab",tab.indexOf(name))
+        console.log("tabs",tab.length)
+        let index = tab.indexOf(name)
+        const check = await PasarACliente()
+        console.log("check",check)
+        if(check){
+            if(index <= tab.length){ 
+                console.log("indexOf-->",index)
+                if (index < tab.length - 1) {
+                    TabTitle(tab[index + 1])
+                    navigation.navigate(tab[index + 1])
+                }
+            }
+        }
     }
     function changeScreenAnterior() {
-        tab.includes(name) ? navigation.navigate(tab[tab.indexOf(name) - 1]) : navigation.navigate("1-EQUIPO")
+        let index = tab.indexOf(name)
+        if(index >= 0 && index <= tab.length){
+            if (index > 0) {
+                TabTitle(tab[index - 1])
+                navigation.navigate(tab[index - 1])
+            }
+        }
+    }
+    async function PasarACliente(){
+        const respuesta = await getHistorialEquiposStorageChecked()
+        console.log("respuesta",respuesta)
+        if(respuesta.length > 0){
+            return true
+        }else{
+            return false
+        }
     }
 
     return (

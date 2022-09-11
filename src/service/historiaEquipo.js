@@ -3,33 +3,44 @@ import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
 
-const axinst = axios.create({
-    timeout: 12000
-})
+
 export const HistorialEquipoIngeniero = async () => {
 
     try {
-        const { token,  IdUsuario } = await getToken()
-        console.log("token", IdUsuario);
-
-        const url = `${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`;
-        const { data, status } = await axinst.get(url, {
+        const { token, userId } = await getToken()
+        var IdUsuario = await SqlIdUsuario(userId)
+        console.log("token", token)
+        console.log(`${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`)
+        const { data, status } = await axios.get(`${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         })
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
-                await SelectExisteEquipo(r, i)
-            })
+            for (let index = 0; index < data.Response.length; index++) {
+                data.Response[index];
+                SelectExisteEquipo(data.Response[index])
+
+            }
+            // data.Response.map(async (r, i) => {
+            // })
             resolve(true);
         });
     } catch (error) {
-        console.log("errores", error);
+        console.log("errores", error.message);
         return false
     }
 }
-
+async function SqlIdUsuario(userId) {
+    return new Promise((resolve, reject) => {
+        db.transaction(tx => {
+            tx.executeSql(`SELECT IdUsuario FROM ingenieros where adicional = ?`, [userId], (_, { rows }) => {
+                console.log("ingenieros IdUsuario", rows._array[0].IdUsuario)
+                resolve(rows._array[0].IdUsuario)
+            })
+        })
+    })
+}
 async function SelectExisteEquipo(r, i) {
     return new Promise((resolve, reject) => {
         try {
@@ -57,8 +68,9 @@ async function SelectExisteEquipo(r, i) {
                              equ_estado,
                              id_equipoContrato,
                              localidad_id,
-                             historial
-                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                             historial,
+                             isChecked
+                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
                     Number(r.equipo_id),
                     Number(r.equ_tipoEquipo),
@@ -82,18 +94,21 @@ async function SelectExisteEquipo(r, i) {
                     String(r.equ_estado),
                     String(r.id_equipoContrato),
                     String(r.localidad_id),
-                    JSON.stringify(r.historial)
+                    JSON.stringify(r.historial),
+                    "false"
                 ],
             }], false, (err, results) => {
                 if (err) {
                     console.log("error", err);
                 } else {
-                    resolve(true)
+                    const delay = time => new Promise(resolveCallback => setTimeout(resolveCallback, time));
+                    delay(1000).then(() => {
+                        resolve(true)
+                    })
                     const { error } = results[0];
                     if (error) {
 
                         console.log("results historialEquipo", results);
-                        console.log("iterador", i);
                     }
                 }
             })
@@ -158,3 +173,53 @@ export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
     }
 }
 
+export const isChecked = (equipo_id) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('update historialEquipo set isChecked = ?', ["false"], (_, { rows }) => {
+                    tx.executeSql('update historialEquipo set isChecked = ? where equipo_id = ? ', ["true", equipo_id], (_, { rows }) => {
+                        tx.executeSql('select * from historialEquipo where isChecked = ? ', ["true"], (_, { rows }) => {
+                            console.log("rows", rows._array);
+                            resolve(rows._array)
+                        })
+                    });
+                });
+            })
+        })
+    } catch (error) {
+        console.log("isChecked-->", error);
+        return null;
+    }
+}
+export const isCheckedCancelar = () => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('update historialEquipo set isChecked = ?', ["false"], (_, { rows }) => {
+                    resolve(true)
+                    console.log("isCheckedCancelar-->", rows);
+                });
+            })
+        })
+    } catch (error) {
+        console.log("isChecked-->", error);
+        return null;
+    }
+}
+
+export const getHistorialEquiposStorageChecked = async () => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select * from historialEquipo where isChecked = ?', ["true"], (_, { rows }) => {
+                    console.log("rows getHistorialEquiposStorageChecked", rows._array);
+                    resolve(rows._array)
+                });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}

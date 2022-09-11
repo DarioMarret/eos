@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
-import moment from "moment";
 import { GetEventosDelDia } from "../service/OSevento";
 
-export default function Banner(props) {
+export default function BannerTicket(props) {
     const { navigation } = props
 
     const [update, setupdate] = useState(false)
@@ -17,20 +16,6 @@ export default function Banner(props) {
 
     return (
         <>
-            <View style={styles.circlePrimary}>
-                <View style={styles.circleSecond}>
-                    <TouchableOpacity
-                        style={{
-                            ...styles.circleTercer,
-                            opacity: 1,
-                        }}
-
-                        onPress={() => navigation.navigate("Ordenes")}>
-                        <Text style={{ color: "#FFF", fontSize: 30 }}>+</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
             <View style={{ ...styles.banner, paddingLeft: 20 }}>
                 <TouchableOpacity
                     onPress={ActualizarEventos}

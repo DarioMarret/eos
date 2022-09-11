@@ -10,7 +10,6 @@ const axinst = axios.create({
 export const EquipoTicket = async (ticket_id) => {
 
     try {
-        console.log("EquipoTicket-->", ticket_id)
         const { token } = await getToken()
         const url = `${host}MSOrdenServicio/equipoTicket?ticketId=${ticket_id}`;
         const { data, status } = await axinst.get(url, {
@@ -148,7 +147,7 @@ async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
                     const { error } = results[0];
                     if (error) {
 
-                        console.log("results historialEquipo", results);
+                        console.log("results equipoTicket", results);
                         console.log("iterador", error);
                     }
                 }
@@ -161,13 +160,23 @@ async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
 
 export const getEquipoTicketStorage = async (ticket_id) => {
     try {
-        const result = await db.select({
-            table: "equipoTicket",
-            where: {
-                ticket_id: ticket_id
-            }
+        return new Promise((resolve, reject) => {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `SELECT * FROM equipoTicket WHERE ticket_id = ?`,
+                    [ticket_id],
+                    (tx, results) => {
+                        const len = results.rows.length;
+                        if (len > 0) {
+                            let row = results.rows.item(0);
+                            resolve(row);
+                        } else {
+                            resolve(null);
+                        }
+                    }
+                );
+            });
         })
-        return result;
 
     } catch (error) {
         console.log("getHistorialEquiposStorage-->", error);

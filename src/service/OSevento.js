@@ -110,7 +110,6 @@ export const GetEventos = async (ev_fechaAsignadaDesde) => {
                 })
             })
         } else if (ev_fechaAsignadaDesde !== "") {
-            ev_fechaAsignadaDesde
             console.log("ev_fechaAsignadaDesde", ev_fechaAsignadaDesde);
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
@@ -127,11 +126,12 @@ export const GetEventos = async (ev_fechaAsignadaDesde) => {
     }
 }
 
-export const GetEventosByTicket = async (ticket_id) => {
+export const GetEventosByTicket = async (ayer, hoy, manana) => {
     try {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
-                tx.executeSql('select ticket_id from OrdenesServicio where ev_estado != "FINALIZADO"', [], (_, { rows }) => {
+                tx.executeSql('select ticket_id from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
+                [`${ayer}T00:00:00`, `${hoy}T00:00:00`, `${manana}T00:00:00`], (_, { rows }) => {
                     resolve(rows._array)
                 });
             })

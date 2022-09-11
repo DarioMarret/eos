@@ -2,7 +2,7 @@ import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View
 import Banner from "../../components/Banner";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { GetEventos, GetEventosByTicket } from "../../service/OSevento";
+import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import moment from "moment";
 
 
@@ -13,6 +13,7 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import { EquipoTicket } from "../../service/equipoTicketID";
+import db from "../../service/Database/model";
 
 
 
@@ -25,16 +26,17 @@ export default function Ayer(prop) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                var date = moment().add(-2, "days").format('YYYY-MM-DD');
+                await GetEventosDelDia()
+                var date = moment().add(-1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
                 const ticket_id = await GetEventosByTicket()
-                ticket_id.map(async ( r ) => {
+                ticket_id.map(async (r) => {
                     await EquipoTicket(r.ticket_id)
                 })
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("rows",rows.length)
+                        console.log("rows", rows._array.length)
                     })
                 })
             })()
@@ -56,9 +58,36 @@ export default function Ayer(prop) {
         }
     }
     async function Ordene(ticket_id) {
-        await AsyncStorage.removeItem(ticketID)
-        await AsyncStorage.setItem(ticketID, ticket_id)
-        navigation.navigate("Ordenes")
+        console.log("ticket_id", ticket_id)
+        try {
+            db.transaction(tx => {
+                tx.executeSql(`SELECT id_equipo FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                    console.log("id_equipo-->", rows._array[0].id_equipo)
+                    db.transaction(tx => {
+                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                            console.log("equipo ayer row", rows._array)
+                            Rutes(rows._array, ticket_id)
+                        })
+                    })
+                })
+            })
+        } catch (error) {
+            console.log("error", error)
+        }
+    }
+
+    async function Rutes(equipo, ticket_id) {
+        if (equipo) {
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ticket_id, equipo}))
+            navigation.navigate("Ordenes")
+        }
+
+        if (equipo == null) {
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ticket_id, equipo}))
+            navigation.navigate("Ticket")
+        }
     }
 
     function _renderItem({ item, index }) {

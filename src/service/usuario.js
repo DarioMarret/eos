@@ -74,7 +74,7 @@ export const Byingeniero = async (userId, token) => {
     try {
         var config = {
             method: 'get',
-            url: 'https://technical.eos.med.ec/webApiSegura/api/customers/ingeniero?userId='+userId,
+            url: 'https://technical.eos.med.ec/webApiSegura/api/customers/ingeniero',
             headers: {
                 'Authorization': 'Bearer '+token
             }

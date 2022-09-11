@@ -13,6 +13,7 @@ import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
 import { ticketID } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { HistorialEquipoIngeniero } from "../../service/historiaEquipo";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -23,18 +24,33 @@ export default function Hoy(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                var date = moment().add(-1,'days').format('YYYY-MM-DD');
+                // await GetEventosDelDia()
+                // await HistorialEquipoIngeniero();
+                var date = moment().format('YYYY-MM-DD');
+                var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                var hoy = moment().format('YYYY-MM-DD');
+                var manana = moment().add(1, 'days').format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                const ticket_id = await GetEventosByTicket()
+                const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                console.log("ticket_id", ticket_id)
                 ticket_id.map(async ( r ) => {
+                    console.log("r", r.ticket_id)
                     await EquipoTicket(r.ticket_id)
                 })
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("rows",rows.length)
+                        console.log("equipoTicket rows",rows.length)
                     })
                 })
+
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
+                        console.log("historialEquipo rows",rows.length)
+                    })
+                })
+
+
             })()
         }, [])
     )
@@ -58,10 +74,37 @@ export default function Hoy(props) {
 
     async function Ordene(ticket_id) {
         console.log("ticket_id", ticket_id)
-        await AsyncStorage.removeItem(ticketID)
-        await AsyncStorage.setItem(ticketID, ticket_id)
-        navigation.navigate("Ordenes")
+        try {
+            db.transaction(tx => {
+                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                    console.log("id_equipo-->", rows._array[0].id_equipo)
+                    db.transaction(tx => {
+                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                            console.log("equipo selecionado hoy row", rows._array)
+                            Rutes(rows._array, ticket_id)
+                        })
+                    })
+                })
+            })
+        } catch (error) {
+            console.log("error", error)
+        }
     }
+
+    async function Rutes(equipo, ticket_id) {
+        if (equipo.length != 0) {
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            navigation.navigate("Ordenes")
+        }
+
+        if (equipo.length == 0) {
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            navigation.navigate("Ticket")
+        }
+    }
+
 
     function _renderItem({ item, index }) {
         return [

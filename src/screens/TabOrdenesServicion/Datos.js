@@ -1,47 +1,70 @@
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View, Switch, ScrollView } from "react-native";
 import { Picker } from '@react-native-picker/picker';
 import BannerOrderServi from "../../components/BannerOrdenServ";
 import { useState } from "react";
 
 
 export default function Datos(props) {
+    const { navigation } = props
     const [selectedLanguage, setSelectedLanguage] = useState();
-    const { navigation, route } = props
-
-    
+    const [isEnabled, setIsEnabled] = useState(false);
+    const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     return (
         <View style={styles.container}>
+            <ScrollView>
             <View style={styles.ContenedorCliente}>
                 <Text style={{
                     fontSize: 20,
                     fontWeight: "bold",
                     color: "#FF6B00",
                     marginTop: "5%",
-                    marginLeft: "5%",
+                    marginLeft: "3%",
                 }}>Ingreso de datos</Text>
                 <View style={styles.ContainerInputs}>
-                    <View style={styles.ContainetTipoModelo}>
-                        <Picker
-                            style={{ 
-                                ...styles.input, 
-                                borderWidth: 1, 
-                                borderColor: '#CECECA'
-                            }}
-                            selectedValue={selectedLanguage}
-                            onValueChange={(itemValue, itemIndex) =>
-                                console.log(itemValue)
+                    <View style={styles.ContainerTipoModelo}>
+                        <View style={{
+                            width: "49%",
+                            height:60,
+                            marginBottom:'6%',
+                            borderWidth: 1,
+                            borderColor: '#CECECA',
+                            borderRadius: 10,
+                        }}>
+                            <Picker
+                                style={styles.wFull}
+                                selectedValue={selectedLanguage}
+                                onValueChange={(itemValue, itemIndex) =>
+                                    console.log(itemValue)
                             }>
-                            <Picker.Item label="Tipo" value={true} />
-
-                        </Picker>
+                                <Picker.Item label="Tipo" value={true} />
+                            </Picker>
+                        </View>
+                        <TextInput
+                            style={{
+                                ...styles.input,
+                                width:'49%',
+                            }}
+                            placeholder="Cliente"
+                        />
                     </View>
                     <View style={{ paddingHorizontal: 20 }} />
                     <View style={{
-                        ...styles.ContainetTipoModelo,
                         width: "100%",
+                        height:60,
+                        marginBottom:'6%',
+                        borderWidth: 1,
+                        borderColor: '#CECECA',
+                        borderRadius: 10,
                     }}>
                         <Picker
-                            style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                            style={{ 
+                                width:'100%', 
+                                height: 60,
+                                borderWidth: 1, 
+                                borderColor: '#CECECA',
+                                padding:10,
+                                
+                            }}
                             selectedValue={selectedLanguage}
                             onValueChange={(itemValue, itemIndex) =>
                                 console.log(itemValue)
@@ -51,23 +74,142 @@ export default function Datos(props) {
                     </View>
                     <TextInput
                         style={styles.input}
-                        placeholder="Cliente"
+                        placeholder="Problema reportado:"
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Código equipo cliente"
+                        placeholder="Sintomas:"
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Dirección"
+                        placeholder="Diagnóstico/Resultado visita*:"
                     />
                     <TextInput
                         style={styles.input}
-                        placeholder="Ciudad"
+                        placeholder="Acción inmediata"
+                    />
+                    <View style={{
+                        width: "100%",
+                        height:60,
+                        marginBottom:'6%',
+                        borderWidth: 1,
+                        borderColor: '#CECECA',
+                        borderRadius: 10,
+                    }}>
+                        <Picker
+                            style={{ 
+                                width:'100%', 
+                                height: 60,
+                                borderWidth: 1, 
+                                borderColor: '#CECECA',
+                                padding:10,
+                                
+                            }}
+                            selectedValue={selectedLanguage}
+                            onValueChange={(itemValue, itemIndex) =>
+                                console.log(itemValue)
+                            }>
+                            <Picker.Item label="Estado de Equipo" value={true} />
+                        </Picker>
+                    </View>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Acción inmediata"
+                    />
+                    <View style={{
+                        ...styles.wFull,
+                        width: '100%',
+                        height: 'auto',
+                        flexDirection:'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '6%'
+                    }}>
+                        <View style={{
+                            ...styles.wFull,
+                            height: 60,
+                            width:'45%',
+                            flexDirection:'row',
+                            alignItems: 'center',
+                        }}>
+                            <Text style={{fontSize:16, marginRight: 4}}>Recordatorio</Text>
+                            <Switch
+                                trackColor={{ false: "#FFAF75", true: "#FFAF75"}}
+                                thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
+                                ios_backgroundColor="#FFAF75"
+                                onValueChange={toggleSwitch}
+                                value={isEnabled}
+                            />
+                        </View>
+                        <TextInput
+                            style={{...styles.input, marginBottom: 0, width:'55%'}}
+                            placeholder="Inf. adicional"
+                        />
+                    </View>
+                    <View style={{
+                        ...styles.wFull,
+                        width: '100%',
+                        height: 'auto',
+                        flexDirection:'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: '6%'
+                    }}>
+                        <View style={{
+                            ...styles.wFull,
+                            height: 60,
+                            width:'45%',
+                            flexDirection:'row',
+                            alignItems: 'center',
+                        }}>
+                            <Text style={{fontSize:16, marginRight: 4}}>Incluye Upgrade:</Text>
+                            <Switch
+                                trackColor={{ false: "#FFAF75", true: "#FFAF75"}}
+                                thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
+                                ios_backgroundColor="#FFAF75"
+                                onValueChange={toggleSwitch}
+                                value={isEnabled}
+                            />
+                        </View>
+                        <TextInput
+                            style={{...styles.input, marginBottom: 0, width:'55%'}}
+                            placeholder="Inf. adicional"
+                        />
+                    </View>
+                    <TextInput
+                        style={{...styles.input, width:'100%'}}
+                        placeholder="Inf. adicional"
+                    />
+                   
+                    <View style={{
+                        ...styles.wFull,
+                        height: 60,
+                        width:'100%',
+                        flexDirection:'row',
+                        alignItems: 'center',
+                        marginBottom:'4%'
+                    }}>
+                        <Text style={{fontSize:16, marginRight: '5%'}}>Requiere nueva visita</Text>
+                        <Switch
+                            trackColor={{ false: "#FFAF75", true: "#FFAF75"}}
+                            thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
+                            ios_backgroundColor="#FFAF75"
+                            onValueChange={toggleSwitch}
+                            value={isEnabled}
+                        />
+                    </View>
+                    <TextInput
+                        style={{...styles.input, width:'100%'}}
+                        placeholder="Release"
+                    />
+                    <TextInput
+                        style={{...styles.input, width:'100%'}}
+                        placeholder="Observación Ingeniero"
                     />
                 </View>
 
             </View>
+            </ScrollView>
             <BannerOrderServi
                 {...props}
                 navigation={navigation}
@@ -84,31 +226,21 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     ContenedorCliente: {
+        marginTop:30,
         flex: 1,
-        top: "5%",
         width: "100%",
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
-        backgroundColor: '#E5E5E5',
+        backgroundColor: '#FFFFFF',
         padding: 10,
     },
     ContainerInputs: {
         flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "flex-start",
         padding: 10,
-        height: "20%",
+        height: "auto",
         width: "100%",
     },
-    input: {
-        borderWidth: 1,
-        borderColor: '#CECECA',
-        width: "100%",
-        height: 60,
-        borderRadius: 10,
-        padding: 10,
-        marginBottom: "5%"
-    },
+    
     ContainetBuscador: {
         flexDirection: 'row',
         width: '100%',
@@ -116,12 +248,22 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-start',
     },
-    ContainetTipoModelo: {
-        borderWidth: 1,
-        width: '40%',
-        borderColor: '#CECECA',
-        borderRadius: 10,
+    ContainerTipoModelo: {
+        width: '100%',
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'space-between',
+        flexDirection:'row'
+    },
+    wFull:{
+        width: "100%",
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#CECECA',
+        width: "auto",
+        height: 60,
+        borderRadius: 10,
+        padding: 10,
+        marginBottom: "6%"
     },
 });

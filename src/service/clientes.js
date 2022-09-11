@@ -27,7 +27,7 @@ export const getClientes = async () => {
 async function InserCliente(r) {
     return new Promise((resolve, reject) => {
         db.exec([{
-            sql: `INSERT INTO clientes (
+            sql: `INSERT INTO cliente (
                 CustomerID,
                 CustomerName,
                 ProvinciaID,
@@ -60,7 +60,7 @@ export const getClientesStorage = async (cedulaRuc) => {
         if (cedulaRuc === "") {
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
-                    tx.executeSql('select * from clientes', [], (_, { rows }) => {
+                    tx.executeSql('select * from cliente', [], (_, { rows }) => {
                         resolve(rows._array)
                     });
                 })
@@ -68,7 +68,7 @@ export const getClientesStorage = async (cedulaRuc) => {
         }else if(cedulaRuc !== ""){
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
-                    tx.executeSql(`select * from clientes where CustomerID like '%${cedulaRuc}%'`, [], (_, { rows }) => {
+                    tx.executeSql(`select * from cliente where CustomerID like '%${cedulaRuc}%'`, [], (_, { rows }) => {
                         resolve(rows._array)
                     });
                 })
@@ -76,6 +76,21 @@ export const getClientesStorage = async (cedulaRuc) => {
         }
     } catch (error) {
         console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}
+
+export const GetClienteCustimerName = async (CustomerName) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql(`select * from cliente where CustomerName like '%${CustomerName}%'`, [], (_, { rows }) => {
+                    resolve(rows._array)
+                });
+            })
+        })
+    } catch (error) {
+        console.log("GetClienteCustimerName-->", error);
         return null;
     }
 }

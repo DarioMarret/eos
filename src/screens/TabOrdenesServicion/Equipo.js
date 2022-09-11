@@ -6,7 +6,7 @@ import BannerOrderServi from "../../components/BannerOrdenServ";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getEquiposStorage } from "../../service/equipos";
 import { getModeloEquiposStorage } from "../../service/modeloquipo";
-import { getHistorialEquiposStorage } from "../../service/historiaEquipo";
+import { getHistorialEquiposStorage, isChecked, isCheckedCancelar } from "../../service/historiaEquipo";
 import Checkbox from "expo-checkbox";
 import db from "../../service/Database/model";
 import isEmpty from "just-is-empty";
@@ -36,33 +36,50 @@ export default function Equipo(props) {
         useCallback(() => {
             (async () => {
                 const response = await getEquiposStorage();
-                // console.log("response", response.length)
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
-                        console.log(rows._array.length)
+                        console.log("historialEquipo-->", rows._array.length)
                     })
                 })
-                let ticket_id = await AsyncStorage.getItem(ticketID)
-                console.log("ticket_id", ticket_id)
                 db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                        var EquipoDes = JSON.parse(rows._array[0].Equipo).equipo_id
-                        console.log("EquipoDes", EquipoDes)
-                        db.transaction(tx => {
-                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [EquipoDes], (_, { rows }) => {
-                                console.log("row", rows._array.length)
-                                setHistorial(rows._array)
-                            })
-                        })
+                    tx.executeSql(`SELECT * FROM OrdenesServicio`, [], (_, { rows }) => {
+                        console.log("OrdenesServicio-->", rows._array.length)
                     })
                 })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM modelosEquipo`, [], (_, { rows }) => {
+                        console.log("modelosEquipo-->", rows._array.length)
+                    })
+                })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
+                        console.log("equipoTicket-->", rows._array.length)
+                    })
+                })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM cliente`, [], (_, { rows }) => {
+                        console.log("cliente-->", rows._array.length)
+                    })
+                })
+
+                const itenSelect = await AsyncStorage.getItem(ticketID)
+                console.log("itenSelect-->", itenSelect)
+                if (itenSelect != null) {
+                    console.log("diferenre de null")
+                    const item = JSON.parse(itenSelect)
+                    const { ticket_id, equipo } = item
+                    console.log("equipo localStorage",equipo)
+                    setHistorial(equipo)
+                }
 
             })()
         }, [])
     )
+
+
 
     useEffect(() => {
         EquipoHistorial()
@@ -79,25 +96,27 @@ export default function Equipo(props) {
         await EquipoHistorial()
     }
 
-    const handleChange = (equ_serie) => {
+    const handleChange = async (equipo_id) => {
         let temp = historial.map((hist) => {
-            if (equ_serie === hist.equ_serie) {
-                if (hist.isChecked === true) {
+            if (equipo_id == hist.equipo_id) {
+                if (hist.isChecked == "true") {
                     setDisable(!isdisabel)
-                    return { ...hist, isChecked: false };
+                    isCheckedCancelar()
+                    return { ...hist, isChecked: "false" }
+                    
                 } else {
                     setDisable(!isdisabel)
-                    return { ...hist, isChecked: true };
+                    isChecked(equipo_id)
+                    return { ...hist, isChecked: "true" }
+
                 }
             }
             return hist;
         });
         setHistorial(temp);
-        console.log(equ_serie, "a")
     }
 
     const showSelect = (index, item) => {
-        console.log("item", item, "item")
         setItemIndex(index)
     }
 
@@ -153,11 +172,11 @@ export default function Equipo(props) {
                     position: 'relative'
                 }}>
                     <View>
-                        <Pressable onPress={() => handleChange(item.equ_serie)} >
+                        <Pressable onPress={() => handleChange(item.equipo_id)} >
                             <MaterialCommunityIcons
-                                name={item.isChecked ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
                                 size={24}
-                                color={item.isChecked ? "#FF6B00" : "#858583"}
+                                color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
                             />
                         </Pressable>
                     </View>
@@ -228,8 +247,9 @@ export default function Equipo(props) {
         setHistorial(result)
     }
 
-    async function CancelarEvento(){
-        await AsyncStorage.removeItem(ticketID)
+    async function CancelarEvento() {
+        // await AsyncStorage.removeItem(ticketID)
+        await isCheckedCancelar()
         setTipo("")
         setModel("")
         setSerie("")

@@ -2,7 +2,7 @@ import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View
 import Banner from "../../components/Banner";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import { GetEventos } from "../../service/OSevento";
+import { GetEventos, GetEventosByTicket } from "../../service/OSevento";
 import moment from "moment";
 
 import calreq from '../../../assets/icons/cal-req.png';
@@ -12,6 +12,7 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import { EquipoTicket } from "../../service/equipoTicketID";
 import { ticketID } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import db from "../../service/Database/model";
 
 
 
@@ -28,13 +29,9 @@ export default function Manana(prop) {
                 var date = moment().add(1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                const ticket_id = await GetEventosByTicket()
-                ticket_id.map(async (r) => {
-                    await EquipoTicket(r.ticket_id)
-                })
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("rows", rows.length)
+                        console.log("rows", rows._array)
                     })
                 })
             })()
@@ -58,9 +55,41 @@ export default function Manana(prop) {
     }
 
     async function Ordene(ticket_id) {
-        await AsyncStorage.removeItem(ticketID)
-        await AsyncStorage.setItem(ticketID, ticket_id)
-        navigation.navigate("Ordenes")
+        try {
+            db.transaction(tx => {
+                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                    console.log("id_equipo-->", rows._array)
+                    // db.transaction(tx => {
+                    //     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                    //         console.log("row", rows._array.length)
+                    //         if(rows._array.length === 0){
+                    //             Rutes(null, ticket_id)
+                    //         }
+                    //         if (rows._array.length > 0) {
+                    //             Rutes(rows._array[0].id_equipo, ticket_id)
+                    //             navigation.navigate("Ordenes")
+                    //         }
+                    //     })
+                    // })
+                })
+            })
+        } catch (error) {
+            console.log("error", error)
+        }
+    }
+
+    async function Rutes(equipo, ticket_id) {
+        if (equipo) {
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            navigation.navigate("Ordenes")
+        }
+
+        if (equipo == null) {
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            navigation.navigate("Ticket")
+        }
     }
 
     function _renderItem({ item, index }) {
