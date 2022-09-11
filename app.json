@@ -17,6 +17,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "plugins": ["expo-document-picker"],
     "ios": {
       "supportsTablet": true
     },

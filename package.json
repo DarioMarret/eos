@@ -51,7 +51,8 @@
     "react-native-signature-canvas": "^4.4.1",
     "react-native-tab-view": "^3.0.0",
     "react-native-web": "~0.18.7",
-    "react-signature-canvas": "^1.0.6"
+    "react-signature-canvas": "^1.0.6",
+    "expo-document-picker": "~10.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"
