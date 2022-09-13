@@ -17,6 +17,8 @@ export const EquipoTicket = async (ticket_id) => {
                 'Authorization': `Bearer ${token}`
             }
         })
+        // console.log("data EquipoTicket-->", data.Response.EquipoContrato);
+        console.log("\n")
         return new Promise((resolve, reject) => {
             data.Response.EquipoContrato.map(async (r) => {
                 await SelectEquipoTicket(r, data.Response.con_ClienteNombre, ticket_id)
@@ -87,66 +89,71 @@ async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
                     ticket_id
                              ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
-                    Number(r.id_equipoContrato),
-                    String(con_ClienteNombre),
-                    Number(r.id_equipo),
-                    Number(r.id_contrato),
-                    Number(r.empresa_id),
-                    String(r.eqc_conRepuesto),
-                    String(r.eqc_frecuenciaVisita),
-                    String(r.eqc_periodo),
-                    String(r.eqc_tiempoVisita),
-                    String(r.eqc_horarioAtencionDesde),
-                    String(r.eqc_horarioAtencionHasta),
-                    String(r.eqc_lunes),
-                    String(r.eqc_martes),
-                    String(r.eqc_miercoles),
-                    String(r.eqc_jueves),
-                    String(r.eqc_viernes),
-                    String(r.eqc_sabado),
-                    String(r.eqc_domingo),
-                    String(r.eqc_monto),
-                    Number(r.eqc_usuarioCreacion),
-                    String(r.eqc_UsuarioModificacion),
-                    String(r.eqc_fechaCreacion),
-                    String(r.eqc_fechaModificacion),
-                    String(r.localidad_id),
-                    String(r.eqc_estado),
-                    String(r.eqc_tiempoServicio),
-                    String(r.eqc_frecuenciaServicio),
-                    String(r.eqc_manoObra),
-                    String(r.eqc_estadoProgramado),
-                    String(r.eqc_fechaIniGaranC),
-                    String(r.eqc_fechaFinGaranC),
-                    String(r.eqc_fechaServicio),
-                    String(r.eqc_fechaServicioFin),
-                    String(r.eqc_oldContract),
-                    String(r.eqc_tiempoRepuestos),
-                    String(r.eqc_tiempoManoObra),
-                    String(r.eqc_consumibles),
-                    String(r.eqc_tiempoConsumibles),
-                    String(r.eqc_fungibles),
-                    String(r.eqc_tiempoFungibles),
-                    String(r.eqc_kitMantenimiento),
-                    String(r.eqc_fechaKitMantenimiento),
-                    String(r.eqc_rutaAdjunto),
-                    String(r.eqc_rucComodato),
-                    String(r.eqc_codComodato),
-                    String(r.eqc_frecVisSitePlan),
-                    String(r.eqc_periodoSitePlan),
-                    String(r.eqc_observacion),
-                    String(JSON.stringify(r.Equipo)),
+                    r.id_equipoContrato,
+                    con_ClienteNombre,
+                    r.id_equipo,
+                    r.id_contrato,
+                    r.empresa_id,
+                    r.eqc_conRepuesto,
+                    r.eqc_frecuenciaVisita,
+                    r.eqc_periodo,
+                    r.eqc_tiempoVisita,
+                    r.eqc_horarioAtencionDesde,
+                    r.eqc_horarioAtencionHasta,
+                    r.eqc_lunes,
+                    r.eqc_martes,
+                    r.eqc_miercoles,
+                    r.eqc_jueves,
+                    r.eqc_viernes,
+                    r.eqc_sabado,
+                    r.eqc_domingo,
+                    r.eqc_monto,
+                    r.eqc_usuarioCreacion,
+                    r.eqc_UsuarioModificacion,
+                    r.eqc_fechaCreacion,
+                    r.eqc_fechaModificacion,
+                    r.localidad_id,
+                    r.eqc_estado,
+                    r.eqc_tiempoServicio,
+                    r.eqc_frecuenciaServicio,
+                    r.eqc_manoObra,
+                    r.eqc_estadoProgramado,
+                    r.eqc_fechaIniGaranC,
+                    r.eqc_fechaFinGaranC,
+                    r.eqc_fechaServicio,
+                    r.eqc_fechaServicioFin,
+                    r.eqc_oldContract,
+                    r.eqc_tiempoRepuestos,
+                    r.eqc_tiempoManoObra,
+                    r.eqc_consumibles,
+                    r.eqc_tiempoConsumibles,
+                    r.eqc_fungibles,
+                    r.eqc_tiempoFungibles,
+                    r.eqc_kitMantenimiento,
+                    r.eqc_fechaKitMantenimiento,
+                    r.eqc_rutaAdjunto,
+                    r.eqc_rucComodato,
+                    r.eqc_codComodato,
+                    r.eqc_frecVisSitePlan,
+                    r.eqc_periodoSitePlan,
+                    r.eqc_observacion,
+                    JSON.stringify(r.Equipo),
                     "SIN",
                     ticket_id
                 ],
             }], false, (err, results) => {
                 if (err) {
                     console.log("error", err);
+                    axios.post(`http://192.168.101.4:3000/`,{r:err}).then((res)=>{
+                        console.log("error",res);
+                    })
                 } else {
                     resolve(true)
                     const { error } = results[0];
+                    axios.get(`http://192.168.101.4:3000/`,{results}).then((res)=>{
+                        console.log("error",res);
+                    })
                     if (error) {
-
                         console.log("results equipoTicket", results);
                         console.log("iterador", error);
                     }

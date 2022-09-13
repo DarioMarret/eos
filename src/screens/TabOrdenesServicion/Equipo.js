@@ -39,6 +39,7 @@ export default function Equipo(props) {
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
+                
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
                         console.log("historialEquipo-->", rows._array.length)
@@ -66,12 +67,9 @@ export default function Equipo(props) {
                 })
 
                 const itenSelect = await AsyncStorage.getItem(ticketID)
-                console.log("itenSelect-->", itenSelect)
                 if (itenSelect != null) {
-                    console.log("diferenre de null")
                     const item = JSON.parse(itenSelect)
                     const { ticket_id, equipo } = item
-                    console.log("equipo localStorage",equipo)
                     setHistorial(equipo)
                 }
 
@@ -248,7 +246,7 @@ export default function Equipo(props) {
     }
 
     async function CancelarEvento() {
-        // await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.removeItem(ticketID)
         await isCheckedCancelar()
         setTipo("")
         setModel("")
@@ -256,6 +254,7 @@ export default function Equipo(props) {
         setHistorial([])
         navigation.navigate("Consultas")
     }
+    
     return (
         <View style={styles.container}>
             <View style={styles.contenedor}>

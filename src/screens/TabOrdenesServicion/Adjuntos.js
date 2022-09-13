@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 import {
   ScrollView,
   StyleSheet,
@@ -5,14 +6,13 @@ import {
   Switch,
   TextInput,
   TouchableOpacity,
-  View,
-  Button,
+  View
 } from "react-native";
 import { useState } from "react";
-import Banner from "../../components/Banner";
 import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function Adjuntos(props) {
   const { navigation } = props;
@@ -21,8 +21,14 @@ export default function Adjuntos(props) {
 
   const pickDocument = async () => {
     let result = await DocumentPicker.getDocumentAsync({});
-    console.log(result.uri);
-    console.log(result);
+    const file = await ImageManipulator.manipulateAsync(result.uri, [
+      { resize: { width: 500, height: 500 } },
+    ], { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG });
+    FileSystem.readAsStringAsync(file.uri, {
+      encoding: FileSystem.EncodingType.Base64
+    }).then((res) => {
+      console.log(res);
+    });
   };
   return (
     <View style={styles.container}>

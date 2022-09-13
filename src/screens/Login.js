@@ -32,12 +32,13 @@ export default function Login() {
   const handleLogin = async () => {
     setVisible(!visible);
     const data = await LoginForm(userData)
-    if (data == false) {
-      setVisible(!visible);
+    console.log("LoginForm-->", data)
+    if (data.success == false) {
       setUserData({
         username: "",
         password: ""
       });
+      setVisible(false);
       return;
     } else {
       const r = await login(data)
@@ -48,7 +49,7 @@ export default function Login() {
           password: ""
         });
         return;
-      }else{
+      } else {
         setVisible(!visible);
       }
     }
@@ -86,11 +87,13 @@ export default function Login() {
               <TextInput
                 style={styles.input}
                 placeholder="Usuario"
+                value={userData.username}
                 onChangeText={(value) => handleChange("username", value)}
               />
               <TextInput
                 style={styles.input}
                 placeholder="Contraseña"
+                value={userData.password}
                 secureTextEntry={true}
                 onChangeText={(value) => handleChange("password", value)}
               />

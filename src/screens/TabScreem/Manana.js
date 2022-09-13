@@ -54,23 +54,28 @@ export default function Manana(prop) {
         }
     }
 
+    functionColor = (type) => {
+        if (type === "PENDIENTE") {
+            return "#FFECDE"
+        } else if (type === "PROCESO") {
+            return "#FFFFFF"
+        } else if (type === "FINALIZADO") {
+            return "#E2FAE0"
+        } else {
+            return "#FFFFFF"
+        }
+    }
     async function Ordene(ticket_id) {
         try {
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("id_equipo-->", rows._array)
-                    // db.transaction(tx => {
-                    //     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                    //         console.log("row", rows._array.length)
-                    //         if(rows._array.length === 0){
-                    //             Rutes(null, ticket_id)
-                    //         }
-                    //         if (rows._array.length > 0) {
-                    //             Rutes(rows._array[0].id_equipo, ticket_id)
-                    //             navigation.navigate("Ordenes")
-                    //         }
-                    //     })
-                    // })
+                    console.log("id_equipo-->", rows._array[0].id_equipo)
+                    db.transaction(tx => {
+                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                            console.log("equipo selecionado Manana row", rows._array)
+                            Rutes(rows._array, ticket_id)
+                        })
+                    })
                 })
             })
         } catch (error) {
@@ -92,6 +97,18 @@ export default function Manana(prop) {
         }
     }
 
+    functionColor = (type) => {
+        if (type === "PENDIENTE") {
+            return "#FFECDE"
+        } else if (type === "PROCESO") {
+            return "#FFFFFF"
+        } else if (type === "FINALIZADO") {
+            return "#E2FAE0"
+        } else {
+            return "#FFFFFF"
+        }
+    }
+
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
@@ -100,7 +117,7 @@ export default function Manana(prop) {
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        backgroundColor: item.ev_estado == "PENDIENTE" ? "#FFECDE" : bg,
+                        backgroundColor: functionColor(item.ev_estado),
                         width: '100%',
                         minHeight: 100,
                         paddingHorizontal: 20,

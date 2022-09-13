@@ -20,7 +20,6 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-
       const jwt = await getToken();
       if (jwt) {
         setToken(jwt)

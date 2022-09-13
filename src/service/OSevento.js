@@ -7,7 +7,7 @@ export const GetEventosDelDia = async () => {
 
     try {
         const { token, userId } = await getToken()
-        console.log("TOKEN----> ",token,"\n", userId)
+        console.log("TOKEN----> ", token, "\n", userId)
         const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}`;
         const { data, status } = await axios.get(url, {
             headers: {
@@ -92,7 +92,7 @@ async function InserEventosDiarios(r) {
                 console.log("error", err);
             } else {
                 resolve(true);
-                console.log("results OrdenesServicio", results);
+                // console.log("results OrdenesServicio", results);
             }
 
         })
@@ -114,7 +114,6 @@ export const GetEventos = async (ev_fechaAsignadaDesde) => {
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
                     tx.executeSql('select * from OrdenesServicio where ev_fechaAsignadaDesde = ?', [ev_fechaAsignadaDesde], (_, { rows }) => {
-                        console.log("rows", rows._array);
                         resolve(rows._array)
                     });
                 })
@@ -126,14 +125,24 @@ export const GetEventos = async (ev_fechaAsignadaDesde) => {
     }
 }
 
+/**
+ * 
+ * @param {} ayer 
+ * @param {*} hoy 
+ * @param {*} manana 
+ * @returns [{
+ * ticket_id: string,
+ * evento_id: string
+ * }] 
+ */
 export const GetEventosByTicket = async (ayer, hoy, manana) => {
     try {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
-                tx.executeSql('select ticket_id from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
-                [`${ayer}T00:00:00`, `${hoy}T00:00:00`, `${manana}T00:00:00`], (_, { rows }) => {
-                    resolve(rows._array)
-                });
+                tx.executeSql('select ticket_id, evento_id from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
+                    [`${ayer}T00:00:00`, `${hoy}T00:00:00`, `${manana}T00:00:00`], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
             })
         })
     } catch (error) {

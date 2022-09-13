@@ -89,6 +89,17 @@ export default function Ayer(prop) {
             navigation.navigate("Ticket")
         }
     }
+    functionColor = (type) => {
+        if (type === "PENDIENTE") {
+            return "#FFECDE"
+        } else if (type === "PROCESO") {
+            return "#FFFFFF"
+        } else if (type === "FINALIZADO") {
+            return "#E2FAE0"
+        } else {
+            return "#FFFFFF"
+        }
+    }
 
     function _renderItem({ item, index }) {
         return [
@@ -98,7 +109,7 @@ export default function Ayer(prop) {
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        backgroundColor: item.ev_estado == "PENDIENTE" ? "#FFECDE" : bg,
+                        backgroundColor: functionColor(item.ev_estado),
                         width: '100%',
                         minHeight: 100,
                         paddingHorizontal: 20,

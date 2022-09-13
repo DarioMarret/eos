@@ -198,7 +198,7 @@ export const isCheckedCancelar = () => {
             db.transaction(tx => {
                 tx.executeSql('update historialEquipo set isChecked = ?', ["false"], (_, { rows }) => {
                     resolve(true)
-                    console.log("isCheckedCancelar-->", rows);
+                    // console.log("isCheckedCancelar-->", rows);
                 });
             })
         })
@@ -213,7 +213,7 @@ export const getHistorialEquiposStorageChecked = async () => {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
                 tx.executeSql('select * from historialEquipo where isChecked = ?', ["true"], (_, { rows }) => {
-                    console.log("rows getHistorialEquiposStorageChecked", rows._array);
+                    // console.log("rows getHistorialEquiposStorageChecked", rows._array);
                     resolve(rows._array)
                 });
             })

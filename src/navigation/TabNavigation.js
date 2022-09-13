@@ -11,6 +11,7 @@ const Tab = createBottomTabNavigator();
 const TabNavigator = () => {
     return (
         <Tab.Navigator
+            scenaAnimationEnabled={true}
             initialRouteName="Hoy"
             style={styles.container}
             screenOptions={{

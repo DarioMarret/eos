@@ -68,6 +68,40 @@ function InitDB() {
         );`)
         })
 
+        //CREATE TABLA ORDENES ANIDADAS
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS ordenesAnidadas
+        (
+            evento_id INTEGER,
+            ticket_id INTEGER,
+            codOS TEXT NULL,
+            codeTicket TEXT NULL,
+            tck_cliente TEXT NULL,
+            tck_tipoTicket TEXT NULL,
+            tck_tipoTicketDesc TEXT NULL,
+            tck_descripcionProblema TEXT NULL,
+            ev_fechaAsignadaDesde TEXT NULL,
+            ev_fechaAsignadaHasta TEXT NULL,
+            ev_horaAsignadaDesde TEXT NULL,
+            ev_horaAsignadaHasta TEXT NULL,
+            ev_estado TEXT NULL,
+            tck_direccion TEXT NULL,
+            tck_canton TEXT NULL,
+            tck_provincia TEXT NULL,
+            tck_reporta TEXT NULL,
+            tck_telefonoReporta TEXT NULL,
+            tck_usuario_creacion INTEGER NULL,
+            tck_estadoTicket TEXT NULL,
+            ev_descripcion TEXT NULL,
+            id_contrato TEXT NULL,
+            ingenieroId INTEGER NULL,
+            ingeniero TEXT NULL,
+            tipoIncidencia TEXT NULL,
+            OrdenServicioID INTEGER UNIQUE NOT NULL
+        );`)
+        })
+
+
         //CREATE TABLA CATALOGOS
 
         //CREATE TABLA ACCIONES
@@ -241,7 +275,7 @@ function InitDB() {
         //CREATE TABLA EQUIPOTICKET
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS equipoTicket (
-            id_equipoContrato INTEGER NOT NULL,
+            id_equipoContrato INTEGER PRIMARY KEY AUTOINCREMENT,
             con_ClienteNombre TEXT NULL,
             id_equipo INTEGER NULL,
             id_contrato INTEGER NULL,
@@ -291,8 +325,55 @@ function InitDB() {
             eqc_observacion TEXT NULL,
             Equipo TEXT NULL,
             estado_local TEXT NULL,
-            ticket_id INTEGER UNIQUE NOT NULL
+            ticket_id INTEGER NOT NULL
         );`)
+        })
+
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS switch 
+            (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                descripcion TEXT NULL,
+                estado INTEGER NULL
+            );`)
+        })
+
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS estadoEquipo 
+            (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                descripcion TEXT NULL
+            );`)
+        })
+
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS tipoComponente 
+            (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                descripcion TEXT NULL
+            );`)
+        })
+
+        //TABLA DE ACTUALIZACION EVENTUAL
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS actualizacion 
+            (
+                id INTEGER UNIQUE NOT NULL,
+                fechaUltimaActualizacion TEXT NULL
+            );`)
+        })
+
+        //TABLA DE ACTUALIZACION TOKEN
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS token 
+            (
+                username TEXT UNIQUE NOT NULL,
+                password TEXT UNIQUE NOT NULL,
+                token TEXT NULL,
+                userId INTEGER NULL,
+                IdUsuario INTEGER NULL,
+                fechaUltimaActualizacion TEXT NULL
+            );`)
         })
     })
 }

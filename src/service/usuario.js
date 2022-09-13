@@ -51,6 +51,16 @@ export const getInfoUserLocal = async () => {
         return null;
     }
 }
+
+/**
+ * 
+ * @returns {
+ * token: string,
+ * userId: string,
+ * cedula: string,
+ * IdUsuario: number
+ * }
+ */
 export const getToken = async () => {
     try {
         const result = await AsyncStorage.getItem(token);
@@ -76,11 +86,11 @@ export const Byingeniero = async (userId, token) => {
             method: 'get',
             url: 'https://technical.eos.med.ec/webApiSegura/api/customers/ingeniero',
             headers: {
-                'Authorization': 'Bearer '+token
+                'Authorization': 'Bearer ' + token
             }
         };
 
-        const { data:{Response} } = await axios(config)
+        const { data: { Response } } = await axios(config)
         return new Promise((resolve, reject) => {
             Response.map(async (r, i) => {
                 if (r.adicional == userId) {
@@ -98,20 +108,36 @@ export const Byingeniero = async (userId, token) => {
 export const LoginForm = async (formData) => {
     try {
         console.log(formData)
-        const { data, status } = await axios.post(`${hostBase}/login/authenticate`, formData)
-        if (status === 200) {
-            console.log("Token obtenido-->", data.token)
+        const response = await fetch('https://technical.eos.med.ec/webApiSegura/api/login/authenticate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        const resultado = await response.json();
+        if ("Message" in resultado) {
+            return {
+                success: false,
+                message: "Erros al obtener el usuario"
+            }
+        }
+        console.log("Message-->", resultado.Message)
+        const { token, userId } = resultado;
+        if (token) {
+            console.log("Token obtenido-->", token)
             console.log("\n")
-            const IdUsuario = await Byingeniero(data.userId, data.token)
-            const { success } = await getUserInfo(data.userId, data.token)
+            const IdUsuario = await Byingeniero(userId, token)
+            const { success } = await getUserInfo(userId, token)
             if (success) {
                 console.log("IdUsuario-->", IdUsuario)
                 console.log("\n")
-                let info = { ...data, IdUsuario }
+                let info = { ...resultado, IdUsuario }
                 if (await GuardarToken(info)) {
                     await setdataUser(formData)
                     return {
-                        ...data,
+                        ...resultado,
                         success: true
                     }
                 }

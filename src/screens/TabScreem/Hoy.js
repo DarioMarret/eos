@@ -14,6 +14,8 @@ import db from "../../service/Database/model";
 import { ticketID } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { HistorialEquipoIngeniero } from "../../service/historiaEquipo";
+import { OrdenServicioAnidadas, getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
+import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -24,33 +26,30 @@ export default function Hoy(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                // await GetEventosDelDia()
-                // await HistorialEquipoIngeniero();
+                let updateMinuto = await ConsultarFechaUltimaActualizacion()
+                if(updateMinuto){
+                    await HistorialEquipoIngeniero();
+                    await ActualizarFechaUltimaActualizacion()
+                }
                 var date = moment().format('YYYY-MM-DD');
                 var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
                 var hoy = moment().format('YYYY-MM-DD');
                 var manana = moment().add(1, 'days').format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
+                console.log("respuesta", respuesta)
                 const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
                 console.log("ticket_id", ticket_id)
                 ticket_id.map(async ( r ) => {
-                    console.log("r", r.ticket_id)
                     await EquipoTicket(r.ticket_id)
+                    await OrdenServicioAnidadas(r.evento_id)
                 })
+                
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("equipoTicket rows",rows.length)
+                        console.log("equipoTicket rows", rows._array.length)
                     })
                 })
-
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
-                        console.log("historialEquipo rows",rows.length)
-                    })
-                })
-
-
             })()
         }, [])
     )
@@ -75,17 +74,25 @@ export default function Hoy(props) {
     async function Ordene(ticket_id) {
         console.log("ticket_id", ticket_id)
         try {
-            db.transaction(tx => {
-                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("id_equipo-->", rows._array[0].id_equipo)
-                    db.transaction(tx => {
-                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            console.log("equipo selecionado hoy row", rows._array)
-                            Rutes(rows._array, ticket_id)
-                        })
+            const anidada = await getOrdenServicioAnidadas(ticket_id)
+            if(anidada == null){
+                console.log("no hay anidadas")
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                        console.log("id_equipo-->", rows._array[0].id_equipo)
+                        // db.transaction(tx => {
+                        //     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                        //         console.log("equipo selecionado hoy row", rows._array)
+                        //         Rutes(rows._array, ticket_id)
+                        //     })
+                        // })
                     })
                 })
-            })
+            }
+            if(anidada.length > 0){
+                console.log("hay anidadas")
+                Rutes([], ticket_id)
+            }
         } catch (error) {
             console.log("error", error)
         }
@@ -100,11 +107,23 @@ export default function Hoy(props) {
 
         if (equipo.length == 0) {
             await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
             navigation.navigate("Ticket")
         }
     }
 
+
+    functionColor = (type) => {
+        if (type === "PENDIENTE") {
+            return "#FFECDE"
+        } else if (type === "PROCESO") {
+            return "#FFFFFF"
+        } else if (type === "FINALIZADO") {
+            return "#E2FAE0"
+        } else {
+            return "#FFFFFF"
+        }
+    }
 
     function _renderItem({ item, index }) {
         return [
@@ -116,7 +135,7 @@ export default function Hoy(props) {
                         flexDirection: 'row',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        backgroundColor: item.ev_estado == "PENDIENTE" ? "#FFECDE" : bg,
+                        backgroundColor: functionColor(item.ev_estado),
                         width: '100%',
                         minHeight: 100,
                         paddingHorizontal: 20,

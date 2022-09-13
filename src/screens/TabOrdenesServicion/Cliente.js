@@ -1,14 +1,17 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import BannerOrderServi from "../../components/BannerOrdenServ";
 import { getEquipoTicketStorage } from "../../service/equipoTicketID";
 import { getIngenierosStorageById } from "../../service/ingenieros";
 import { getToken } from "../../service/usuario";
-import { ticketID } from "../../utils/constantes";
+import { CLIENTE_, ticketID } from "../../utils/constantes";
 import moment from "moment";
 import { GetClienteCustimerName } from "../../service/clientes";
 import { getProvinciasStorageBy } from "../../service/provincias";
+import { CambieEstadoSwitch, EstadoSwitch, ListaDiagnostico } from "../../service/config";
+import db from "../../service/Database/model";
 
 
 export default function Cliente(props) {
@@ -20,13 +23,16 @@ export default function Cliente(props) {
         NombreUsuario: "",
         adicional: "",
     })
+
     const [fecha, setFecha] = useState(moment().format('YYYY/MM/DD'))
+
     const [equipoTicket, setEquipoTicket] = useState({
         con_ClienteNombre: "",
         ticket_id: "",
         id_contrato: "",
         id_equipo: ""
     })
+
     const [cliente, setCliente] = useState({
         CantonID: "",
         CustomerID: "",
@@ -36,6 +42,8 @@ export default function Cliente(props) {
         Sucursal: "",
         grupo: "",
     })
+
+
     const [direccion, setDireccion] = useState({
         CantonID: "",
         Direccion: "",
@@ -43,39 +51,74 @@ export default function Cliente(props) {
         SucursalID: "",
         SucursalNombre: "",
     })
+
     const [provincia, setProvincia] = useState({
         descripcion: "",
         id: "",
     })
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const { userId } = await getToken()
-                const ingeniero = await getIngenierosStorageById(userId)
-                console.log("ingeniero", ingeniero)
-                setIngeniero(ingeniero)
-                const itenSelect = await AsyncStorage.getItem(ticketID)
-                if (itenSelect !== null) {
-                    const item = JSON.parse(itenSelect)
-                    const { ticket_id, equipo } = item
-                    const ticket = await getEquipoTicketStorage(ticket_id)
-                    setEquipoTicket(ticket)
-                    console.log("ticket", ticket)
-                    let cliente = await GetClienteCustimerName(ticket.con_ClienteNombre)
-                    setCliente(cliente[0])
-                    let n_direccion = JSON.parse(cliente[0].Sucursal).length - 1
-                    let direccion = JSON.parse(cliente[0].Sucursal)[n_direccion]
-                    setDireccion(direccion)
-                    console.log("direccion", direccion.ProvinciaId)
-                    const pro = await getProvinciasStorageBy(direccion.ProvinciaId)
-                    setProvincia(pro[0])
+    const SwitchGuardar = async () => {
+        setIsEnabled(!isEnabled)
+        if (isEnabled) {
+            let estado = await CambieEstadoSwitch(1, 1)
+            console.log("estado", estado.estado)
+            await AsyncStorage.setItem(CLIENTE_, JSON.stringify({
+                ...cliente,
+                ...equipoTicket,
+                ...direccion,
+                ...provincia,
+                ...ingeniero
+            }))
+            console.log("ClienSwitch",await AsyncStorage.setItem("ClienSwitch:", JSON.stringify(false)))
+        }else{
+            let estado = await CambieEstadoSwitch(1, 0)
+            
+            console.log("estado", estado.estado)
+        }
+    }
+
+
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                try {
+                    const { userId } = await getToken()
+                    const ingeniero = await getIngenierosStorageById(userId)
+                    console.log("ingeniero", ingeniero)
+                    setIngeniero(ingeniero)
+                    console.log("ListaDiagnostico",await ListaDiagnostico())
+                    console.log("EstadoSwitch",await EstadoSwitch(1))
+                    let est = await EstadoSwitch(1)
+                    if (est.estado == 1) {
+                        setIsEnabled(true)
+                    } else {
+                        setIsEnabled(false)
+                    }
+                    const itenSelect = await AsyncStorage.getItem(ticketID)
+                    if (itenSelect !== null) {
+                        const item = JSON.parse(itenSelect)
+                        const { ticket_id, equipo } = item
+                        const ticket = await getEquipoTicketStorage(ticket_id)
+                        setEquipoTicket(ticket)
+                        // console.log("ticket", ticket)
+                        let cliente = await GetClienteCustimerName(ticket.con_ClienteNombre)
+                        setCliente(cliente[0])
+                        let n_direccion = JSON.parse(cliente[0].Sucursal).length - 1
+                        let direccion = JSON.parse(cliente[0].Sucursal)[n_direccion]
+                        setDireccion(direccion)
+                        console.log("direccion", direccion.ProvinciaId)
+                        const pro = await getProvinciasStorageBy(direccion.ProvinciaId)
+                        setProvincia(pro[0])
+                    }
+                    let swit = JSON.parse(await AsyncStorage.getItem("ClienSwitch:"))
+                    setIsEnabled(swit)
+                    console.log("ClienSwitch:", JSON.parse(await AsyncStorage.getItem("ClienSwitch:")))
+                } catch (error) {
+                    console.log("error", error)
                 }
-            } catch (error) {
-                console.log("error", error)
-            }
-        })()
-    }, [])
+            })()
+        }, [])
+    )
 
     return (
         <View style={styles.container}>
@@ -122,22 +165,29 @@ export default function Cliente(props) {
                             style={styles.input}
                             placeholder="Cliente"
                             value={cliente.CustomerName}
+                            onChangeText={(text) => setCliente({ ...cliente, CustomerName: text })}
+                            editable={isEnabled}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Código equipo cliente"
                             value={equipoTicket.id_equipo}
+                            onChangeText={(text) => setEquipoTicket({ ...equipoTicket, id_equipo: text })}
+                            editable={isEnabled}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Dirección"
                             value={direccion.Direccion}
+                            onChangeText={(text) => setDireccion({ ...direccion, Direccion: text })}
+                            editable={isEnabled}
                         />
                         <TextInput
                             style={styles.input}
                             placeholder="Ciudad"
                             value={provincia.descripcion}
-                            disabled={false}
+                            onChangeText={(text) => setProvincia({ ...provincia, descripcion: text })}
+                            editable={isEnabled}
                         />
                         <View style={{
                             ...styles.wFull,
@@ -147,12 +197,16 @@ export default function Cliente(props) {
                             justifyContent: 'flex-end',
                             alignItems: 'center',
                         }}>
-                            <Text style={{ fontSize: 16, marginRight: 4 }}>Guardar:</Text>
+                            {
+                                isEnabled ?
+                                    <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
+                                    : <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
+                            }
                             <Switch
                                 trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                 thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
                                 ios_backgroundColor="#FFAF75"
-                                onValueChange={toggleSwitch}
+                                onValueChange={SwitchGuardar}
                                 value={isEnabled}
                             />
                         </View>
