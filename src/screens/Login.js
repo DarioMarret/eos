@@ -15,6 +15,7 @@ export default function Login() {
     password: ""
   });
 
+  const [errorLog, setErrorLog] = useState(false);
   const [visible, setVisible] = useState(false);
   const toggleAlert = useCallback(() => {
     setVisible(!visible);
@@ -39,6 +40,7 @@ export default function Login() {
         password: ""
       });
       setVisible(false);
+      setErrorLog(true)
       return;
     } else {
       const r = await login(data)
@@ -72,6 +74,24 @@ export default function Login() {
                 <ActivityIndicator size={100} color="#FF6B00" />
                 <Text style={{ marginTop: 16, marginBottom: 32 }}>Cargando...</Text>
               </View>
+            </View>
+          </Modal>
+
+          <Modal
+            animationType="slide"
+            visible={errorLog}
+            transparent={true}
+            style={{ backgroundColor: 'white'
+            }}
+          >
+            <View style={styles.centeredView}>
+              <View style={{...styles.modalView, height:'auto'}}>
+                <Text style={{fontSize: 20, color: '#FF6B00', fontWeight: 'bold' }}>Usuario o contraseña incorrectos.</Text>
+                <Text style={{marginTop:20}} onPress={()=>setErrorLog(false)} >
+                  <AntDesign name="closecircle" size={30} color="#FF6B00" />  
+                </Text>
+              </View>
+              
             </View>
           </Modal>
 
