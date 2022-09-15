@@ -4,12 +4,11 @@ const db = SQLite.openDatabase('eos.db', 1, 'DatabaseLocal', 200000)
 
 
 function InitDB() {
-    return new Promise((resolve, reject) => {
         //CREATE TABLE HISTORIAL EQUIPO
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS historialEquipo 
         (
-            equipo_id INTEGER UNIQUE NOT NULL,
+            equipo_id INTEGER NULL,
             equ_tipoEquipo INTEGER,
             tipo TEXT NULL,
             equ_modeloEquipo INTEGER,
@@ -40,7 +39,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS cliente 
         (
-            CustomerID TEXT UNIQUE,
+            CustomerID TEXT NULL,
             CustomerName TEXT,
             ProvinciaID TEXT NULL,
             CantonID TEXT NULL,
@@ -97,10 +96,9 @@ function InitDB() {
             ingenieroId INTEGER NULL,
             ingeniero TEXT NULL,
             tipoIncidencia TEXT NULL,
-            OrdenServicioID INTEGER UNIQUE NOT NULL
+            OrdenServicioID INTEGER NULL
         );`)
         })
-
 
         //CREATE TABLA CATALOGOS
 
@@ -192,7 +190,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS tiposEquipos 
         (
-            tipo_id INTEGER UNIQUE NOT NULL,
+            tipo_id INTEGER NULL,
             empresa_id INTEGER,
             tipo_descripcion TEXT NULL,
             tipo_estado TEXT NULL,
@@ -211,7 +209,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS modelosEquipo 
         (
-            modelo_id INTEGER UNIQUE NOT NULL,
+            modelo_id INTEGER NULL,
             tipo_id INTEGER,
             tipoEquipo TEXT NULL,
             empresa_id INTEGER,
@@ -226,12 +224,11 @@ function InitDB() {
         );`)
         })
 
-
         //CREATE TABLA INGENIEROS 
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS ingenieros
         (
-            IdUsuario INTEGER UNIQUE NOT NULL,
+            IdUsuario INTEGER NULL,
             NombreUsuario TEXT NULL,
             cedula TEXT NULL,
             adicional INTEGER NULL
@@ -242,7 +239,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS OrdenesServicio 
         (
-            evento_id INTEGER UNIQUE NOT NULL,
+            evento_id INTEGER NULL,
             ticket_id INTEGER NULL,
             codOS TEXT NULL,
             codTicket INTEGER,
@@ -275,7 +272,7 @@ function InitDB() {
         //CREATE TABLA EQUIPOTICKET
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS equipoTicket (
-            id_equipoContrato INTEGER PRIMARY KEY AUTOINCREMENT,
+            id_equipoContrato INTEGER NULL,
             con_ClienteNombre TEXT NULL,
             id_equipo INTEGER NULL,
             id_contrato INTEGER NULL,
@@ -375,7 +372,6 @@ function InitDB() {
                 fechaUltimaActualizacion TEXT NULL
             );`)
         })
-    })
 }
 
 InitDB()

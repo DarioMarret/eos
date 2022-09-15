@@ -1,7 +1,6 @@
 import { host } from "../utils/constantes";
-import axios from "axios";
-import db from "./Database/model";
 import { getToken } from "./usuario";
+import db from "./Database/model";
 
 
 
@@ -9,16 +8,19 @@ export const getCantones = async () => {
     const url = `${host}MSCatalogo/canton`;
     try {
         const { token } = await getToken()
-        const { data, status } = await axios.get(url, {
+        const response = await fetch(url, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
+            Response.map(async (r) => {
                 await InserCantones(r)
             })
-            resolve(true);
+            resolve(true)
         });
     } catch (error) {
         console.log("getHistorialEquiposStorage-->", error);
@@ -26,34 +28,55 @@ export const getCantones = async () => {
     }
 }
 async function InserCantones(r) {
-    return new Promise((resolve, reject) => {
-        db.exec([{
-            sql: `INSERT INTO cantones (id,descripcion) VALUES (?,?)`,
-            args: [String(r.id),String(r.descripcion)]
-        }], false, (err, results) => {
-            if (err) {
-                console.log("error", err);
-            } else {
-                resolve(true);
-                console.log("results cantones", results);
-            }
-        })
-    })
-}
-
-export const getCantonesStorageBy = async (id) => {
-    try {
+    const existe = await SelectCantones(r.id)
+    if (!existe) {
         return new Promise((resolve, reject) => {
             db.exec([{
-                sql: `SELECT * FROM cantones WHERE id = ?`,
-                args: [id]
+                sql: `INSERT INTO cantones (id,descripcion) VALUES (?,?)`,
+                args: [r.id, r.descripcion]
             }], false, (err, results) => {
                 if (err) {
                     console.log("error", err);
                 } else {
-                    resolve(results);
                     console.log("results cantones", results);
                 }
+            })
+            resolve(true);
+        })
+    } else {
+        return true
+    }
+}
+async function SelectCantones(id) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM cantones WHERE id = ?`,
+                [id],
+                (tx, results) => {
+                    if (results.rows._array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
+    })
+}
+export const getCantonesStorageBy = async (id) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `SELECT * FROM cantones WHERE id = ?`,
+                    [id],
+                    (tx, results) => {
+                        if (results.rows._array.length > 0) {
+                            resolve(results)
+                        } else {
+                            resolve(false)
+                        }
+                    })
             })
         })
     } catch (error) {

@@ -1,6 +1,5 @@
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
-import axios from "axios";
 import db from "./Database/model";
 
 
@@ -8,13 +7,16 @@ export const getIngenieros = async () => {
     const url = `${host}webApiSegura/api/customers/ingeniero`;
     try {
         const { token } = await getToken()
-        const { data, status } = await axios.get(url, {
+        const response = await fetch(url, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
+            Response.map(async (r, i) => {
                 await InserIngenieros(r)
             })
             resolve(true);
@@ -25,29 +27,56 @@ export const getIngenieros = async () => {
 }
 
 async function InserIngenieros(r) {
-    return new Promise((resolve, reject) => {
-        db.exec([{
-            sql: `INSERT INTO ingenieros (
-                IdUsuario,
-                NombreUsuario,
-                cedula,
-                adicional) VALUES (?,?,?,?)`,
-            args: [
-                Number(r.IdUsuario),
-                String(r.NombreUsuario),
-                String(r.cedula),
-                Number(r.adicional)]
-        }], false, (err, results) => {
-            if (err) {
-                console.log("error", err);
-            } else {
+    const existe = await SelectIngenieros(r.IdUsuario)
+    if (!existe) {
+        return new Promise((resolve, reject) => {
+            try {
+                db.exec([{
+                    sql: `INSERT INTO ingenieros 
+                    (
+                        IdUsuario,
+                        NombreUsuario,
+                        cedula,
+                        adicional
+                    ) VALUES (?,?,?,?)`,
+                    args: [
+                        r.IdUsuario,
+                        r.NombreUsuario,
+                        r.cedula,
+                        r.adicional
+                    ]
+                }], false, (err, results) => {
+                    if (err) {
+                        console.log("error", err);
+                    } else {
+                        console.log("results ingenieros", results);
+                    }
+                })
                 resolve(true)
-                console.log("results ingenieros", results);
+            } catch (error) {
+                console.log("insert InserIngenieros--->", error);
             }
+        })
+    } else {
+        return true
+    }
+}
+async function SelectIngenieros(IdUsuario) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM ingenieros WHERE IdUsuario = ?`,
+                [IdUsuario],
+                (tx, results) => {
+                    if (results.rows._array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
         })
     })
 }
-
 export const getIngenierosStorage = async (IdUsuario, NombreUsuario) => {
     try {
         if (IdUsuario === "" && NombreUsuario === "") {

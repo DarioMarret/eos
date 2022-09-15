@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
 import moment from "moment";
-import { GetEventosDelDia } from "../service/OSevento";
+import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
+import { EquipoTicket } from "../service/equipoTicketID";
+import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 
 export default function Banner(props) {
     const { navigation } = props
@@ -12,6 +14,15 @@ export default function Banner(props) {
     async function ActualizarEventos() {
         setupdate(true)
         await GetEventosDelDia()
+        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+        var hoy = moment().format('YYYY-MM-DD');
+        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+        console.log("ticket_id", ticket_id)
+        ticket_id.map(async ( r ) => {
+            await EquipoTicket(r.ticket_id)
+            await OrdenServicioAnidadas(r.evento_id)
+        })
         setupdate(false)
     }
 

@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
+import { OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 
 
 
@@ -33,6 +34,7 @@ export default function Ayer(prop) {
                 const ticket_id = await GetEventosByTicket()
                 ticket_id.map(async (r) => {
                     await EquipoTicket(r.ticket_id)
+                    await OrdenServicioAnidadas(r.evento_id)
                 })
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {

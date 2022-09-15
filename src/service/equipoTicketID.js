@@ -3,25 +3,22 @@ import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
 
-const axinst = axios.create({
-    timeout: 12000
-})
-
 export const EquipoTicket = async (ticket_id) => {
 
     try {
         const { token } = await getToken()
         const url = `${host}MSOrdenServicio/equipoTicket?ticketId=${ticket_id}`;
-        const { data, status } = await axinst.get(url, {
+        const response = await fetch(url, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
-        // console.log("data EquipoTicket-->", data.Response.EquipoContrato);
-        console.log("\n")
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            data.Response.EquipoContrato.map(async (r) => {
-                await SelectEquipoTicket(r, data.Response.con_ClienteNombre, ticket_id)
+            Response.EquipoContrato.map(async (r) => {
+                await SelectEquipoTicket(r, Response.con_ClienteNombre, ticket_id)
             })
             resolve(true);
         });
@@ -32,62 +29,63 @@ export const EquipoTicket = async (ticket_id) => {
 }
 
 async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
-    return new Promise((resolve, reject) => {
-        try {
+const existe = await SelectTicket(ticket_id)
+    if (!existe) {
+        return new Promise((resolve, reject) => {
             db.exec([{
                 sql: `INSERT INTO equipoTicket (
-                    id_equipoContrato,
-                    con_ClienteNombre,
-                    id_equipo,
-                    id_contrato,
-                    empresa_id,
-                    eqc_conRepuesto,
-                    eqc_frecuenciaVisita,
-                    eqc_periodo,
-                    eqc_tiempoVisita,
-                    eqc_horarioAtencionDesde,
-                    eqc_horarioAtencionHasta,
-                    eqc_lunes,
-                    eqc_martes,
-                    eqc_miercoles,
-                    eqc_jueves,
-                    eqc_viernes,
-                    eqc_sabado,
-                    eqc_domingo,
-                    eqc_monto,
-                    eqc_usuarioCreacion,
-                    eqc_UsuarioModificacion,
-                    eqc_fechaCreacion,
-                    eqc_fechaModificacion,
-                    localidad_id,
-                    eqc_estado,
-                    eqc_tiempoServicio,
-                    eqc_frecuenciaServicio,
-                    eqc_manoObra,
-                    eqc_estadoProgramado,
-                    eqc_fechaIniGaranC,
-                    eqc_fechaFinGaranC,
-                    eqc_fechaServicio,
-                    eqc_fechaServicioFin,
-                    eqc_oldContract,
-                    eqc_tiempoRepuestos,
-                    eqc_tiempoManoObra,
-                    eqc_consumibles,
-                    eqc_tiempoConsumibles,
-                    eqc_fungibles,
-                    eqc_tiempoFungibles,
-                    eqc_kitMantenimiento,
-                    eqc_fechaKitMantenimiento,
-                    eqc_rutaAdjunto,
-                    eqc_rucComodato,
-                    eqc_codComodato,
-                    eqc_frecVisSitePlan,
-                    eqc_periodoSitePlan,
-                    eqc_observacion,
-                    Equipo,
-                    estado_local,
-                    ticket_id
-                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                        id_equipoContrato,
+                        con_ClienteNombre,
+                        id_equipo,
+                        id_contrato,
+                        empresa_id,
+                        eqc_conRepuesto,
+                        eqc_frecuenciaVisita,
+                        eqc_periodo,
+                        eqc_tiempoVisita,
+                        eqc_horarioAtencionDesde,
+                        eqc_horarioAtencionHasta,
+                        eqc_lunes,
+                        eqc_martes,
+                        eqc_miercoles,
+                        eqc_jueves,
+                        eqc_viernes,
+                        eqc_sabado,
+                        eqc_domingo,
+                        eqc_monto,
+                        eqc_usuarioCreacion,
+                        eqc_UsuarioModificacion,
+                        eqc_fechaCreacion,
+                        eqc_fechaModificacion,
+                        localidad_id,
+                        eqc_estado,
+                        eqc_tiempoServicio,
+                        eqc_frecuenciaServicio,
+                        eqc_manoObra,
+                        eqc_estadoProgramado,
+                        eqc_fechaIniGaranC,
+                        eqc_fechaFinGaranC,
+                        eqc_fechaServicio,
+                        eqc_fechaServicioFin,
+                        eqc_oldContract,
+                        eqc_tiempoRepuestos,
+                        eqc_tiempoManoObra,
+                        eqc_consumibles,
+                        eqc_tiempoConsumibles,
+                        eqc_fungibles,
+                        eqc_tiempoFungibles,
+                        eqc_kitMantenimiento,
+                        eqc_fechaKitMantenimiento,
+                        eqc_rutaAdjunto,
+                        eqc_rucComodato,
+                        eqc_codComodato,
+                        eqc_frecVisSitePlan,
+                        eqc_periodoSitePlan,
+                        eqc_observacion,
+                        Equipo,
+                        estado_local,
+                        ticket_id
+                                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
                     r.id_equipoContrato,
                     con_ClienteNombre,
@@ -144,24 +142,29 @@ async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
             }], false, (err, results) => {
                 if (err) {
                     console.log("error", err);
-                    axios.post(`http://192.168.101.4:3000/`,{r:err}).then((res)=>{
-                        console.log("error",res);
-                    })
                 } else {
-                    resolve(true)
-                    const { error } = results[0];
-                    axios.get(`http://192.168.101.4:3000/`,{results}).then((res)=>{
-                        console.log("error",res);
-                    })
-                    if (error) {
-                        console.log("results equipoTicket", results);
-                        console.log("iterador", error);
-                    }
+                    console.log("results", results);
                 }
             })
-        } catch (error) {
-            console.log("error al insertar--->", error);
-        }
+            resolve(true)
+        })
+    }else{
+        return true
+    }
+}
+
+async function SelectTicket(ticket_id) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT * FROM equipoTicket WHERE ticket_id = ?`,
+                [ticket_id], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        });
     })
 }
 

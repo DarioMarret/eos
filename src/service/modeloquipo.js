@@ -7,13 +7,16 @@ export const getModeloEquipos = async () => {
     const url = `${host}MSCatalogo/api/ModelosEquipos`;
     try {
         const { token } = await getToken()
-        const { data } = await axios.get(url, {
+        const response = await fetch(url, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
+            Response.map(async (r, i) => {
                 await InserModeloEquipo(r)
             })
             resolve(true);
@@ -24,41 +27,65 @@ export const getModeloEquipos = async () => {
 }
 
 async function InserModeloEquipo(r) {
-    db.exec([{
-        sql: `INSERT INTO modelosEquipo (
-                modelo_id,
-                tipo_id,
-                tipoEquipo,
-                empresa_id,
-                modelo_descripcion,
-                modelo_tiempoprom_inst,
-                modelo_tiempoprom_mant,
-                modelo_estado,
-                modelo_usuarioCreacion,
-                modelo_usuarioModificacion,
-                modelo_fechaCreacion,
-                modelo_fechaModificacion
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
-        args: [
-            Number(r.modelo_id),
-            Number(r.tipo_id),
-            String(r.tipoEquipo),
-            Number(r.empresa_id),
-            String(r.modelo_descripcion),
-            String(r.modelo_tiempoprom_inst),
-            String(r.modelo_tiempoprom_mant),
-            String(r.modelo_estado),
-            Number(r.modelo_usuarioCreacion),
-            Number(r.modelo_usuarioModificacion),
-            String(r.modelo_fechaCreacion),
-            String(r.modelo_fechaModificacion)]
-    }], false, (err, results) => {
-        if (err) {
-            console.log("error",err);
-        } else {
-            console.log("results modelosEquipo", results);
-        }
-
+    const existe = await SelectModeloEquipo(r.modelo_id)
+    if (!existe) {
+        return new Promise((resolve, reject) => {
+            db.exec([{
+                sql: `INSERT INTO modelosEquipo (
+                    modelo_id,
+                    tipo_id,
+                    tipoEquipo,
+                    empresa_id,
+                    modelo_descripcion,
+                    modelo_tiempoprom_inst,
+                    modelo_tiempoprom_mant,
+                    modelo_estado,
+                    modelo_usuarioCreacion,
+                    modelo_usuarioModificacion,
+                    modelo_fechaCreacion,
+                    modelo_fechaModificacion
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+                args: [
+                    r.modelo_id,
+                    r.tipo_id,
+                    r.tipoEquipo,
+                    r.empresa_id,
+                    r.modelo_descripcion,
+                    r.modelo_tiempoprom_inst,
+                    r.modelo_tiempoprom_mant,
+                    r.modelo_estado,
+                    r.modelo_usuarioCreacion,
+                    r.modelo_usuarioModificacion,
+                    r.modelo_fechaCreacion,
+                    r.modelo_fechaModificacion]
+            }], false, (err, results) => {
+                if (err) {
+                    console.log("error", err);
+                } else {
+                    console.log("results modelosEquipo", results);
+                }
+    
+            })
+            resolve(true);
+        });
+    }else{
+        return true
+    }
+}
+async function SelectModeloEquipo(modelo_id) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM modelosEquipo WHERE modelo_id = ?`,
+                [modelo_id],
+                (tx, results) => {
+                    if (results.rows._array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
     })
 }
 

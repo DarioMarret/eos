@@ -13,7 +13,8 @@ export const OrdenServicioAnidadas = async (idEvento) => {
             }
         });
         const data = await response.json();
-        const { Code, Message, Response } = data;
+
+        const { Response } = data;
         if (Response.length > 0) {
             return new Promise((resolve, reject) => {
                 Response.map(async (item) => {
@@ -29,74 +30,93 @@ export const OrdenServicioAnidadas = async (idEvento) => {
 }
 
 async function InsertOrdenServicioAnidadas(data) {
+    const existe = await selectOrdenServicioAnidadas(data.OrdenServicioID)
+    if (!existe) {
+        return new Promise((resolve, reject) => {
+            db.exec([{
+                sql:
+                    `INSERT INTO ordenesAnidadas (
+                    evento_id,
+                    ticket_id,
+                    codOS,
+                    codeTicket,
+                    tck_cliente,
+                    tck_tipoTicket,
+                    tck_tipoTicketDesc,
+                    tck_descripcionProblema,
+                    ev_fechaAsignadaDesde,
+                    ev_fechaAsignadaHasta,
+                    ev_horaAsignadaDesde,
+                    ev_horaAsignadaHasta,
+                    ev_estado,
+                    tck_direccion,
+                    tck_canton,
+                    tck_provincia,
+                    tck_reporta,
+                    tck_telefonoReporta,
+                    tck_usuario_creacion,
+                    tck_estadoTicket,
+                    ev_descripcion,
+                    id_contrato,
+                    ingenieroId,
+                    ingeniero,
+                    tipoIncidencia,
+                    OrdenServicioID
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                args: [
+                    data.evento_id,
+                    data.ticket_id,
+                    data.codOS,
+                    data.codeTicket,
+                    data.tck_cliente,
+                    data.tck_tipoTicket,
+                    data.tck_tipoTicketDesc,
+                    data.tck_descripcionProblema,
+                    data.ev_fechaAsignadaDesde,
+                    data.ev_fechaAsignadaHasta,
+                    data.ev_horaAsignadaDesde,
+                    data.ev_horaAsignadaHasta,
+                    data.ev_estado,
+                    data.tck_direccion,
+                    data.tck_canton,
+                    data.tck_provincia,
+                    data.tck_reporta,
+                    data.tck_telefonoReporta,
+                    data.tck_usuario_creacion,
+                    data.tck_estadoTicket,
+                    data.ev_descripcion,
+                    data.id_contrato,
+                    data.ingenieroId,
+                    data.ingeniero,
+                    data.tipoIncidencia,
+                    data.OrdenServicioID
+                ],
+            }], false, (err, results) => {
+                if (err) {
+                    console.log("InsertOrdenServicioAnidadas", err);
+                } else {
+                    console.log("insert ordenesAnidadas", results);
+                }
+            })
+            resolve(true)
+        })
+    }else{
+        return true
+    }
+}
+async function selectOrdenServicioAnidadas(OrdenServicioID) {
     return new Promise((resolve, reject) => {
-        db.exec([{
-            sql:
-                `INSERT INTO ordenesAnidadas (
-                evento_id,
-                ticket_id,
-                codOS,
-                codeTicket,
-                tck_cliente,
-                tck_tipoTicket,
-                tck_tipoTicketDesc,
-                tck_descripcionProblema,
-                ev_fechaAsignadaDesde,
-                ev_fechaAsignadaHasta,
-                ev_horaAsignadaDesde,
-                ev_horaAsignadaHasta,
-                ev_estado,
-                tck_direccion,
-                tck_canton,
-                tck_provincia,
-                tck_reporta,
-                tck_telefonoReporta,
-                tck_usuario_creacion,
-                tck_estadoTicket,
-                ev_descripcion,
-                id_contrato,
-                ingenieroId,
-                ingeniero,
-                tipoIncidencia,
-                OrdenServicioID
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            args: [
-                data.evento_id,
-                data.ticket_id,
-                data.codOS,
-                data.codeTicket,
-                data.tck_cliente,
-                data.tck_tipoTicket,
-                data.tck_tipoTicketDesc,
-                data.tck_descripcionProblema,
-                data.ev_fechaAsignadaDesde,
-                data.ev_fechaAsignadaHasta,
-                data.ev_horaAsignadaDesde,
-                data.ev_horaAsignadaHasta,
-                data.ev_estado,
-                data.tck_direccion,
-                data.tck_canton,
-                data.tck_provincia,
-                data.tck_reporta,
-                data.tck_telefonoReporta,
-                data.tck_usuario_creacion,
-                data.tck_estadoTicket,
-                data.ev_descripcion,
-                data.id_contrato,
-                data.ingenieroId,
-                data.ingeniero,
-                data.tipoIncidencia,
-                data.OrdenServicioID
-            ],
-        }], false, (err, results) => {
-            if (err) {
-                console.log("error", err);
-                reject(err)
-            } else {
-                console.log("data", data);
-                console.log("insert ordenesAnidadas", results);
-                resolve(results)
-            }
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
+                [OrdenServicioID],
+                (tx, results) => {
+                    if (results.rows._array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
         })
     })
 }

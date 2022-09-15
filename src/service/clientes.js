@@ -1,6 +1,5 @@
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
-import axios from "axios";
 import db from "./Database/model";
 
 
@@ -8,13 +7,16 @@ export const getClientes = async () => {
     const url = `${host}MSCatalogo/ClienteByNombre`;
     try {
         const { token } = await getToken()
-        const { data, status } = await axios.get(url, {
+        const response = await fetch(url, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
+            Response.map(async (r, i) => {
                 await InserCliente(r)
             })
             resolve(true);
@@ -23,38 +25,57 @@ export const getClientes = async () => {
         console.log(error);
     }
 }
-
+ 
 async function InserCliente(r) {
+    const existe = await SelectCliente(r.CustomerID)
+    if (!existe) {
+        return new Promise((resolve, reject) => {
+            db.exec([{
+                sql: `INSERT INTO cliente (
+                    CustomerID,
+                    CustomerName,
+                    ProvinciaID,
+                    CantonID,
+                    Direccion,
+                    grupo,
+                    Sucursal) VALUES (?,?,?,?,?,?,?)`,
+                args: [
+                    r.CustomerID,
+                    r.CustomerName,
+                    r.ProvinciaID,
+                    r.CantonID,
+                    r.Direccion,
+                    r.grupo,
+                    JSON.stringify(r.Sucursal)]
+            }], false, (err, results) => {
+                if (err) {
+                    console.log("error", err);
+                } else {
+                    console.log("results clientes", results);
+                }
+            })
+            resolve(true);
+        })
+    }else{
+        return true
+    }
+}
+async function SelectCliente(CustomerID) {
     return new Promise((resolve, reject) => {
-        db.exec([{
-            sql: `INSERT INTO cliente (
-                CustomerID,
-                CustomerName,
-                ProvinciaID,
-                CantonID,
-                Direccion,
-                grupo,
-                Sucursal) VALUES (?,?,?,?,?,?,?)`,
-            args: [
-                String(r.CustomerID),
-                String(r.CustomerName),
-                String(r.ProvinciaID),
-                String(r.CantonID),
-                String(r.Direccion),
-                String(r.grupo),
-                String(JSON.stringify(r.Sucursal))]
-        }], false, (err, results) => {
-            if (err) {
-                console.log("error", err);
-            } else {
-                resolve(true);
-                console.log("results clientes", results);
-            }
-    
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM cliente WHERE CustomerID = ?`,
+                [CustomerID],
+                (tx, results) => {
+                    if (results.rows._array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
         })
     })
-}
-
+}    
 export const getClientesStorage = async (cedulaRuc) => {
     try {
         if (cedulaRuc === "") {

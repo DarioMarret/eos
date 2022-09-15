@@ -1,4 +1,3 @@
-import axios from "axios";
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
@@ -10,20 +9,18 @@ export const HistorialEquipoIngeniero = async () => {
         const { token, userId } = await getToken()
         var IdUsuario = await SqlIdUsuario(userId)
         console.log("token", token)
-        console.log(`${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`)
-        const { data, status } = await axios.get(`${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`, {
+        const response = await fetch(`${host}MSOrdenServicio/getbaseInstal247ClientesReport?ingeniero_id=${IdUsuario}`, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            for (let index = 0; index < data.Response.length; index++) {
-                data.Response[index];
-                SelectExisteEquipo(data.Response[index])
-
-            }
-            // data.Response.map(async (r, i) => {
-            // })
+            Response.map(async (r) => {
+                await SelectExisteEquipo(r)
+            })
             resolve(true);
         });
     } catch (error) {
@@ -41,59 +38,61 @@ async function SqlIdUsuario(userId) {
         })
     })
 }
-async function SelectExisteEquipo(r, i) {
-    return new Promise((resolve, reject) => {
-        try {
+
+async function SelectExisteEquipo(r) {
+    const existe = await SelectExisteEquipoQ(r.equipo_id)
+    if (!existe) {
+        return new Promise((resolve, reject) => {
             db.exec([{
                 sql: `INSERT INTO historialEquipo (
-                             equipo_id,
-                             equ_tipoEquipo,
-                             tipo,
-                             equ_modeloEquipo,
-                             modelo,
-                             equ_serie,
-                             equ_SitioInstalado,
-                             equ_areaInstalado,
-                             con_ClienteNombre,
-                             marca,
-                             equ_modalidad,
-                             Modalidad,
-                             equ_fechaInstalacion,
-                             equ_fecIniGaranP,
-                             equ_fecFinGaranP,
-                             equ_provincia,
-                             equ_canton,
-                             equ_ingenieroResponsable,
-                             equ_marca,
-                             equ_estado,
-                             id_equipoContrato,
-                             localidad_id,
-                             historial,
-                             isChecked
-                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                                 equipo_id,
+                                 equ_tipoEquipo,
+                                 tipo,
+                                 equ_modeloEquipo,
+                                 modelo,
+                                 equ_serie,
+                                 equ_SitioInstalado,
+                                 equ_areaInstalado,
+                                 con_ClienteNombre,
+                                 marca,
+                                 equ_modalidad,
+                                 Modalidad,
+                                 equ_fechaInstalacion,
+                                 equ_fecIniGaranP,
+                                 equ_fecFinGaranP,
+                                 equ_provincia,
+                                 equ_canton,
+                                 equ_ingenieroResponsable,
+                                 equ_marca,
+                                 equ_estado,
+                                 id_equipoContrato,
+                                 localidad_id,
+                                 historial,
+                                 isChecked
+                                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
-                    Number(r.equipo_id),
-                    Number(r.equ_tipoEquipo),
-                    String(r.tipo),
-                    Number(r.equ_modeloEquipo),
-                    String(r.modelo),
-                    String(r.equ_serie),
-                    String(r.equ_SitioInstalado),
-                    String(r.equ_areaInstalado),
-                    String(r.con_ClienteNombre),
-                    String(r.marca),
-                    String(r.equ_modalidad),
-                    String(r.Modalidad),
-                    String(r.equ_fechaInstalacion),
-                    String(r.equ_fecIniGaranP),
-                    String(r.equ_fecFinGaranP),
-                    String(r.equ_provincia),
-                    String(r.equ_canton),
-                    String(r.equ_ingenieroResponsable),
-                    String(r.equ_marca),
-                    String(r.equ_estado),
-                    String(r.id_equipoContrato),
-                    String(r.localidad_id),
+                    r.equipo_id,
+                    r.equ_tipoEquipo,
+                    r.tipo,
+                    r.equ_modeloEquipo,
+                    r.modelo,
+                    r.equ_serie,
+                    r.equ_SitioInstalado,
+                    r.equ_areaInstalado,
+                    r.con_ClienteNombre,
+                    r.marca,
+                    r.equ_modalidad,
+                    r.Modalidad,
+                    r.equ_fechaInstalacion,
+                    r.equ_fecIniGaranP,
+                    r.equ_fecFinGaranP,
+                    r.equ_provincia,
+                    r.equ_canton,
+                    r.equ_ingenieroResponsable,
+                    r.equ_marca,
+                    r.equ_estado,
+                    r.id_equipoContrato,
+                    r.localidad_id,
                     JSON.stringify(r.historial),
                     "false"
                 ],
@@ -101,20 +100,30 @@ async function SelectExisteEquipo(r, i) {
                 if (err) {
                     console.log("error", err);
                 } else {
-                    const delay = time => new Promise(resolveCallback => setTimeout(resolveCallback, time));
-                    delay(1000).then(() => {
-                        resolve(true)
-                    })
-                    const { error } = results[0];
-                    if (error) {
-
-                        console.log("results historialEquipo", results);
-                    }
+                    console.log("insert config", results);
+                    resolve(true)
                 }
             })
-        } catch (error) {
-            console.log("error al insertar--->", error);
-        }
+        })
+    } else {
+        return true
+    }
+}
+
+async function SelectExisteEquipoQ(equipo_id) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT * FROM historialEquipo WHERE equipo_id = ?`,
+                [equipo_id],
+                (tx, results) => {
+                    console.log("results", results)
+                    if (results.rows._array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
     })
 }
 

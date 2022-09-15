@@ -1,7 +1,6 @@
 import { host } from "../utils/constantes";
-import axios from "axios";
-import db from "./Database/model";
 import { getToken } from "./usuario";
+import db from "./Database/model";
 
 
 
@@ -9,13 +8,16 @@ export const getProvincias = async () => {
     const url = `${host}MSCatalogo/provincia`;
     try {
         const { token } = await getToken()
-        const { data, status } = await axios.get(url, {
+        const response = await fetch(url, {
+            method: "GET",
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': 'Bearer ' + token
             }
         })
+        const resultado = await response.json()
+        const { Response } = resultado
         return new Promise((resolve, reject) => {
-            data.Response.map(async (r, i) => {
+            Response.map(async (r, i) => {
                 await InserProvincias(r)
             })
             resolve(true);
@@ -34,10 +36,10 @@ async function InserProvincias(r) {
             if (err) {
                 console.log("error", err);
             } else {
-                resolve(true);
                 console.log("results provincias", results);
             }
         })
+        resolve(true);
     })
 }
 

@@ -28,10 +28,10 @@ export default function Hoy(props) {
             (async () => {
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
                 if(updateMinuto){
-                    await HistorialEquipoIngeniero();
                     await ActualizarFechaUltimaActualizacion()
                 }
-                var date = moment().format('YYYY-MM-DD');
+                await HistorialEquipoIngeniero();
+                var date = moment().add(-1, 'days').format('YYYY-MM-DD');
                 var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
                 var hoy = moment().format('YYYY-MM-DD');
                 var manana = moment().add(1, 'days').format('YYYY-MM-DD');
@@ -44,10 +44,20 @@ export default function Hoy(props) {
                     await EquipoTicket(r.ticket_id)
                     await OrdenServicioAnidadas(r.evento_id)
                 })
-                
+
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
                         console.log("equipoTicket rows", rows._array.length)
+                    })
+                })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM ordenesAnidadas`, [], (_, { rows }) => {
+                        console.log("ordenesAnidadas rows", rows._array.length)
+                    })
+                })
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
+                        console.log("historialEquipo rows", rows._array.length)
                     })
                 })
             })()
@@ -80,12 +90,12 @@ export default function Hoy(props) {
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                         console.log("id_equipo-->", rows._array[0].id_equipo)
-                        // db.transaction(tx => {
-                        //     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                        //         console.log("equipo selecionado hoy row", rows._array)
-                        //         Rutes(rows._array, ticket_id)
-                        //     })
-                        // })
+                        db.transaction(tx => {
+                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                                console.log("equipo selecionado hoy row", rows._array)
+                                Rutes(rows._array, ticket_id)
+                            })
+                        })
                     })
                 })
             }
