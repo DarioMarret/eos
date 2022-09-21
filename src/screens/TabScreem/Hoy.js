@@ -1,21 +1,24 @@
 import { Button, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
+import { OrdenServicioAnidadas, getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
-import { useCallback, useEffect, useState } from "react";
+import { HistorialEquipoIngeniero } from "../../service/historiaEquipo";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { EquipoTicket } from "../../service/equipoTicketID";
 import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useEffect, useState } from "react";
+import NetInfo from '@react-native-community/netinfo';
+import { ticketID } from "../../utils/constantes";
+import db from "../../service/Database/model";
 import Banner from "../../components/Banner";
 import moment from "moment";
 
-import calreq from '../../../assets/icons/cal-req.png';
-import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
-import { EquipoTicket } from "../../service/equipoTicketID";
-import db from "../../service/Database/model";
-import { ticketID } from "../../utils/constantes";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { HistorialEquipoIngeniero } from "../../service/historiaEquipo";
-import { OrdenServicioAnidadas, getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
-import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
+import calreq from '../../../assets/icons/cal-req.png';
+import calok from '../../../assets/icons/cal-ok.png';
+import { RefresLogin } from "../../service/usuario";
+import { OSOrdenServicioID } from "../../service/OS_OrdenServicio";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -27,38 +30,44 @@ export default function Hoy(props) {
         useCallback(() => {
             (async () => {
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
-                if(updateMinuto){
-                    await ActualizarFechaUltimaActualizacion()
+
+                if (updateMinuto) {
+                    NetInfo.fetch().then(state => {
+                        if (state.isConnected === true) {
+                            (async () => {
+                                await RefresLogin()
+                                await HistorialEquipoIngeniero();
+                                await ActualizarFechaUltimaActualizacion()
+                            })()
+                        }
+                    });
                 }
-                await HistorialEquipoIngeniero();
                 var date = moment().add(-1, 'days').format('YYYY-MM-DD');
-                var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                var hoy = moment().format('YYYY-MM-DD');
-                var manana = moment().add(1, 'days').format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                console.log("respuesta", respuesta)
-                const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                console.log("ticket_id", ticket_id)
-                ticket_id.map(async ( r ) => {
-                    await EquipoTicket(r.ticket_id)
-                    await OrdenServicioAnidadas(r.evento_id)
-                })
 
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("equipoTicket rows", rows._array.length)
-                    })
-                })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM ordenesAnidadas`, [], (_, { rows }) => {
-                        console.log("ordenesAnidadas rows", rows._array.length)
-                    })
-                })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
-                        console.log("historialEquipo rows", rows._array.length)
-                    })
+                NetInfo.fetch().then(state => {
+                    if (state.isConnected === true) {
+                        (async () => {
+                            var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                            var hoy = moment().format('YYYY-MM-DD');
+                            var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                            const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                            console.log("tickets", ticket_id)
+                            ticket_id.map(async (r) => {
+                                await EquipoTicket(r.ticket_id)
+                                await OrdenServicioAnidadas(r.evento_id)
+                            })
+                            ticket_id.map(async (r) => {
+                                if (r.OrdenServicioID != 0) {
+                                    console.log("OrdenServicioID", r.OrdenServicioID)
+                                    await OSOrdenServicioID(r.OrdenServicioID)
+                                } else {
+                                    console.log("OrdenServicioID Cero", r.OrdenServicioID)
+                                }
+                            })
+                        })()
+                    }
                 })
             })()
         }, [])
@@ -85,7 +94,7 @@ export default function Hoy(props) {
         console.log("ticket_id", ticket_id)
         try {
             const anidada = await getOrdenServicioAnidadas(ticket_id)
-            if(anidada == null){
+            if (anidada == null) {
                 console.log("no hay anidadas")
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
@@ -99,7 +108,7 @@ export default function Hoy(props) {
                     })
                 })
             }
-            if(anidada.length > 0){
+            if (anidada.length > 0) {
                 console.log("hay anidadas")
                 Rutes([], ticket_id)
             }
@@ -183,7 +192,7 @@ export default function Hoy(props) {
                         </View>
                     </View>
                 </TouchableOpacity>
-            </View>,
+            </View>
         ]
     }
 

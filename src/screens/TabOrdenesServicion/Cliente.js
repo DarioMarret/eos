@@ -12,11 +12,14 @@ import { GetClienteCustimerName } from "../../service/clientes";
 import { getProvinciasStorageBy } from "../../service/provincias";
 import { CambieEstadoSwitch, EstadoSwitch, ListaDiagnostico } from "../../service/config";
 import db from "../../service/Database/model";
+import { datosClienteOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 
 
 export default function Cliente(props) {
     const { navigation } = props
     const [isEnabled, setIsEnabled] = useState(false);
+    const [isdisabelsub, setDisableSub] = useState(true)
+
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const [ingeniero, setIngeniero] = useState({
         IdUsuario: "",
@@ -27,10 +30,13 @@ export default function Cliente(props) {
     const [fecha, setFecha] = useState(moment().format('YYYY/MM/DD'))
 
     const [equipoTicket, setEquipoTicket] = useState({
+        CodigoEquipoCliente: "",
         con_ClienteNombre: "",
         ticket_id: "",
         id_contrato: "",
-        id_equipo: ""
+        id_equipo: "",
+        codOS: "",
+        Estado: "",
     })
 
     const [cliente, setCliente] = useState({
@@ -69,10 +75,10 @@ export default function Cliente(props) {
                 ...provincia,
                 ...ingeniero
             }))
-            console.log("ClienSwitch",await AsyncStorage.setItem("ClienSwitch:", JSON.stringify(false)))
-        }else{
+            console.log("ClienSwitch", await AsyncStorage.setItem("ClienSwitch:", JSON.stringify(false)))
+        } else {
             let estado = await CambieEstadoSwitch(1, 0)
-            
+
             console.log("estado", estado.estado)
         }
     }
@@ -82,12 +88,12 @@ export default function Cliente(props) {
         useCallback(() => {
             (async () => {
                 try {
+
                     const { userId } = await getToken()
                     const ingeniero = await getIngenierosStorageById(userId)
                     console.log("ingeniero", ingeniero)
                     setIngeniero(ingeniero)
-                    console.log("ListaDiagnostico",await ListaDiagnostico())
-                    console.log("EstadoSwitch",await EstadoSwitch(1))
+                    console.log("EstadoSwitch", await EstadoSwitch(1))
                     let est = await EstadoSwitch(1)
                     if (est.estado == 1) {
                         setIsEnabled(true)
@@ -97,8 +103,47 @@ export default function Cliente(props) {
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect !== null) {
                         const item = JSON.parse(itenSelect)
-                        const { ticket_id, equipo } = item
+                        console.log("item", item)
+                        const { ticket_id, equipo, OrdenServicioID } = item
+                        if (OrdenServicioID !== null) {
+                            setDisableSub(false)
+                            setIsEnabled(false)
+                            var datosClient = await datosClienteOSOrdenServicioID(OrdenServicioID)
+                            datosClient.map((item) => {
+                                setCliente({
+                                    ...cliente,
+                                    CustomerName: item.ClienteNombre,
+                                })
+                                setDireccion({
+                                    ...direccion,
+                                    Direccion: item.Direccion,
+                                })
+                                setProvincia({
+                                    ...provincia,
+                                    descripcion: item.Ciudad,
+                                })
+                                setEquipoTicket({
+                                    ...equipoTicket,
+                                    id_contrato: item.contrato_id,
+                                    id_equipo: item.equipo_id,
+                                    codOS: item.codOS,
+                                    ticket_id: item.ticket_id,
+                                    Estado: item.Estado,
+                                    CodigoEquipoCliente: item.CodigoEquipoCliente,
+                                })
+                                setFecha(item.FechaCreacion.split("T")[0])
+
+                            })
+                            console.log(await datosClienteOSOrdenServicioID(OrdenServicioID))
+
+
+                            return
+
+                        }
+
+
                         const ticket = await getEquipoTicketStorage(ticket_id)
+                        // return
                         setEquipoTicket(ticket)
                         // console.log("ticket", ticket)
                         let cliente = await GetClienteCustimerName(ticket.con_ClienteNombre)
@@ -141,13 +186,13 @@ export default function Cliente(props) {
                     }}>
 
                         <View>
-                            <Text style={styles.text}>OS: </Text>
+                            <Text style={styles.text}>OS: {equipoTicket.codOS}</Text>
                             <Text style={styles.text}>Ticket: {equipoTicket.ticket_id}</Text>
-                            <Text style={styles.text}>Estado: </Text>
+                            <Text style={styles.text}>Estado: {equipoTicket.Estado}</Text>
                         </View>
                         <View>
                             <Text style={styles.text}>Contrato: {equipoTicket.id_contrato}</Text>
-                            <Text style={styles.text}>Fecha de creac: {fecha}</Text>
+                            <Text style={styles.text}>Fecha Crea.: {fecha}</Text>
                             <Text style={styles.text}>Ingeniero: {ingeniero.NombreUsuario}</Text>
                         </View>
 
@@ -198,17 +243,23 @@ export default function Cliente(props) {
                             alignItems: 'center',
                         }}>
                             {
-                                isEnabled ?
-                                    <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
-                                    : <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
+                                isdisabelsub ?
+                                    <>
+                                        {
+                                            isEnabled ?
+                                                <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
+                                                : <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
+                                        }
+                                        <Switch
+                                            trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
+                                            thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
+                                            ios_backgroundColor="#FFAF75"
+                                            onValueChange={SwitchGuardar}
+                                            value={isEnabled}
+                                        />
+                                    </>
+                                    : null
                             }
-                            <Switch
-                                trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
-                                thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
-                                ios_backgroundColor="#FFAF75"
-                                onValueChange={SwitchGuardar}
-                                value={isEnabled}
-                            />
                         </View>
                     </View>
                 </ScrollView>

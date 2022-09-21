@@ -14,7 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
-import { OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
+import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 
 
 
@@ -41,6 +41,12 @@ export default function Ayer(prop) {
                         console.log("rows", rows._array.length)
                     })
                 })
+
+                // db.transaction(tx => {
+                //     tx.executeSql(`SELECT * FROM ordenesAnidadas where ticket_id = ? `, ["2022099298"], (_, { rows }) => {
+                //         console.log("ordenesAnidadas ayer row", rows._array)
+                //     })
+                // })
             })()
         }, [])
     )
@@ -62,35 +68,44 @@ export default function Ayer(prop) {
     async function Ordene(ticket_id) {
         console.log("ticket_id", ticket_id)
         try {
-            db.transaction(tx => {
-                tx.executeSql(`SELECT id_equipo FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("id_equipo-->", rows._array[0].id_equipo)
-                    db.transaction(tx => {
-                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            console.log("equipo ayer row", rows._array)
-                            Rutes(rows._array, ticket_id)
+            const anidada = await getOrdenServicioAnidadas(ticket_id)
+            if (anidada == null) {
+                console.log("no hay anidadas")
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                        console.log("id_equipo-->", rows._array[0].id_equipo)
+                        db.transaction(tx => {
+                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                                console.log("equipo selecionado hoy row", rows._array)
+                                Rutes(rows._array, ticket_id)
+                            })
                         })
                     })
                 })
-            })
+            }
+            if (anidada.length > 0) {
+                console.log("hay anidadas")
+                Rutes([], ticket_id)
+            }
         } catch (error) {
             console.log("error", error)
         }
     }
 
     async function Rutes(equipo, ticket_id) {
-        if (equipo) {
+        if (equipo.length != 0) {
             await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ticket_id, equipo}))
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
             navigation.navigate("Ordenes")
         }
 
-        if (equipo == null) {
+        if (equipo.length == 0) {
             await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ticket_id, equipo}))
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
             navigation.navigate("Ticket")
         }
     }
+    
     functionColor = (type) => {
         if (type === "PENDIENTE") {
             return "#FFECDE"

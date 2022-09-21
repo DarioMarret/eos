@@ -72,7 +72,7 @@ async function InserModeloEquipo(r) {
         return true
     }
 }
-async function SelectModeloEquipo(modelo_id) {
+export async function SelectModeloEquipo(modelo_id) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
@@ -80,7 +80,7 @@ async function SelectModeloEquipo(modelo_id) {
                 [modelo_id],
                 (tx, results) => {
                     if (results.rows._array.length > 0) {
-                        resolve(true)
+                        resolve(results.rows._array)
                     } else {
                         resolve(false)
                     }

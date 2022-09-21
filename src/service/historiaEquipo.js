@@ -216,6 +216,22 @@ export const isCheckedCancelar = () => {
         return null;
     }
 }
+export const isCheckedCancelaReturn = (equipo_id) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('update historialEquipo set isChecked = ?', ["false"], (_, { rows }) => {
+                    tx.executeSql('select * from historialEquipo where equipo_id = ? ', [equipo_id], (_, { rows }) => {
+                        resolve(rows._array)
+                    })
+                });
+            })
+        })
+    } catch (error) {
+        console.log("isChecked-->", error);
+        return null;
+    }
+}
 
 export const getHistorialEquiposStorageChecked = async () => {
     try {

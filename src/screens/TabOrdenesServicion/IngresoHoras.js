@@ -9,10 +9,14 @@ import {
 } from "react-native";
 import Banner from "../../components/Banner";
 import { AntDesign } from "@expo/vector-icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import Moment from 'moment';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
+import { ticketID } from "../../utils/constantes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 
 
 export default function IngresoHoras(props) {
@@ -40,7 +44,7 @@ export default function IngresoHoras(props) {
     setDatePickerVisibility(false);
   };
   const handleConfirm = (date) => {
-    setDateForms({...dateForms, [infoPicker]: Moment(date).format('DD/MM/YYYY')})
+    setDateForms({ ...dateForms, [infoPicker]: Moment(date).format('DD/MM/YYYY') })
     console.log(dateForms)
     hideDatePicker();
   };
@@ -52,9 +56,53 @@ export default function IngresoHoras(props) {
     setTimePickerVisibility(false);
   };
   const handleConfirmTime = (time) => {
-    setDateForms({...dateForms, [infoPicker]: Moment(time).format('LT')})
+    setDateForms({ ...dateForms, [infoPicker]: Moment(time).format('LT') })
     hideTimePicker();
-  };
+  }
+
+  const [fechas, setFechas] = useState({
+    fechaIngreso: "",
+    salidaOrigen: "",
+    arriboCliente: "",
+    inicioTrabajo: "",
+    finTrabajo: "",
+    salidaCliente: "",
+    siguienteDestino: "",
+  })
+
+
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        if (itenSelect != null) {
+          const item = JSON.parse(itenSelect)
+          const { equipo, OrdenServicioID, ticket_id } = item
+          if (OrdenServicioID != null) {
+            const tiempo = await TiempoOSOrdenServicioID(OrdenServicioID)
+            const tiempos = JSON.parse(tiempo[0].OS_Tiempos)
+            tiempos.map((item) => {
+              setFechas({
+                ...fechas,
+                fechaIngreso: item.Fecha.split('T')[0],
+                salidaOrigen: item.HoraSalidaOrigen,
+                arriboCliente: item.HoraLlegadaCliente,
+                inicioTrabajo: item.HoraInicioTrabajo,
+                finTrabajo: item.HoraFinTrabajo,
+                salidaCliente: item.HoraSalidaCliente,
+                siguienteDestino: item.HoraLlegadaSgteDestino
+              })
+            })
+            console.log(tiempos)
+
+            return
+          }
+        }
+      })()
+    }, [])
+  )
+
 
   return (
     <View style={styles.container}>
@@ -70,126 +118,128 @@ export default function IngresoHoras(props) {
         >
           Ingreso de tiempos
         </Text>
-        <View style={styles.ContainerInputs}>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Fecha de Ingreso'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.dateInit}
+        <ScrollView>
+          <View style={styles.ContainerInputs}>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Fecha de Ingreso'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.fechaIngreso}
+              />
+              <AntDesign
+                onPress={() => showDatePicker('dateInit')}
+                name='calendar'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Salida origen'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.salidaOrigen}
+              />
+              <AntDesign
+                onPress={() => showTimePicker('timeOriginOut')}
+                name='clockcircleo'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Arribo cliente'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.arriboCliente}
+              />
+              <AntDesign
+                onPress={() => showTimePicker('timeArrivedClient')}
+                name='clockcircleo'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Inicio trabajo'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.inicioTrabajo}
+              />
+              <AntDesign
+                onPress={() => showTimePicker('timeInitWork')}
+                name='clockcircleo'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Fin trabajo'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.finTrabajo}
+              />
+              <AntDesign
+                onPress={() => showTimePicker('timeFinishWork')}
+                name='clockcircleo'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Salida cliente'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.salidaCliente}
+              />
+              <AntDesign
+                onPress={() => showTimePicker('timeOutClient')}
+                name='clockcircleo'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <View style={styles.input}>
+              <TextInput
+                style={{ width: "90%", height: "100%" }}
+                placeholder='Hora llegada siguiente destino'
+                onChangeText={(e) => changeTime(e)}
+                value={fechas.siguienteDestino}
+              />
+              <AntDesign
+                onPress={() => showTimePicker('timeNextDestine')}
+                name='clockcircleo'
+                size={24}
+                color='#000000'
+              />
+            </View>
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible}
+              mode='date'
+              onConfirm={handleConfirm}
+              onCancel={hideDatePicker}
+              style={{ color: "#FF6B00" }}
             />
-            <AntDesign
-              onPress={() => showDatePicker('dateInit')}
-              name='calendar'
-              size={24}
-              color='#000000'
+            <DateTimePickerModal
+              isVisible={isTimePickerVisible}
+              mode='time'
+              onConfirm={handleConfirmTime}
+              onCancel={hideTimePicker}
+              style={{ color: "#FF6B00" }}
             />
           </View>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Salida origen'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.timeOriginOut}
-            />
-            <AntDesign
-              onPress={()=>showTimePicker('timeOriginOut')}
-              name='clockcircleo'
-              size={24}
-              color='#000000'
-            />
-          </View>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Arribo cliente'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.timeArrivedClient}
-            />
-            <AntDesign
-              onPress={()=>showTimePicker('timeArrivedClient')}
-              name='clockcircleo'
-              size={24}
-              color='#000000'
-            />
-          </View>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Inicio trabajo'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.timeInitWork}
-            />
-            <AntDesign
-              onPress={()=>showTimePicker('timeInitWork')}
-              name='clockcircleo'
-              size={24}
-              color='#000000'
-            />
-          </View>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Fin trabajo'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.timeFinishWork}
-            />
-            <AntDesign
-              onPress={()=>showTimePicker('timeFinishWork')}
-              name='clockcircleo'
-              size={24}
-              color='#000000'
-            />
-          </View>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Salida cliente'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.timeOutClient}
-            />
-            <AntDesign
-              onPress={()=>showTimePicker('timeOutClient')}
-              name='clockcircleo'
-              size={24}
-              color='#000000'
-            />
-          </View>
-          <View style={styles.input}>
-            <TextInput
-              style={{ width: "90%", height: "100%" }}
-              placeholder='Hora llegada siguiente destino'
-              onChangeText={(e) => changeTime(e)}
-              value={dateForms.timeNextDestine}
-            />
-            <AntDesign
-              onPress={()=>showTimePicker('timeNextDestine')}
-              name='clockcircleo'
-              size={24}
-              color='#000000'
-            />
-          </View>
-          <DateTimePickerModal
-            isVisible={isDatePickerVisible}
-            mode='date'
-            onConfirm={handleConfirm}
-            onCancel={hideDatePicker}
-            style={{ color: "#FF6B00" }}
-          />
-          <DateTimePickerModal
-            isVisible={isTimePickerVisible}
-            mode='time'
-            onConfirm={handleConfirmTime}
-            onCancel={hideTimePicker}
-            style={{ color: "#FF6B00" }}
-          />
-        </View>
+        </ScrollView>
       </View>
       <BannerOrderServi
-            {...props}
-            navigation={navigation}
-            screen={"6-INGRESO HORAS"}
-        />
+        {...props}
+        navigation={navigation}
+        screen={"6-INGRESO HORAS"}
+      />
     </View>
   );
 }

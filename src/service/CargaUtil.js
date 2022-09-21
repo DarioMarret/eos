@@ -54,38 +54,66 @@ export const CardaUtil = async () => {
     }
 }
 
-const time = time => new Promise(resolve => setTimeout(resolve, time));
+export const time = time => new Promise(resolve => setTimeout(resolve, time));
 
+
+//eliminar tablas cada que cierre la app
 export const TrucateTable = async () => {
     db.transaction(tx => {
         tx.executeSql('delete from historialEquipo', [], (_, { rows }) => {
             console.log("delete table historialEquipo", rows);
-        });
+        })
     })
     db.transaction(tx => {
         tx.executeSql('delete from ingenieros', [], (_, { rows }) => {
             console.log("delete table ingenieros", rows);
-        });
+        })
     })
     db.transaction(tx => {
         tx.executeSql('delete from OrdenesServicio', [], (_, { rows }) => {
             console.log("delete table OrdenesServicio", rows);
-        });
+        })
     })
     db.transaction(tx => {
         tx.executeSql('delete from equipoTicket', [], (_, { rows }) => {
             console.log("delete table equipoTicket", rows);
-        });
+        })
     })
     db.transaction(tx => {
         tx.executeSql('delete from token', [], (_, { rows }) => {
             console.log("delete table token", rows);
-        });
+        })
     })
     db.transaction(tx => {
         tx.executeSql('delete from ordenesAnidadas', [], (_, { rows }) => {
             console.log("delete table ordenesAnidadas", rows);
-        });
+        })
     })
+}
 
-}//OrdenesServicio
+//Truncar tablas ordenesAnidadas equipoTicket historialEquipo OrdenesServicio cada que sincronice
+export const TrucateUpdate = async () => {
+    return new Promise((resolve, reject) => {
+        db.transaction(tx => {
+            tx.executeSql('delete from historialEquipo', [], (_, { rows }) => {
+                console.log("delete table historialEquipo", rows);
+            });
+        })
+        db.transaction(tx => {
+            tx.executeSql('delete from OrdenesServicio', [], (_, { rows }) => {
+                console.log("delete table OrdenesServicio", rows);
+            });
+        })
+        db.transaction(tx => {
+            tx.executeSql('delete from equipoTicket', [], (_, { rows }) => {
+                console.log("delete table equipoTicket", rows);
+            });
+        })
+        db.transaction(tx => {
+            tx.executeSql('delete from ordenesAnidadas', [], (_, { rows }) => {
+                console.log("delete table ordenesAnidadas", rows);
+            });
+        })
+        resolve(true)
+    })
+}

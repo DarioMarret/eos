@@ -16,6 +16,7 @@ export const GetEventosDelDia = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
+        console.log("GetEventosDelDia-->", Response)
         return new Promise((resolve, reject) => {
             Response.map(async (r) => {
                 await InserEventosDiarios(r)
@@ -159,7 +160,7 @@ export const GetEventosByTicket = async (ayer, hoy, manana) => {
     try {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
-                tx.executeSql('select ticket_id, evento_id from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
+                tx.executeSql('select ticket_id, evento_id, OrdenServicioID from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
                     [`${ayer}T00:00:00`, `${hoy}T00:00:00`, `${manana}T00:00:00`], (_, { rows }) => {
                         resolve(rows._array)
                     });

@@ -70,6 +70,10 @@ export const getToken = async () => {
         return null;
     }
 }
+/**
+ * 
+ * @returns true
+ */
 export const desLogeo = async () => {
     try {
         await AsyncStorage.removeItem(token);
@@ -193,6 +197,7 @@ export const RefresLogin = async () => {
     const refres = await getdataUser()
     const { data, status } = await axios.post(`${hostBase}/login/authenticate`, refres)
     if (status === 200) {
-        await getUserInfo(data.userId, data.token)
+        const { IdUsuario } = await getToken()
+        await GuardarToken({ ...data, IdUsuario })
     }
 }

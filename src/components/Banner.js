@@ -1,29 +1,61 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { Fontisto } from '@expo/vector-icons';
-import moment from "moment";
 import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
-import { EquipoTicket } from "../service/equipoTicketID";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { EquipoTicket } from "../service/equipoTicketID";
+import NetInfo from '@react-native-community/netinfo';
+import { Fontisto } from '@expo/vector-icons';
+import React, { useState } from "react";
+import moment from "moment";
+import { time, TrucateUpdate } from "../service/CargaUtil";
+import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
 
 export default function Banner(props) {
     const { navigation } = props
 
     const [update, setupdate] = useState(false)
+    const [message, setMessage] = useState("Actualizando...")
 
     async function ActualizarEventos() {
         setupdate(true)
-        await GetEventosDelDia()
-        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-        var hoy = moment().format('YYYY-MM-DD');
-        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-        console.log("ticket_id", ticket_id)
-        ticket_id.map(async ( r ) => {
-            await EquipoTicket(r.ticket_id)
-            await OrdenServicioAnidadas(r.evento_id)
+        const respuesta = await Sincronizar()
+        if (respuesta) {
+            setupdate(false)
+        }else{
+            setMessage("Sin conexión a internet")
+            setupdate(true)
+            setTimeout(() => {
+                setupdate(false)
+            }, 2000)
+        }
+    }
+
+    
+    async function Sincronizar(){
+        return new Promise((resolve, reject) => {
+            NetInfo.fetch().then(state => {
+                if (state.isConnected === true) {
+                    (async () => {
+                        await TrucateUpdate()
+                        time(1500)
+                        await HistorialEquipoIngeniero()
+                        await time(1000)
+                        await GetEventosDelDia()
+                        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                        var hoy = moment().format('YYYY-MM-DD');
+                        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                        console.log("ticket_id", ticket_id)
+                        ticket_id.map(async (r) => {
+                            await EquipoTicket(r.ticket_id)
+                            await OrdenServicioAnidadas(r.evento_id)
+                        })
+                    })()
+                }else{
+                    resolve(false)
+                }
+            })
+            resolve(true)
         })
-        setupdate(false)
     }
 
     return (
@@ -53,7 +85,7 @@ export default function Banner(props) {
                                 color: !update ? "#FFF" : "#099E15",
                                 fontSize: 10,
                             }}
-                        >Actualizando...</Text> : null
+                        >{message}</Text> : null
                     }
 
                 </TouchableOpacity>

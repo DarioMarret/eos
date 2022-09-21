@@ -1,16 +1,13 @@
 import NetInfo from '@react-native-community/netinfo';
-// import Firmador from './src/components/Firmador'
 import DrawerNavigation from './src/navigation/Navigation'
 import Login from './src/screens/Login'
 import userContext from "./src/context/userContext"
 import jwtDecode from "jwt-decode"
 import { useEffect, useMemo, useState } from 'react'
 import { desLogeo, getToken, GuardarToken, RefresLogin } from './src/service/usuario'
-// import './src/service/Database/model'
-// import { GetEventosDelDia } from './src/service/OSevento';
 import { CardaUtil, TrucateTable } from './src/service/CargaUtil';
 import { StatusBar } from 'expo-status-bar';
-
+import { MenuProvider } from 'react-native-popup-menu';
 
 
 export default function App() {
@@ -74,12 +71,14 @@ export default function App() {
   return (
     // <Firmador/>
     <userContext.Provider value={UserData}>
-      <StatusBar style="auto" />
-      {Token ? (
-        <DrawerNavigation />
-      ) : (
-        <Login />
-      )}
+      <MenuProvider>
+        <StatusBar style="auto" />
+        {Token ? (
+          <DrawerNavigation />
+        ) : (
+          <Login />
+        )}
+      </MenuProvider>
     </userContext.Provider>
   )
 

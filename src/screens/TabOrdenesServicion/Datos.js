@@ -5,18 +5,25 @@ import React, { useCallback, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DATOS_ } from "../../utils/constantes";
+import { DATOS_, ticketID } from "../../utils/constantes";
+import { DatosOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { getEquipoTicketStorage } from "../../service/equipoTicketID";
+import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas";
 
 
 export default function Datos(props) {
     const { navigation } = props
     const [selectedLanguage, setSelectedLanguage] = useState();
-    const [isEnabled, setIsEnabled] = useState(false);
     const [isRecordatorio, setIsRecordatorio] = useState(false);
     const [isUpgrade, setIsUpgrade] = useState(false);
     const [isVisita, setIsVisita] = useState(false);
     const [incidente, setIncidente] = useState([]);
     const [estadoEquipo, setEstadoEquipo] = useState([]);
+
+    const [tipo, setTipo] = useState("");
+
+    const [isEnabled, setIsEnabled] = useState(false);
+    const [isdisabelsub, setDisableSub] = useState(true)
 
     const [datos, setDatos] = useState({
         sitioTrabajo: "",
@@ -34,6 +41,7 @@ export default function Datos(props) {
         requiereVisita: null,
         release: "",
         observacionIngeniero: "",
+        FechaSeguimiento: "",
     })
 
 
@@ -63,6 +71,45 @@ export default function Datos(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+
+                const itenSelect = await AsyncStorage.getItem(ticketID)
+                if (itenSelect != null) {
+                    const item = JSON.parse(itenSelect)
+                    const { equipo, OrdenServicioID, ticket_id } = item
+                    if (OrdenServicioID != null) {
+                        const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
+                        console.log("response", response)
+                        response.map(item => setTipo(item.tck_tipoTicket))
+                        console.log("OrdenServicioID", OrdenServicioID)
+                        setIsEnabled(false)
+                        setDisableSub(false)
+                        const datosC = await DatosOSOrdenServicioID(OrdenServicioID)
+                        datosC.map(d => {
+                            setDatos({
+                                ...datos,
+                                sitioTrabajo: d.SitioTrabajo,
+                                tipoIncidente: d.tipoIncidente,
+                                sintomas: d.Sintomas,
+                                problemaReportado: d.Causas,
+                                diagnostico: d.Diagnostico,
+                                estadoEquipo: d.EstadoEquipo,
+                                accionInmediata: d.Acciones,
+                                recordatorio: null,
+                                incluyeupgrade: d.IncluyoUpgrade,
+                                infoAdicional: d.ComentarioRestringido,
+                                infoAdicional2: d.ComentarioUpgrade,
+                                fechaRecordatorio: d.FechaSeguimiento,
+                                requiereVisita: d.FechaSeguimiento,
+                                release: d.release,
+                                observacionIngeniero: d.ObservacionIngeniero,
+
+                            })
+                        })
+                        console.log(await DatosOSOrdenServicioID(OrdenServicioID))
+                        return
+                    }
+                }
+
                 const inci = await ListaComponentes()
                 setIncidente(inci)
 
@@ -77,7 +124,7 @@ export default function Datos(props) {
                     setIsEnabled(!false)
                 }
                 let dat = await AsyncStorage.getItem(DATOS_)
-                if(dat != null){
+                if (dat != null) {
                     setDatos(JSON.parse(dat))
                 }
             })()
@@ -92,7 +139,7 @@ export default function Datos(props) {
             await AsyncStorage.setItem(DATOS_, JSON.stringify({
                 ...datos
             }))
-        }else{
+        } else {
             let estado = await CambieEstadoSwitch(2, 0)
 
             console.log("estado datos", estado.estado)
@@ -127,7 +174,7 @@ export default function Datos(props) {
                                     onValueChange={(itemValue, itemIndex) =>
                                         console.log(itemValue)
                                     }>
-                                    <Picker.Item label="Tipo" value={true} />
+                                    <Picker.Item label={tipo} value={true} />
                                 </Picker>
                             </View>
                             <TextInput
@@ -150,6 +197,7 @@ export default function Datos(props) {
                             borderColor: '#CECECA',
                             borderRadius: 10,
                         }}>
+
                             <Picker
                                 style={{
                                     width: '100%',
@@ -164,13 +212,15 @@ export default function Datos(props) {
                                 onValueChange={(itemValue, itemIndex) =>
                                     setDatos({ ...datos, tipoIncidente: itemValue })
                                 }>
-                                <Picker.Item label="Tipo de Incidente" value={true} />
+                                <Picker.Item label="Tipo de Instalacion" value={true} />
                                 {
                                     incidente.map((item, index) => (
                                         <Picker.Item label={item.descripcion} value={item.descripcion} />
                                     ))
                                 }
                             </Picker>
+
+
                         </View>
                         <TextInput
                             style={styles.input}
@@ -201,27 +251,44 @@ export default function Datos(props) {
                             borderColor: '#CECECA',
                             borderRadius: 10,
                         }}>
-                            <Picker
-                                style={{
-                                    width: '100%',
-                                    height: 60,
-                                    borderWidth: 1,
-                                    borderColor: '#CECECA',
-                                    padding: 10,
+                            {
+                                isdisabelsub ?
+                                    <Picker
+                                        style={{
+                                            width: '100%',
+                                            height: 60,
+                                            borderWidth: 1,
+                                            borderColor: '#CECECA',
+                                            padding: 10,
 
-                                }}
-                                selectedValue={datos.estadoEquipo}
-                                enabled={isEnabled}
-                                onValueChange={(itemValue, itemIndex) =>
-                                    setDatos({ ...datos, estadoEquipo: itemValue })
-                                }>
-                                <Picker.Item label="Estado de Equipo" value={true} />
-                                {
-                                    estadoEquipo.map((item, index) => (
-                                        <Picker.Item label={item.descripcion} value={item.descripcion} />
-                                    ))
-                                }
-                            </Picker>
+                                        }}
+                                        selectedValue={datos.estadoEquipo}
+                                        enabled={isEnabled}
+                                        onValueChange={(itemValue, itemIndex) =>
+                                            setDatos({ ...datos, estadoEquipo: itemValue })
+                                        }>
+                                        <Picker.Item label="Estado de Equipo" value={true} />
+                                        {
+                                            estadoEquipo.map((item, index) => (
+                                                <Picker.Item label={item.descripcion} value={item.descripcion} />
+                                            ))
+                                        }
+                                    </Picker>
+                                    :
+                                    <Picker
+                                        style={{
+                                            width: '100%',
+                                            height: 60,
+                                            borderWidth: 1,
+                                            borderColor: '#CECECA',
+                                            padding: 10,
+
+                                        }}
+                                        selectedValue={datos.tipoIncidente}
+                                        enabled={isEnabled}>
+                                        <Picker.Item label={datos.estadoEquipo} value={true} />
+                                    </Picker>
+                            }
                         </View>
                         <TextInput
                             style={styles.input}
@@ -298,7 +365,8 @@ export default function Datos(props) {
                         </View>
                         <TextInput
                             style={{ ...styles.input, width: '100%' }}
-                            placeholder="Inf. adicional"
+                            placeholder="Fecha Recordatorio"
+                            value={datos.FechaSeguimiento}
                             editable={isEnabled}
                         />
 

@@ -5,13 +5,14 @@ import { useCallback, useEffect, useState } from "react";
 import BannerOrderServi from "../../components/BannerOrdenServ";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { getEquiposStorage } from "../../service/equipos";
-import { getModeloEquiposStorage } from "../../service/modeloquipo";
-import { getHistorialEquiposStorage, isChecked, isCheckedCancelar } from "../../service/historiaEquipo";
+import { getModeloEquiposStorage, SelectModeloEquipo } from "../../service/modeloquipo";
+import { getHistorialEquiposStorage, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo";
 import Checkbox from "expo-checkbox";
 import db from "../../service/Database/model";
 import isEmpty from "just-is-empty";
 import { ticketID } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DatosEquipo } from "../../service/OS_OrdenServicio";
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -21,9 +22,10 @@ export default function Equipo(props) {
     const [historial, setHistorial] = useState([])
 
     const [isdisabel, setDisable] = useState(true)
+    const [isdisabelsub, setDisableSub] = useState(true)
 
-    const [tipo, setTipo] = useState("")
-    const [model, setModel] = useState("")
+    const [tipo, setTipo] = useState("Tipo")
+    const [model, setModel] = useState("Modelo")
     const [serie, setSerie] = useState("")
 
     const [infoModal, setInfoModal] = useState(null)
@@ -39,7 +41,7 @@ export default function Equipo(props) {
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
-                
+
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
                         console.log("historialEquipo-->", rows._array.length)
@@ -69,7 +71,22 @@ export default function Equipo(props) {
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
-                    const { ticket_id, equipo } = item
+                    const { equipo, OrdenServicioID } = item
+                    console.log("itenSelect-->", item)
+                    if (OrdenServicioID != null) {
+                        console.log("OrdenServicioID-->", OrdenServicioID)
+                        const eqi = await DatosEquipo(OrdenServicioID)
+                        isChecked(eqi[0].equipo_id)
+                        setDisableSub(false)
+                        setDisable(false)
+                        equipo.map((item, index) => {
+                            setHistorial([{ ...item, isChecked: "true" }])
+                            setTipo(item.tipo)
+                            setSerie(item.equ_serie)
+                            setModel(item.modelo)
+                        })
+                        return
+                    }
                     setHistorial(equipo)
                 }
 
@@ -95,23 +112,23 @@ export default function Equipo(props) {
     }
 
     const handleChange = async (equipo_id) => {
-        let temp = historial.map((hist) => {
+        // let temp = 
+        historial.map(async(hist) => {
             if (equipo_id == hist.equipo_id) {
                 if (hist.isChecked == "true") {
                     setDisable(!isdisabel)
-                    isCheckedCancelar()
+                    setHistorial(await isCheckedCancelaReturn(equipo_id))
                     return { ...hist, isChecked: "false" }
-                    
+
                 } else {
                     setDisable(!isdisabel)
-                    isChecked(equipo_id)
+                    setHistorial(await isChecked(equipo_id))
                     return { ...hist, isChecked: "true" }
-
                 }
             }
-            return hist;
+            // return hist;
         });
-        setHistorial(temp);
+        // setHistorial(temp);
     }
 
     const showSelect = (index, item) => {
@@ -170,13 +187,24 @@ export default function Equipo(props) {
                     position: 'relative'
                 }}>
                     <View>
-                        <Pressable onPress={() => handleChange(item.equipo_id)} >
-                            <MaterialCommunityIcons
-                                name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
-                                size={24}
-                                color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
-                            />
-                        </Pressable>
+                        {
+                            isdisabelsub ?
+                                <Pressable onPress={() => handleChange(item.equipo_id)}>
+                                    <MaterialCommunityIcons
+                                        name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                        size={24}
+                                        color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
+                                    />
+                                </Pressable>
+                                :
+                                <Pressable >
+                                    <MaterialCommunityIcons
+                                        name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                        size={24}
+                                        color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
+                                    />
+                                </Pressable>
+                        }
                     </View>
                     <View style={{
                         flex: 1,
@@ -224,6 +252,13 @@ export default function Equipo(props) {
     }
 
     async function EquipoHistorial() {
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        const item = JSON.parse(itenSelect)
+        const { OrdenServicioID } = item
+        if (OrdenServicioID != null) {
+            return
+        }
+
         var result = []
         console.log("tipo", tipo, "model", model, "serie", serie)
         if (tipo !== "" && model !== "") {
@@ -254,7 +289,7 @@ export default function Equipo(props) {
         setHistorial([])
         navigation.navigate("Consultas")
     }
-    
+
     return (
         <View style={styles.container}>
             <View style={styles.contenedor}>
@@ -267,6 +302,7 @@ export default function Equipo(props) {
                                         style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                         selectedValue={tipo}
                                         onValueChange={(itemValue) => setTipo(itemValue)}
+
                                     >
                                         <Picker.Item label="Tipo" value={""} />
                                         {
@@ -279,7 +315,7 @@ export default function Equipo(props) {
                                     </Picker>
                                     :
                                     <Picker style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}>
-                                        <Picker.Item label="Tipo" value={""} />
+                                        <Picker.Item label={tipo} value="" />
                                     </Picker>
                             }
                         </View>
@@ -302,7 +338,7 @@ export default function Equipo(props) {
                                     </Picker>
                                     :
                                     <Picker style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}>
-                                        <Picker.Item label="Modelo" value={""} />
+                                        <Picker.Item label={model} value="" />
                                     </Picker>
                             }
                         </View>
@@ -323,6 +359,8 @@ export default function Equipo(props) {
                             }}
                             onChangeText={text => setSerie(text)}
                             placeholder="Serie"
+                            editable={isdisabelsub}
+                            value={serie}
                         />
                     </View>
                     {/*  */}
