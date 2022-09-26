@@ -6,7 +6,7 @@ import { HistorialEquipoIngeniero } from "../../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
 import { ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
@@ -18,19 +18,19 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import { RefresLogin } from "../../service/usuario";
-import { OSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { getTPTCKStorage } from "../../service/catalogos";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
+    const [time, setTime] = useState(false)
     const { navigation } = props
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
-
                 if (updateMinuto) {
                     NetInfo.fetch().then(state => {
                         if (state.isConnected === true) {
@@ -42,10 +42,10 @@ export default function Hoy(props) {
                         }
                     });
                 }
-                var date = moment().add(-1, 'days').format('YYYY-MM-DD');
+                var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-
+                await getTPTCKStorage()
                 NetInfo.fetch().then(state => {
                     if (state.isConnected === true) {
                         (async () => {
@@ -58,19 +58,11 @@ export default function Hoy(props) {
                                 await EquipoTicket(r.ticket_id)
                                 await OrdenServicioAnidadas(r.evento_id)
                             })
-                            ticket_id.map(async (r) => {
-                                if (r.OrdenServicioID != 0) {
-                                    console.log("OrdenServicioID", r.OrdenServicioID)
-                                    await OSOrdenServicioID(r.OrdenServicioID)
-                                } else {
-                                    console.log("OrdenServicioID Cero", r.OrdenServicioID)
-                                }
-                            })
                         })()
                     }
                 })
             })()
-        }, [])
+        }, [time])
     )
 
     const typeImage = () => {
@@ -210,6 +202,8 @@ export default function Hoy(props) {
             <Banner
                 {...props}
                 navigation={navigation}
+                setTime={setTime}
+                times={time}
             />
         </View>
     );

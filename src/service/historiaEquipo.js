@@ -100,7 +100,7 @@ async function SelectExisteEquipo(r) {
                 if (err) {
                     console.log("error", err);
                 } else {
-                    console.log("insert config", results);
+                    console.log("insert historialEquipo", results);
                     resolve(true)
                 }
             })
@@ -116,7 +116,7 @@ async function SelectExisteEquipoQ(equipo_id) {
             tx.executeSql(`SELECT * FROM historialEquipo WHERE equipo_id = ?`,
                 [equipo_id],
                 (tx, results) => {
-                    console.log("results", results)
+                    // console.log("results", results)
                     if (results.rows._array.length > 0) {
                         resolve(true)
                     } else {
@@ -136,7 +136,7 @@ export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
                 db.transaction(tx => {
                     tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? ', [tipo], (_, { rows }) => {
                         resolve(rows._array)
-                        console.log("rows", rows._array);
+                        // console.log("rows", rows._array);
                     });
                 })
             })
@@ -189,7 +189,7 @@ export const isChecked = (equipo_id) => {
                 tx.executeSql('update historialEquipo set isChecked = ?', ["false"], (_, { rows }) => {
                     tx.executeSql('update historialEquipo set isChecked = ? where equipo_id = ? ', ["true", equipo_id], (_, { rows }) => {
                         tx.executeSql('select * from historialEquipo where isChecked = ? ', ["true"], (_, { rows }) => {
-                            console.log("rows", rows._array);
+                            // console.log("rows", rows._array);
                             resolve(rows._array)
                         })
                     });

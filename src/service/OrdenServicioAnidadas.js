@@ -1,4 +1,5 @@
 import db from "./Database/model";
+import { OSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 
@@ -32,6 +33,8 @@ export const OrdenServicioAnidadas = async (idEvento) => {
 async function InsertOrdenServicioAnidadas(data) {
     const existe = await selectOrdenServicioAnidadas(data.OrdenServicioID)
     if (!existe) {
+        console.log("OSOrdenServicioID", data.OrdenServicioID)
+        await OSOrdenServicioID(data.OrdenServicioID)
         return new Promise((resolve, reject) => {
             db.exec([{
                 sql:
@@ -104,6 +107,7 @@ async function InsertOrdenServicioAnidadas(data) {
         return true
     }
 }
+
 async function selectOrdenServicioAnidadas(OrdenServicioID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {

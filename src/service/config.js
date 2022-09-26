@@ -1,4 +1,4 @@
-import { componente, diagnoctico, estadoSwitch } from "../utils/constantes"
+import { Canton, componente, diagnoctico, estadoSwitch, Provincia } from "../utils/constantes"
 import db from "./Database/model"
 import moment from "moment"
 
@@ -55,6 +55,34 @@ export const ConfiiguracionBasicas = async () => {
                 }
 
             })
+
+            Provincia.map((r) => {
+                db.exec([{
+                    sql: `INSERT INTO provincias (id,descripcion) VALUES (?,?)`,
+                    args: [String(r.id), String(r.descripcion)]
+                }], false, (err, results) => {
+                    if (err) {
+                        console.log("error", err);
+                    } else {
+                        console.log("results provincias", results);
+                    }
+                })
+
+            })
+
+            Canton.map((r) => {
+                db.exec([{
+                    sql: `INSERT INTO cantones (id,descripcion) VALUES (?,?)`,
+                    args: [r.id, r.descripcion]
+                }], false, (err, results) => {
+                    if (err) {
+                        console.log("error", err);
+                    } else {
+                        console.log("results cantones", results);
+                    }
+                })
+            })
+
             resolve(true)
         })
     } catch (error) {
@@ -119,7 +147,7 @@ export const ConsultarFechaUltimaActualizacion = async () => {
                 let minuto = a.diff(b, 'minutes')
                 if (minuto > 5) {
                     resolve(true)
-                }else{
+                } else {
                     resolve(false)
                 }
             });

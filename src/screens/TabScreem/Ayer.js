@@ -18,11 +18,12 @@ import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/O
 
 
 
-export default function Ayer(prop) {
-    const { navigation } = prop;
+export default function Ayer(props) {
+    const { navigation } = props;
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
+    const [time, setTime] = useState(false)
 
     useFocusEffect(
         useCallback(() => {
@@ -41,12 +42,6 @@ export default function Ayer(prop) {
                         console.log("rows", rows._array.length)
                     })
                 })
-
-                // db.transaction(tx => {
-                //     tx.executeSql(`SELECT * FROM ordenesAnidadas where ticket_id = ? `, ["2022099298"], (_, { rows }) => {
-                //         console.log("ordenesAnidadas ayer row", rows._array)
-                //     })
-                // })
             })()
         }, [])
     )
@@ -105,7 +100,7 @@ export default function Ayer(prop) {
             navigation.navigate("Ticket")
         }
     }
-    
+
     functionColor = (type) => {
         if (type === "PENDIENTE") {
             return "#FFECDE"
@@ -180,7 +175,10 @@ export default function Ayer(prop) {
                 </SafeAreaView>
             </View>
             <Banner
+                {...props}
                 navigation={navigation}
+                setTime={setTime}
+                times={time}
             />
         </View>
     );

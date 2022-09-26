@@ -1,14 +1,22 @@
-import * as React from "react";
+import React, { useMemo } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ayer from "../screens/TabScreem/Ayer";
 import Manana from "../screens/TabScreem/Manana";
 import Hoy from "../screens/TabScreem/Hoy";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet } from "react-native";
+
+const Tab = createBottomTabNavigator()
 
 
-const Tab = createBottomTabNavigator();
 const TabNavigator = () => {
+    const UserUp = useMemo(
+        () => ({
+            Update,
+        }), [])
+    function Update() {
+        console.log("Hola")
+    }
     return (
         <Tab.Navigator
             scenaAnimationEnabled={true}
@@ -40,24 +48,23 @@ const TabNavigator = () => {
                 }
             }}
         >
-            <Tab.Screen name="Ayer" component={Ayer}
-                options={{
-                    headerShown: false
-                }}
-            />
-            <Tab.Screen name="Hoy" component={Hoy}
-                options={{
-                    headerShown: false
-                }}
-            />
-            <Tab.Screen name="Mañana" component={Manana}
-                options={{
-                    headerShown: false,
-                }}
-            />
+                <Tab.Screen name="Ayer" component={Ayer}
+                    options={{
+                        headerShown: false
+                    }}
+                />
+                <Tab.Screen name="Hoy" component={Hoy}
+                    options={{
+                        headerShown: false
+                    }}
+                />
+                <Tab.Screen name="Mañana" component={Manana}
+                    options={{
+                        headerShown: false,
+                    }}
+                />
         </Tab.Navigator>
-
-    );
+    )
 };
 
 const styles = StyleSheet.create({

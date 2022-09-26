@@ -1,18 +1,17 @@
-import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native";
-import { Picker } from '@react-native-picker/picker'
+import { getHistorialEquiposStorage, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
+import { FlatList, ActivityIndicador, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
-import { useCallback, useEffect, useState } from "react";
-import BannerOrderServi from "../../components/BannerOrdenServ";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { getEquiposStorage } from "../../service/equipos";
-import { getModeloEquiposStorage, SelectModeloEquipo } from "../../service/modeloquipo";
-import { getHistorialEquiposStorage, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo";
-import Checkbox from "expo-checkbox";
-import db from "../../service/Database/model";
-import isEmpty from "just-is-empty";
-import { ticketID } from "../../utils/constantes";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DatosEquipo } from "../../service/OS_OrdenServicio";
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { getIngenierosStorageById } from "../../service/ingenieros"
+import { getModeloEquiposStorage } from "../../service/modeloquipo"
+import BannerOrderServi from "../../components/BannerOrdenServ"
+import { DatosEquipo } from "../../service/OS_OrdenServicio"
+import { useFocusEffect } from "@react-navigation/native"
+import { getEquiposStorage } from "../../service/equipos"
+import { useCallback, useEffect, useState } from "react"
+import { Picker } from '@react-native-picker/picker'
+import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, ticketID } from "../../utils/constantes"
+import { getToken } from "../../service/usuario"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -21,12 +20,34 @@ export default function Equipo(props) {
     const [modelosub, setModeloSub] = useState([])
     const [historial, setHistorial] = useState([])
 
+    const [isLoading, setIsLoading] = useState(false)
+
     const [isdisabel, setDisable] = useState(true)
     const [isdisabelsub, setDisableSub] = useState(true)
+    const [equipoSelect, setEquipoSelect] = useState({
+        Modalidad: "",
+        con_ClienteNombre: "",
+        equ_SitioInstalado: "",
+        equ_areaInstalado: "",
+        equ_canton: "",
+        equ_estado: "",
+        equ_marca: "",
+        equ_modalidad: "",
+        equ_modeloEquipo: "",
+        equ_provincia: "",
+        equ_serie: "",
+        equ_tipoEquipo: "",
+        equipo_id: "",
+        id_equipoContrato: "",
+        marca: "",
+        modelo: "",
+        tipo: "",
+    })
 
     const [tipo, setTipo] = useState("Tipo")
     const [model, setModel] = useState("Modelo")
     const [serie, setSerie] = useState("")
+
 
     const [infoModal, setInfoModal] = useState(null)
     const [showPopup, setShowPopup] = useState(false)
@@ -37,44 +58,17 @@ export default function Equipo(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                const response = await getEquiposStorage();
+                const response = await getEquiposStorage()
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
 
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM historialEquipo`, [], (_, { rows }) => {
-                        console.log("historialEquipo-->", rows._array.length)
-                    })
-                })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM OrdenesServicio`, [], (_, { rows }) => {
-                        console.log("OrdenesServicio-->", rows._array.length)
-                    })
-                })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM modelosEquipo`, [], (_, { rows }) => {
-                        console.log("modelosEquipo-->", rows._array.length)
-                    })
-                })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("equipoTicket-->", rows._array.length)
-                    })
-                })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM cliente`, [], (_, { rows }) => {
-                        console.log("cliente-->", rows._array.length)
-                    })
-                })
-
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
-                    const { equipo, OrdenServicioID } = item
-                    console.log("itenSelect-->", item)
-                    if (OrdenServicioID != null) {
-                        console.log("OrdenServicioID-->", OrdenServicioID)
+                    const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                    console.log("equipo", equipo)
+                    if (Accion == "clonar") {
                         const eqi = await DatosEquipo(OrdenServicioID)
                         isChecked(eqi[0].equipo_id)
                         setDisableSub(false)
@@ -85,50 +79,111 @@ export default function Equipo(props) {
                             setSerie(item.equ_serie)
                             setModel(item.modelo)
                         })
+                        setHistorial(equipo)
                         return
+                    }else if(Accion == "OrdenSinTicket"){
+                        const os = await AsyncStorage.getItem("OS")
+                        const osItem = JSON.parse(os)
+                        console.log("osItem", osItem)
                     }
-                    setHistorial(equipo)
+                    // else if (OrdenServicioID != null && OSClone != null) {
+                    //     setHistorial(equipo)
+                    //     return
+                    // } else if (equipo != null && OrdenServicioID == null && OSClone == null) {
+                    //     setHistorial(equipo)
+                    //     return
+                    // }
                 }
-
             })()
         }, [])
     )
 
 
-
-    useEffect(() => {
-        EquipoHistorial()
-    }, [tipo, model, serie]);
-
-    useEffect(() => {
-        onChange()
-    }, [tipo]);
-
-    async function onChange() {
-        setModel("")
+    async function onChangeTipo(tipo) {
+        setTipo(tipo)
+        let result = await getHistorialEquiposStorage(tipo, "", "")
         const respuesta = modelo.filter(e => e.tipo_id === tipo)
         setModeloSub(respuesta)
-        await EquipoHistorial()
+        setHistorial(result)
+    }
+    async function onChangeModelo(model) {
+        setModel(model)
+        let result = await getHistorialEquiposStorage(tipo, model, "")
+        setHistorial(result)
+    }
+
+    async function onChangeSerie(serie) {
+        if (tipo !== "" && model !== "" && serie !== "") {
+            setSerie(serie)
+            let result = await getHistorialEquiposStorage(tipo, model, serie)
+            setHistorial(result)
+        } else if (tipo == "" && model == "" && serie != "") {
+            setSerie(serie)
+            result = await getHistorialEquiposStorage("", "", serie)
+        }
+        setSerie(model)
+        let result = await getHistorialEquiposStorage(tipo, model, serie)
+        setHistorial(result)
     }
 
     const handleChange = async (equipo_id) => {
-        // let temp = 
-        historial.map(async(hist) => {
+        let temp = historial.map(async (hist) => {
             if (equipo_id == hist.equipo_id) {
                 if (hist.isChecked == "true") {
                     setDisable(!isdisabel)
                     setHistorial(await isCheckedCancelaReturn(equipo_id))
                     return { ...hist, isChecked: "false" }
-
                 } else {
-                    setDisable(!isdisabel)
-                    setHistorial(await isChecked(equipo_id))
+                    let equipo = await isChecked(equipo_id)
+                    setEquipoSelect(equipo[0])
+                    setHistorial(equipo)
+                    await GuadadoOS(equipo[0])
+                    console.log("equipo-->", equipo[0])
+                    equipo.forEach((item) => {
+                        setTipo(item.tipo)
+                        setModel(item.modelo)
+                        setSerie(item.equ_serie)
+                    })
                     return { ...hist, isChecked: "true" }
                 }
             }
-            // return hist;
+            return hist;
         });
-        // setHistorial(temp);
+        setHistorial(temp);
+    }
+    const GuadadoOS = async (item) => {
+        const { userId } = await getToken()
+        const { IdUsuario } = await getIngenierosStorageById(userId)
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        const it = JSON.parse(itenSelect)
+        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
+        if (Accion == "clonar") {
+            OSClone[0].equipo_id = item.equipo_id,
+                OSClone[0].Serie = item.equ_serie,
+                OSClone[0].TipoEquipo = item.equ_tipoEquipo,
+                OSClone[0].MarcaSerie = item.equ_marca,
+                OSClone[0].ClienteNombreSerie = item.equ_clienteNombre,
+                OSClone[0].Marca = item.marca
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
+        } else if (Accion == "OrdenSinTicket") {
+            const os = await AsyncStorage.getItem("OS")
+            const osItem = JSON.parse(os)
+            osItem.equipo_id = equipoSelect.equipo_id,//#
+            osItem.Serie = equipoSelect.equ_serie,//#
+            osItem.MarcaSerie = equipoSelect.equ_marca,//#
+            osItem.Marca = equipoSelect.marca //#
+            osItem.ClienteNombre = equipoSelect.con_ClienteNombre //#
+            osItem.IdEquipoContrato = equipoSelect.id_equipoContrato //#
+            osItem.EstadoEqPrevio = equipoSelect.equ_estado //#
+            osItem.TipoEquipo = equipoSelect.equ_tipoEquipo //#
+            osItem.ModeloEquipo = equipoSelect.equ_modeloEquipo //#
+            osItem.IngenieroID = IdUsuario//#
+            osItem.empresa_id = 1 //#
+            osItem.UsuarioCreacion = userId //#
+            osItem.UsuarioModificacion = userId //#
+            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+            console.log(osItem)
+        }
     }
 
     const showSelect = (index, item) => {
@@ -254,8 +309,8 @@ export default function Equipo(props) {
     async function EquipoHistorial() {
         const itenSelect = await AsyncStorage.getItem(ticketID)
         const item = JSON.parse(itenSelect)
-        const { OrdenServicioID } = item
-        if (OrdenServicioID != null) {
+        const { OrdenServicioID, OSClone } = item
+        if (OrdenServicioID != null && OSClone == null) {
             return
         }
 
@@ -282,65 +337,64 @@ export default function Equipo(props) {
 
     async function CancelarEvento() {
         await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.removeItem("OS_PartesRepuestos")
+        await AsyncStorage.removeItem("OS_CheckList")
+        await AsyncStorage.removeItem("OS_Firmas")
+        await AsyncStorage.removeItem("OS_Anexos")
+        await AsyncStorage.removeItem("OS")
+        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
+        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
+        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
+        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
+        await AsyncStorage.setItem("OS", JSON.stringify(OS))
         await isCheckedCancelar()
-        setTipo("")
-        setModel("")
+        setTipo("Tipo")
+        setModel("Modelo")
         setSerie("")
+        setModeloSub([])
         setHistorial([])
         navigation.navigate("Consultas")
     }
 
     return (
         <View style={styles.container}>
+            {/* <ActivityIndicador size={100} color="#FF6B00" /> */}
             <View style={styles.contenedor}>
                 <View style={styles.ContainetEquipo}>
                     <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>
-                            {
-                                isdisabel ?
-                                    <Picker
-                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                        selectedValue={tipo}
-                                        onValueChange={(itemValue) => setTipo(itemValue)}
 
-                                    >
-                                        <Picker.Item label="Tipo" value={""} />
-                                        {
-                                            equipo ?
-                                                equipo.map((item, index) => (
-                                                    <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
-                                                ))
-                                                : null
-                                        }
-                                    </Picker>
-                                    :
-                                    <Picker style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}>
-                                        <Picker.Item label={tipo} value="" />
-                                    </Picker>
-                            }
+                            <Picker
+                                style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                selectedValue={tipo}
+                                onValueChange={(itemValue) => onChangeTipo(itemValue)}
+
+                            >
+                                <Picker.Item label={tipo} value={""} />
+                                {
+                                    equipo ?
+                                        equipo.map((item, index) => (
+                                            <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
+                                        ))
+                                        : null
+                                }
+                            </Picker>
                         </View>
                         <View style={{ paddingHorizontal: 10 }} />
                         <View style={styles.ContainetTipoModelo}>
-                            {
-                                isdisabel ?
-                                    <Picker
-                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                        selectedValue={model}
-                                        onValueChange={(itemValue, itemIndex) => setModel(itemValue)}>
-                                        <Picker.Item label="Modelo" value={""} />
-                                        {
-                                            modelosub ?
-                                                modelosub.map((item, index) => (
-                                                    <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
-                                                ))
-                                                : null
-                                        }
-                                    </Picker>
-                                    :
-                                    <Picker style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}>
-                                        <Picker.Item label={model} value="" />
-                                    </Picker>
-                            }
+                            <Picker
+                                style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                selectedValue={model}
+                                onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+                                <Picker.Item label={model} value={""} />
+                                {
+                                    modelosub ?
+                                        modelosub.map((item, index) => (
+                                            <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                        ))
+                                        : null
+                                }
+                            </Picker>
                         </View>
                     </View>
                     <View style={{
@@ -357,7 +411,7 @@ export default function Equipo(props) {
                                 borderRadius: 10,
                                 padding: 10
                             }}
-                            onChangeText={text => setSerie(text)}
+                            onChangeText={text => onChangeSerie(text)}
                             placeholder="Serie"
                             editable={isdisabelsub}
                             value={serie}

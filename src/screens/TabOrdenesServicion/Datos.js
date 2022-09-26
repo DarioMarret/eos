@@ -1,24 +1,32 @@
-import { StyleSheet, Text, TextInput, View, Switch, ScrollView } from "react-native";
-import { Picker } from '@react-native-picker/picker';
-import BannerOrderServi from "../../components/BannerOrdenServ";
-import React, { useCallback, useState } from "react";
-import { useFocusEffect } from "@react-navigation/native";
-import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { DATOS_, ticketID } from "../../utils/constantes";
-import { DatosOSOrdenServicioID } from "../../service/OS_OrdenServicio";
-import { getEquipoTicketStorage } from "../../service/equipoTicketID";
-import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas";
-
+import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config"
+import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas"
+import { StyleSheet, Text, TextInput, View, Switch, ScrollView } from "react-native"
+import { DatosOSOrdenServicioID } from "../../service/OS_OrdenServicio"
+import DateTimePickerModal from "react-native-modal-datetime-picker"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import BannerOrderServi from "../../components/BannerOrdenServ"
+import { SelectCategoria } from "../../service/catalogos"
+import { useFocusEffect } from "@react-navigation/native"
+import { DATOS_, ticketID } from "../../utils/constantes"
+import { Picker } from '@react-native-picker/picker'
+import React, { useCallback, useState } from "react"
+import { AntDesign } from "@expo/vector-icons"
+import moment from "moment"
 
 export default function Datos(props) {
     const { navigation } = props
-    const [selectedLanguage, setSelectedLanguage] = useState();
+
+    const [isDatePickerVisible, setDatePickerVisibility] = useState(false)
+
     const [isRecordatorio, setIsRecordatorio] = useState(false);
     const [isUpgrade, setIsUpgrade] = useState(false);
     const [isVisita, setIsVisita] = useState(false);
     const [incidente, setIncidente] = useState([]);
-    const [estadoEquipo, setEstadoEquipo] = useState([]);
+    const [estadoEquipo, setEstadoEquipo] = useState([])
+
+    const [CategoriaTPCK, setCategoriaTPCK] = useState([])
+    const [CategoriaTPINC, setCategoriaTPINC] = useState([])
+    const [CategoriaESTEQ, setCategoriaESTEQ] = useState([])
 
     const [tipo, setTipo] = useState("");
 
@@ -26,24 +34,48 @@ export default function Datos(props) {
     const [isdisabelsub, setDisableSub] = useState(true)
 
     const [datos, setDatos] = useState({
-        sitioTrabajo: "",
-        tipoIncidente: "",
-        problemaReportado: "",
-        sintomas: "",
-        diagnostico: "",
-        estadoEquipo: "",
-        accionInmediata: "",
-        recordatorio: null,
-        incluyeupgrade: null,
-        infoAdicional: "",
-        infoAdicional2: "",
-        fechaRecordatorio: "",
-        requiereVisita: null,
-        release: "",
-        observacionIngeniero: "",
+        SitioTrabajo: "",
+        tipoIncidencia: "",
+        Causas: "",
+        Sintomas: "",
+        Diagnostico: "",
+        EstadoEquipo: "",
+        Acciones: "",
+        IncluyoUpgrade: 0,
+        ComentarioRestringido: "",
+        ComentarioUpgrade: "",
         FechaSeguimiento: "",
+        nuevaVisita: 0,
+        release: "",
+        ObservacionIngeniero: "",
+        FechaSeguimiento: "",
+        TipoVisita: "",
+        TipoVistaDescripcion: "",
+        Seguimento: 0,
     })
 
+    function TipoVisitadescripcion(items) {
+        setDatos({
+            ...datos,
+            TipoVisita: items
+        })
+    }
+    function TipoIncidencia(items) {
+        setDatos({
+            ...datos,
+            tipoIncidencia: items
+        })
+    }
+    const handleConfirmTime = (time) => {
+        setDatos({
+            ...datos,
+            FechaSeguimiento: moment(time).format('YYYY-MM-DD')
+        })
+        hideTimePicker();
+    }
+    const hideTimePicker = () => {
+        setDatePickerVisibility(!isDatePickerVisible);
+    };
 
 
     const toggleSwitchRecordatorio = () => {
@@ -71,42 +103,70 @@ export default function Datos(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-
+                setCategoriaTPCK(await SelectCategoria("TPTCK"))
+                setCategoriaTPINC(await SelectCategoria("TPINC"))
+                setCategoriaESTEQ(await SelectCategoria("ESTEQ"))
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
-                    const { equipo, OrdenServicioID, ticket_id } = item
-                    if (OrdenServicioID != null) {
+                    const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                    console.log("OSClone", OSClone)
+                    if (Accion == "FINALIZADO") {
                         const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
-                        console.log("response", response)
+                        // console.log("response", response)
                         response.map(item => setTipo(item.tck_tipoTicket))
-                        console.log("OrdenServicioID", OrdenServicioID)
                         setIsEnabled(false)
                         setDisableSub(false)
                         const datosC = await DatosOSOrdenServicioID(OrdenServicioID)
                         datosC.map(d => {
                             setDatos({
                                 ...datos,
-                                sitioTrabajo: d.SitioTrabajo,
+                                SitioTrabajo: d.SitioTrabajo,
                                 tipoIncidente: d.tipoIncidente,
-                                sintomas: d.Sintomas,
-                                problemaReportado: d.Causas,
-                                diagnostico: d.Diagnostico,
-                                estadoEquipo: d.EstadoEquipo,
-                                accionInmediata: d.Acciones,
+                                Sintomas: d.Sintomas,
+                                Causas: d.Causas,
+                                Diagnostico: d.Diagnostico,
+                                EstadoEquipo: d.EstadoEquipo,
+                                Acciones: d.Acciones,
                                 recordatorio: null,
                                 incluyeupgrade: d.IncluyoUpgrade,
-                                infoAdicional: d.ComentarioRestringido,
-                                infoAdicional2: d.ComentarioUpgrade,
-                                fechaRecordatorio: d.FechaSeguimiento,
+                                ComentarioRestringido: d.ComentarioRestringido,
+                                ComentarioUpgrade: d.ComentarioUpgrade,
+                                FechaSeguimiento: d.FechaSeguimiento,
                                 requiereVisita: d.FechaSeguimiento,
                                 release: d.release,
                                 observacionIngeniero: d.ObservacionIngeniero,
-
                             })
                         })
-                        console.log(await DatosOSOrdenServicioID(OrdenServicioID))
                         return
+                    } else if (Accion == "clonar") {
+                        setIsEnabled(true)
+                        setDisableSub(true)
+                        setDatos({
+                            ...datos,
+                            SitioTrabajo: OSClone[0].SitioTrabajo,
+                            tipoIncidente: OSClone[0].tipoIncidente,
+                            Sintomas: OSClone[0].Sintomas,
+                            Causas: OSClone[0].Causas,
+                            Diagnostico: OSClone[0].Diagnostico,
+                            EstadoEquipo: OSClone[0].EstadoEquipo,
+                            Acciones: OSClone[0].Acciones,
+                            recordatorio: null,
+                            IncluyoUpgrade: OSClone[0].IncluyoUpgrade,
+                            ComentarioRestringido: OSClone[0].ComentarioRestringido,
+                            ComentarioUpgrade: OSClone[0].ComentarioUpgrade,
+                            fechaRecordatorio: OSClone[0].FechaSeguimiento,
+                            FechaSeguimiento: OSClone[0].FechaSeguimiento,
+                            release: OSClone[0].release,
+                            ObservacionIngeniero: OSClone[0].ObservacionIngeniero,
+                        })
+                    } else if (Accion == "OrdenSinTicket") {
+                        const os = await AsyncStorage.getItem("OS")
+                        const osItem = JSON.parse(os)
+                        setDatos({
+                            ...datos,
+                            ...osItem
+                        })
                     }
                 }
 
@@ -117,7 +177,6 @@ export default function Datos(props) {
                 setEstadoEquipo(estadoE)
 
                 let est = await EstadoSwitch(2)
-                console.log("est", est);
                 if (est.estado == 1) {
                     setIsEnabled(!true)
                 } else {
@@ -134,6 +193,7 @@ export default function Datos(props) {
     const SwitchGuardar = async () => {
         setIsEnabled(!isEnabled)
         if (isEnabled) {
+            await GuadadoOS()
             let estado = await CambieEstadoSwitch(2, 1)
             console.log("estado datos", estado.estado)
             await AsyncStorage.setItem(DATOS_, JSON.stringify({
@@ -146,36 +206,92 @@ export default function Datos(props) {
         }
     }
 
+    const GuadadoOS = async () => {
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        const it = JSON.parse(itenSelect)
+        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
+        if (Accion == "clonar") {
+            OSClone[0].ClienteNombre = cliente.CustomerName,
+                OSClone[0].Direccion = direccion.Direccion,
+                OSClone[0].Ciudad = provincia.descripcion,
+                OSClone[0].contrato_id = equipoTicket.id_contrato,
+                OSClone[0].equipo_id = equipoTicket.id_equipo,
+                OSClone[0].codOS = equipoTicket.codOS,
+                OSClone[0].ticket_id = equipoTicket.ticket_id,
+                OSClone[0].Estado = equipoTicket.Estado,
+                OSClone[0].CodigoEquipoCliente = equipoTicket.CodigoEquipoCliente,
+                console.log("OSClone", OSClone)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
+        } else if (Accion == "OrdenSinTicket") {
+            const os = await AsyncStorage.getItem("OS")
+            const osItem = JSON.parse(os)
+            osItem.Acciones = datos.Acciones,//# accion inmediata
+                osItem.Causas = datos.Causas, //# Problema reportado
+                osItem.SitioTrabajo = datos.SitioTrabajo, //# sitio de trabajo
+                osItem.Sintomas = datos.Sintomas, //# sintomas
+                osItem.Diagnostico = datos.Diagnostico, //# diagnostico
+                osItem.EstadoEquipo = datos.EstadoEquipo, //# estado del equipo
+                osItem.ComentarioRestringido = datos.ComentarioRestringido, //# inf. adicional 1
+                osItem.ComentarioUpgrade = datos.ComentarioUpgrade, //# inf. adicional 2
+                osItem.FechaSeguimiento = datos.FechaSeguimiento, //# fecha recordatorio
+                osItem.IncluyoUpgrade = datos.IncluyoUpgrade, //# IncluyoUpgrade estado true false
+                osItem.release = datos.release, //# release
+                osItem.ObservacionIngeniero = datos.ObservacionIngeniero, //# ObservacionIngeniero
+                osItem.nuevaVisita = datos.nuevaVisita, //# requiere nueva visita
+                osItem.Seguimento = datos.Seguimento, //# sequimiento
+                osItem.tipoIncidencia = datos.tipoIncidencia, //# sequimiento
+                osItem.TipoVisita = datos.TipoVisita, //# sequimiento
+                await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+            console.log("osItem", osItem)
+        }
+    }
+
     return (
         <View style={styles.container}>
-            <ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false} >
                 <View style={styles.ContenedorCliente}>
-                    <Text style={{
-                        fontSize: 20,
-                        fontWeight: "bold",
-                        color: "#FF6B00",
-                        marginTop: "5%",
-                        marginLeft: "3%",
-                    }}>Ingreso de datos</Text>
+                    <Text
+                        style={{
+                            fontSize: 20,
+                            fontWeight: "bold",
+                            color: "#FF6B00",
+                            marginTop: "5%",
+                            marginLeft: "3%",
+                        }}>Ingreso de datos</Text>
                     <View style={styles.ContainerInputs}>
                         <View style={styles.ContainerTipoModelo}>
-                            <View style={{
-                                width: "49%",
-                                height: 60,
-                                marginBottom: '6%',
-                                borderWidth: 1,
-                                borderColor: '#CECECA',
-                                borderRadius: 10,
-                            }}>
-                                <Picker
-                                    style={styles.wFull}
-                                    enabled={isEnabled}
-                                    selectedValue={selectedLanguage}
-                                    onValueChange={(itemValue, itemIndex) =>
-                                        console.log(itemValue)
-                                    }>
-                                    <Picker.Item label={tipo} value={true} />
-                                </Picker>
+                            <View
+                                style={{
+                                    width: "49%",
+                                    height: 60,
+                                    marginBottom: '6%',
+                                    borderWidth: 1,
+                                    borderColor: '#CECECA',
+                                    borderRadius: 10,
+                                }}>
+                                {
+                                    CategoriaTPCK.length > 0 ?
+                                        <Picker
+                                            style={styles.wFull}
+                                            enabled={isEnabled}
+                                            selectedValue={datos.TipoVisita != "" ? datos.TipoVisita : datos.TipoVisita}
+                                            onValueChange={(itemValue) => TipoVisitadescripcion(itemValue)}
+                                        >
+                                            {
+                                                CategoriaTPCK.map((item, index) => (
+                                                    item.IdCatalogoDetalle == datos.TipoVisita ?
+                                                        <Picker.Item
+                                                            key={index}
+                                                            label={item.Descripcion}
+                                                            value={item.IdCatalogoDetalle}
+                                                            selected={true}
+                                                        />
+                                                        : <Picker.Item key={index} label={item.Descripcion} value={item.IdCatalogoDetalle} />
+                                                ))
+                                            }
+                                        </Picker>
+                                        : null
+                                }
                             </View>
                             <TextInput
                                 style={{
@@ -184,11 +300,73 @@ export default function Datos(props) {
                                 }}
                                 placeholder="Sitio de trabajo"
                                 editable={isEnabled}
-                                value={datos.sitioTrabajo}
-                                onChangeText={(sitioTrabajo) => setDatos({ ...datos, sitioTrabajo })}
+                                value={datos.SitioTrabajo}
+                                onChangeText={(SitioTrabajo) => setDatos({ ...datos, SitioTrabajo })}
                             />
                         </View>
                         <View style={{ paddingHorizontal: 20 }} />
+                        <View
+                            style={{
+                                width: "100%",
+                                height: 60,
+                                marginBottom: '6%',
+                                borderWidth: 1,
+                                borderColor: '#CECECA',
+                                borderRadius: 10,
+                            }}>
+
+
+                            {
+                                CategoriaTPINC.length > 0 ?
+                                    <Picker
+                                        style={{
+                                            width: '100%',
+                                            height: 60,
+                                            borderWidth: 1,
+                                            borderColor: '#CECECA',
+                                            padding: 10,
+
+                                        }}
+                                        selectedValue={datos.tipoIncidencia}
+                                        enabled={isEnabled}
+                                        onValueChange={(itemValue, itemIndex) => TipoIncidencia(itemValue)}>
+                                        {
+                                            CategoriaTPINC.map((item, index) => (
+                                                item.IdCatalogoDetalle == datos.tipoIncidencia ?
+                                                    <Picker.Item
+                                                        key={index}
+                                                        label={item.Descripcion}
+                                                        value={item.IdCatalogoDetalle}
+                                                        selected={true}
+                                                    />
+                                                    : <Picker.Item key={index} label={item.Descripcion} value={item.IdCatalogoDetalle} />
+                                            ))
+                                        }
+                                    </Picker>
+                                    : null
+                            }
+                        </View>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Problema reportado:"
+                            editable={isEnabled}
+                            value={datos.Causas}
+                            onChangeText={(text) => setDatos({ ...datos, Causas: text })}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Sintomas:"
+                            editable={isEnabled}
+                            value={datos.Sintomas}
+                            onChangeText={(text) => setDatos({ ...datos, Sintomas: text })}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Diagnóstico/Resultado visita*:"
+                            editable={isEnabled}
+                            value={datos.Diagnostico}
+                            onChangeText={(text) => setDatos({ ...datos, Diagnostico: text })}
+                        />
                         <View style={{
                             width: "100%",
                             height: 60,
@@ -207,16 +385,24 @@ export default function Datos(props) {
                                     padding: 10,
 
                                 }}
-                                selectedValue={datos.tipoIncidente}
+                                selectedValue={datos.EstadoEquipo}
                                 enabled={isEnabled}
                                 onValueChange={(itemValue, itemIndex) =>
-                                    setDatos({ ...datos, tipoIncidente: itemValue })
+                                    setDatos({ ...datos, EstadoEquipo: itemValue })
                                 }>
-                                <Picker.Item label="Tipo de Instalacion" value={true} />
                                 {
-                                    incidente.map((item, index) => (
-                                        <Picker.Item label={item.descripcion} value={item.descripcion} />
-                                    ))
+                                    CategoriaESTEQ.length > 0 ?
+                                        CategoriaESTEQ.map((item, index) => (
+                                            item.IdCatalogoDetalle == datos.Descripcion ?
+                                                <Picker.Item
+                                                    key={index}
+                                                    label={item.Descripcion}
+                                                    value={item.Descripcion}
+                                                    selected={true}
+                                                />
+                                                : <Picker.Item key={index} label={item.Descripcion} value={item.Descripcion} />
+                                        ))
+                                        : null
                                 }
                             </Picker>
 
@@ -224,78 +410,10 @@ export default function Datos(props) {
                         </View>
                         <TextInput
                             style={styles.input}
-                            placeholder="Problema reportado:"
-                            editable={isEnabled}
-                            value={datos.problemaReportado}
-                            onChangeText={(problemaReportado) => setDatos({ ...datos, problemaReportado })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Sintomas:"
-                            editable={isEnabled}
-                            value={datos.sintomas}
-                            onChangeText={(sintomas) => setDatos({ ...datos, sintomas })}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Diagnóstico/Resultado visita*:"
-                            editable={isEnabled}
-                            value={datos.diagnostico}
-                            onChangeText={(diagnostico) => setDatos({ ...datos, diagnostico })}
-                        />
-                        <View style={{
-                            width: "100%",
-                            height: 60,
-                            marginBottom: '6%',
-                            borderWidth: 1,
-                            borderColor: '#CECECA',
-                            borderRadius: 10,
-                        }}>
-                            {
-                                isdisabelsub ?
-                                    <Picker
-                                        style={{
-                                            width: '100%',
-                                            height: 60,
-                                            borderWidth: 1,
-                                            borderColor: '#CECECA',
-                                            padding: 10,
-
-                                        }}
-                                        selectedValue={datos.estadoEquipo}
-                                        enabled={isEnabled}
-                                        onValueChange={(itemValue, itemIndex) =>
-                                            setDatos({ ...datos, estadoEquipo: itemValue })
-                                        }>
-                                        <Picker.Item label="Estado de Equipo" value={true} />
-                                        {
-                                            estadoEquipo.map((item, index) => (
-                                                <Picker.Item label={item.descripcion} value={item.descripcion} />
-                                            ))
-                                        }
-                                    </Picker>
-                                    :
-                                    <Picker
-                                        style={{
-                                            width: '100%',
-                                            height: 60,
-                                            borderWidth: 1,
-                                            borderColor: '#CECECA',
-                                            padding: 10,
-
-                                        }}
-                                        selectedValue={datos.tipoIncidente}
-                                        enabled={isEnabled}>
-                                        <Picker.Item label={datos.estadoEquipo} value={true} />
-                                    </Picker>
-                            }
-                        </View>
-                        <TextInput
-                            style={styles.input}
                             placeholder="Acción inmediata"
                             editable={isEnabled}
                             value={datos.accionInmediata}
-                            onChangeText={(accionInmediata) => setDatos({ ...datos, accionInmediata })}
+                            onChangeText={(text) => setDatos({ ...datos, Acciones: text })}
                         />
                         <View style={{
                             ...styles.wFull,
@@ -318,7 +436,10 @@ export default function Datos(props) {
                                     trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                     thumbColor={isRecordatorio ? "#FF6B00" : "#ffffff"}
                                     ios_backgroundColor="#FFAF75"
-                                    onValueChange={toggleSwitchRecordatorio}
+                                    onValueChange={() => {
+                                        toggleSwitchRecordatorio()
+                                        setDatos({ ...datos, Seguimento: !isRecordatorio ? 1 : 0 })
+                                    }}
                                     value={isRecordatorio}
                                 />
                             </View>
@@ -326,8 +447,8 @@ export default function Datos(props) {
                                 style={{ ...styles.input, marginBottom: 0, width: '55%' }}
                                 placeholder="Inf. adicional"
                                 editable={isEnabled}
-                                value={datos.infoAdicional}
-                                onChangeText={(infoAdicional) => setDatos({ ...datos, infoAdicional })}
+                                value={datos.ComentarioRestringido}
+                                onChangeText={(text) => setDatos({ ...datos, ComentarioRestringido: text })}
                             />
                         </View>
                         <View style={{
@@ -351,7 +472,10 @@ export default function Datos(props) {
                                     trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                     thumbColor={isUpgrade ? "#FF6B00" : "#ffffff"}
                                     ios_backgroundColor="#FFAF75"
-                                    onValueChange={toggleSwitchUpgrade}
+                                    onValueChange={() => {
+                                        toggleSwitchUpgrade()
+                                        setDatos({ ...datos, IncluyoUpgrade: !isUpgrade ? 1 : 0 })
+                                    }}
                                     value={isUpgrade}
                                 />
                             </View>
@@ -359,17 +483,35 @@ export default function Datos(props) {
                                 style={{ ...styles.input, marginBottom: 0, width: '55%' }}
                                 placeholder="Inf. adicional"
                                 editable={isEnabled}
-                                value={datos.infoAdicional2}
-                                onChangeText={(infoAdicional2) => setDatos({ ...datos, infoAdicional2 })}
+                                value={datos.ComentarioUpgrade}
+                                onChangeText={(text) => setDatos({ ...datos, ComentarioUpgrade: text })}
                             />
                         </View>
-                        <TextInput
-                            style={{ ...styles.input, width: '100%' }}
-                            placeholder="Fecha Recordatorio"
-                            value={datos.FechaSeguimiento}
-                            editable={isEnabled}
-                        />
-
+                        <View style={{
+                            borderWidth: 1,
+                            borderColor: "#CECECA",
+                            width: "100%",
+                            height: 60,
+                            borderRadius: 10,
+                            padding: 10,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 20,
+                        }}>
+                            <TextInput
+                                style={{ width: "90%", height: "100%" }}
+                                placeholder='Fecha Recordatorio'
+                                editable={isEnabled}
+                                value={datos.FechaSeguimiento}
+                            />
+                            <AntDesign
+                                onPress={() => hideTimePicker()}
+                                name='clockcircleo'
+                                size={24}
+                                color='#000000'
+                            />
+                        </View>
                         <View style={{
                             ...styles.wFull,
                             height: 60,
@@ -383,7 +525,10 @@ export default function Datos(props) {
                                 trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                 thumbColor={isVisita ? "#FF6B00" : "#ffffff"}
                                 ios_backgroundColor="#FFAF75"
-                                onValueChange={toggleSwitchVisita}
+                                onValueChange={() => {
+                                    toggleSwitchVisita()
+                                    setDatos({ ...datos, nuevaVisita: !isVisita ? 1 : 0 })
+                                }}
                                 value={isVisita}
                             />
                         </View>
@@ -392,15 +537,16 @@ export default function Datos(props) {
                             placeholder="Release"
                             editable={isEnabled}
                             value={datos.release}
-                            onChangeText={(release) => setDatos({ ...datos, release })}
+                            onChangeText={(text) => setDatos({ ...datos, release: text })}
                         />
                         <TextInput
-                            style={{ ...styles.input, width: '100%', height: "10%" }}
+                            style={{ ...styles.input, width: '100%', height: "10%", textAlignVertical: 'top' }}
                             placeholder="Observación Ingeniero"
                             multiline
+                            numberOfLines={4}
                             editable={isEnabled}
-                            value={datos.observacionIngeniero}
-                            onChangeText={(observacionIngeniero) => setDatos({ ...datos, observacionIngeniero })}
+                            value={datos.ObservacionIngeniero}
+                            onChangeText={(text) => setDatos({ ...datos, ObservacionIngeniero: text })}
                         />
                         <View
                             style={{
@@ -418,13 +564,19 @@ export default function Datos(props) {
                                 trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                 thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
                                 ios_backgroundColor="#FFAF75"
-                                onValueChange={SwitchGuardar}
+                                onValueChange={() => SwitchGuardar()}
                                 value={isEnabled}
                             />
                         </View>
                     </View>
                     <View style={{ padding: 50 }} ></View>
-
+                    <DateTimePickerModal
+                        isVisible={isDatePickerVisible}
+                        mode='date'
+                        onConfirm={handleConfirmTime}
+                        onCancel={hideTimePicker}
+                        style={{ color: "#FF6B00" }}
+                    />
                 </View>
             </ScrollView>
             <BannerOrderServi

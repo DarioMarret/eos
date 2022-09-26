@@ -109,6 +109,16 @@ export const getIngenierosStorage = async (IdUsuario, NombreUsuario) => {
     }
 }
 
+/**
+ * 
+ * @param {*} adicional 
+ * @returns {
+ * "IdUsuario": 0,
+ * "NombreUsuario": "string",
+ * "cedula": "string",
+ * "adicional": "string"
+ * }
+ */
 export const getIngenierosStorageById = async (adicional) => {
     try {
         return new Promise((resolve, reject) => {

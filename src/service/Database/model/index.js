@@ -366,6 +366,24 @@ function InitDB() {
                 fechaUltimaActualizacion TEXT NULL
             );`)
         })
+
+        //TABLA DE COMPONENTES ESTADO
+        db.transaction(tx => {
+            tx.executeSql(`CREATE TABLE IF NOT EXISTS EstadoDatos 
+            (
+                IdCatalogo TEXT NULL,
+                IdCatalogoDetalle TEXT NULL,
+                Descripcion TEXT NULL,
+                Auxiliar1 TEXT NULL,
+                Auxiliar2 TEXT NULL,
+                Ordenamiento TEXT NULL,
+                FechaCreacion TEXT NULL,
+                UsuarioCreacion TEXT NULL,
+                FechaModificacion TEXT NULL,
+                UsuarioModificacion TEXT NULL,
+                Estado TEXT NULL
+            );`)
+        })
 }
 
 InitDB()

@@ -1,20 +1,13 @@
 import { useFocusEffect } from "@react-navigation/native";
 
-import calreq from '../../../assets/icons/cal-req.png';
-import calok from '../../../assets/icons/cal-ok.png';
-import calsync from '../../../assets/icons/cal-sync.png';
-import calwait from '../../../assets/icons/cal-wait.png';
-import OptionsMenu from "react-native-option-menu";
+import { useCallback, useState } from "react";
 
-import { useCallback, useEffect, useState } from "react";
-
-import { FlatList, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
-import { getOrdenServicioAnidadas, getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas";
+import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas";
 import db from "../../service/Database/model";
-import { Ionicons } from '@expo/vector-icons';
 import {
     Menu,
     MenuOptions,
@@ -22,7 +15,7 @@ import {
     MenuTrigger,
 } from 'react-native-popup-menu';
 import VisualizadorPDF from "../../components/VisualizadorPDF";
-import { getRucCliente, PDFVisializar } from "../../service/OS_OrdenServicio";
+import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
@@ -35,6 +28,7 @@ export default function TicketsOS(props) {
     const [listadoEmails, setlistadoEmails] = useState([])
 
     const [itemIndex, setItemIndex] = useState(null)
+    const [idOrdenServicio, setIdOrdenServicio] = useState(null)
 
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -45,9 +39,7 @@ export default function TicketsOS(props) {
         useCallback(() => {
             (async () => {
                 const ticket_id = JSON.parse(await AsyncStorage.getItem(ticketID)).ticket_id
-                console.log("ticket_id", ticket_id)
                 const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
-                console.log("response", response)
                 seteventosAnidados(response)
             })()
         }, [])
@@ -65,18 +57,14 @@ export default function TicketsOS(props) {
         }
     }
 
-
-
-    async function Ordene(ticket_id, OrdenServicioID) {
-        console.log("ticket_id", ticket_id)
+    async function Ordene(ticket_id, OrdenServicioID, estado) {
+        // console.log("ticket_id", ticket_id)
         try {
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("id_equipo-->", rows._array[0].id_equipo)
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            console.log("equipo selecionado hoy row", rows._array)
-                            Rutes(rows._array, ticket_id, OrdenServicioID)
+                            Rutes(rows._array, ticket_id, OrdenServicioID, null, estado)
                         })
                     })
                 })
@@ -86,29 +74,36 @@ export default function TicketsOS(props) {
         }
     }
 
-    async function Rutes(equipo, ticket_id, OrdenServicioID) {
-        await AsyncStorage.removeItem(ticketID)
-        await AsyncStorage.setItem(ticketID, JSON.stringify({
-            ticket_id,
-            equipo,
-            OrdenServicioID: OrdenServicioID == null || OrdenServicioID == "" ? null : OrdenServicioID
-        }))
-        navigation.navigate("Ordenes")
-    }
+
 
     async function AgregarFirma(item) {
         console.log("AgregarFirma", item)
     }
 
-    function ClonarOS(item) {
-        console.log("ClonarOS", item)
+    async function ClonarOS(ticket_id, OrdenServicioID) {
+        const OSClone = await SelectOSOrdenServicioID(OrdenServicioID)
+        OSClone[0]['OS_ASUNTO'] = []
+        OSClone[0]['OS_FINALIZADA'] = null
+        OSClone[0]['OrdenServicioID'] = null
+        OSClone[0]['OS_Firmas'] = []
+        OSClone[0]['OS_Anexos'] = []
+        // OSClone[0]['OS_Tiempos'] = []
+        OSClone[0]['codOS'] = null
+        db.transaction(tx => {
+            tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                        Rutes(rows._array, ticket_id, OrdenServicioID, OSClone, "clonar")
+                    })
+                })
+            })
+        })
     }
 
     async function EnviarOS(item) {
         const { ClienteID, UsuarioCreacion } = await getRucCliente(item)
         const { token } = await getToken()
-        console.log("token", token)
-        const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`,{
+        const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`, {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
@@ -117,9 +112,8 @@ export default function TicketsOS(props) {
         })
         console.log("data", data)
         setlistadoEmails(data)
-
+        setIdOrdenServicio(item)
         setModalVisible(!modalVisible);
-        console.log("EnviarOS", item)
     }
 
     async function VisualizarPdf(item) {
@@ -129,128 +123,16 @@ export default function TicketsOS(props) {
         console.log("VisualizarPdf", base64)
     }
 
-    function _renderItem({ item, index }) {
-        return (
-            <View key={index}>
-                <TouchableOpacity
-                    onPress={() => Ordene(String(item.ticket_id), item.OrdenServicioID)}>
-
-                    <View style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        backgroundColor: functionColor(item.ev_estado),
-                        width: '100%',
-                        minHeight: 100,
-                        paddingHorizontal: 20,
-                        borderBottomWidth: 0.5,
-                        borderColor: '#858583'
-                    }}>
-                        <View>
-                            <Text
-                                style={{
-                                    fontSize: 12,
-                                    color: '#858583'
-                                }}
-                            >{"#" + item.ticket_id + " - " + item.tck_tipoTicket.toUpperCase()} </Text>
-                            <Text
-                                style={{
-                                    fontSize: 16,
-                                    fontWeight: 'bold',
-                                }}
-                            >{item.tck_tipoTicket} / {item.ev_horaAsignadaDesde.substring(0, 5)}</Text>
-                            <Text
-                                style={{
-                                    fontSize: 12,
-                                    color: '#858583'
-                                }}
-                            >{item.ev_descripcion}</Text>
-                        </View>
-
-                        {/* <OptionsMenu
-                            customButton={<Ionicons name="ellipsis-vertical" size={24} color="black" />}
-                            destructiveIndex={1}
-                            options={["Agregar Firma", "Clonar OS", "Enviar OS", "Visializar PDF", "Cancel"]}
-                            actions={[AgregarFirma(item), ClonarOS(item), EnviarOS(item), VisualizarPdf(item)]}/> */}
-                        <Menu>
-                            <MenuTrigger
-                                text='...'
-                                customStyles={{
-                                    triggerText: {
-                                        fontSize: 30,
-                                        color: '#858583',
-                                        fontWeight: 'bold',
-                                        transform: [{ rotate: '90deg' }]
-                                    },
-                                }} />
-                            <MenuOptions
-                                customStyles={{
-                                    optionsContainer: {
-                                        width: 150,
-                                        backgroundColor: '#FFFFFF',
-                                        borderRadius: 5,
-                                        padding: 10,
-                                        shadowColor: "#000",
-                                        shadowOffset: {
-                                            width: 0,
-                                            height: 2,
-                                        },
-                                        shadowOpacity: 0.25,
-                                        shadowRadius: 3.84,
-                                        elevation: 5,
-                                    },
-                                }}
-                            >
-                                <MenuOption
-                                    onSelect={() => AgregarFirma(item.OrdenServicioID)}
-                                    text='Agregar Firma'
-                                    customStyles={{
-                                        optionText: {
-                                            fontSize: 16,
-                                            color: '#000000',
-                                            fontWeight: 'bold',
-                                            paddingBottom: 10,
-                                        },
-                                    }} />
-                                <MenuOption
-                                    onSelect={() => ClonarOS(item.OrdenServicioID)}
-                                    text='Clonar OS'
-                                    customStyles={{
-                                        optionText: {
-                                            fontSize: 16,
-                                            color: '#000000',
-                                            fontWeight: 'bold',
-                                            paddingBottom: 10,
-                                        },
-                                    }} />
-                                <MenuOption
-                                    onSelect={() => EnviarOS(item.OrdenServicioID)}
-                                    text='Enviar OS'
-                                    customStyles={{
-                                        optionText: {
-                                            fontSize: 16,
-                                            color: '#000000',
-                                            fontWeight: 'bold',
-                                            paddingBottom: 10,
-                                        },
-                                    }} />
-                                <MenuOption
-                                    onSelect={() => VisualizarPdf(item.OrdenServicioID)}
-                                    text='Visializar PDF'
-                                    customStyles={{
-                                        optionText: {
-                                            fontSize: 16,
-                                            color: '#000000',
-                                            fontWeight: 'bold',
-                                        },
-                                    }} />
-                                {/* <MenuOption disabled={true} text='Disabled' /> */}
-                            </MenuOptions>
-                        </Menu>
-                    </View>
-                </TouchableOpacity>
-            </View>
-        )
+    async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
+        await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.setItem(ticketID, JSON.stringify({
+            ticket_id,
+            equipo,
+            OrdenServicioID: OrdenServicioID == null || OrdenServicioID == "" ? null : OrdenServicioID,
+            OSClone: OSClone == null ? null : OSClone,
+            Accion: accion
+        }))
+        navigation.navigate("Ordenes")
     }
 
     return (
@@ -265,16 +147,133 @@ export default function TicketsOS(props) {
                                 ...styles.header,
                                 fontSize: 15,
                             }}>Ticket #{eventosAnidados[0].ticket_id}</Text>
-                            <View style={styles.body1} >
-                                <Pressable onPress={() => setItemIndex(null)}>
-                                    <SafeAreaView>
-                                        <FlatList
-                                            data={eventosAnidados}
-                                            renderItem={_renderItem}
-                                            keyExtractor={(item, index) => index.toString()}
-                                        />
-                                    </SafeAreaView>
-                                </Pressable>
+                            <View style={{ ...styles.body1 }} >
+                                {/* <Pressable onPress={() => setItemIndex(null)}> */}
+                                <ScrollView showsVerticalScrollIndicator={false} >
+                                    {
+                                        eventosAnidados.map((item, index) => {
+                                            return (
+                                                <View key={index}
+                                                    style={{ width: '90%', alignSelf: 'center', marginBottom: 10, }}
+                                                >
+                                                    <TouchableOpacity
+                                                        onPress={() => Ordene(String(item.ticket_id), item.OrdenServicioID, item.ev_estado)}>
+                                                        <View
+                                                            style={{
+                                                                flexDirection: 'row',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                backgroundColor: functionColor(item.ev_estado),
+                                                                width: '100%',
+                                                                minHeight: 80,
+                                                                paddingHorizontal: 20,
+                                                                borderBottomWidth: 0.5,
+                                                                borderColor: '#858583'
+                                                            }}>
+                                                            <View>
+                                                                <Text
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                        color: '#858583'
+                                                                    }}
+                                                                >{"#" + item.ticket_id + " - " + item.tck_tipoTicket.toUpperCase()} </Text>
+                                                                <Text
+                                                                    style={{
+                                                                        fontSize: 16,
+                                                                        fontWeight: 'bold',
+                                                                    }}
+                                                                >{item.tck_tipoTicket} / {item.ev_horaAsignadaDesde.substring(0, 5)}</Text>
+                                                                <Text
+                                                                    style={{
+                                                                        fontSize: 12,
+                                                                        color: '#858583'
+                                                                    }}
+                                                                >{item.ev_descripcion}</Text>
+                                                            </View>
+                                                            <Menu>
+                                                                <MenuTrigger
+                                                                    text='...'
+                                                                    customStyles={{
+                                                                        triggerText: {
+                                                                            fontSize: 35,
+                                                                            color: '#858583',
+                                                                            fontWeight: 'bold',
+                                                                            transform: [{ rotate: '90deg' }],
+                                                                            padding: 10,
+                                                                        },
+                                                                    }} />
+                                                                <MenuOptions
+                                                                    customStyles={{
+                                                                        optionsContainer: {
+                                                                            width: 150,
+                                                                            backgroundColor: '#FFFFFF',
+                                                                            borderRadius: 5,
+                                                                            padding: 10,
+                                                                            shadowColor: "#000",
+                                                                            shadowOffset: {
+                                                                                width: 0,
+                                                                                height: 2,
+                                                                            },
+                                                                            shadowOpacity: 0.25,
+                                                                            shadowRadius: 3.84,
+                                                                            elevation: 5,
+                                                                        },
+                                                                    }}
+                                                                >
+                                                                    <MenuOption
+                                                                        onSelect={() => AgregarFirma(item.OrdenServicioID)}
+                                                                        text='Agregar Firma'
+                                                                        customStyles={{
+                                                                            optionText: {
+                                                                                fontSize: 16,
+                                                                                color: '#000000',
+                                                                                fontWeight: 'bold',
+                                                                                paddingBottom: 10,
+                                                                            },
+                                                                        }} />
+                                                                    <MenuOption
+                                                                        onSelect={() => ClonarOS(String(item.ticket_id), item.OrdenServicioID)}
+                                                                        text='Clonar OS'
+                                                                        customStyles={{
+                                                                            optionText: {
+                                                                                fontSize: 16,
+                                                                                color: '#000000',
+                                                                                fontWeight: 'bold',
+                                                                                paddingBottom: 10,
+                                                                            },
+                                                                        }} />
+                                                                    <MenuOption
+                                                                        onSelect={() => EnviarOS(item.OrdenServicioID)}
+                                                                        text='Enviar OS'
+                                                                        customStyles={{
+                                                                            optionText: {
+                                                                                fontSize: 16,
+                                                                                color: '#000000',
+                                                                                fontWeight: 'bold',
+                                                                                paddingBottom: 10,
+                                                                            },
+                                                                        }} />
+                                                                    <MenuOption
+                                                                        onSelect={() => VisualizarPdf(item.OrdenServicioID)}
+                                                                        text='Visializar PDF'
+                                                                        customStyles={{
+                                                                            optionText: {
+                                                                                fontSize: 16,
+                                                                                color: '#000000',
+                                                                                fontWeight: 'bold',
+                                                                            },
+                                                                        }} />
+                                                                    {/* <MenuOption disabled={true} text='Disabled' /> */}
+                                                                </MenuOptions>
+                                                            </Menu>
+                                                        </View>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            )
+                                        })
+                                    }
+                                </ScrollView>
+                                {/* </Pressable> */}
                             </View>
                             <Pressable style={styles.body3} onPress={() => setItemIndex(null)}>
                                 <TouchableOpacity style={styles.opacity}>
@@ -305,6 +304,8 @@ export default function TicketsOS(props) {
                     txtboton2={"Cancelar"}
                     subtitle={"Seleccione los emails a los que desea enviar la OS"}
                     contenflex={listadoEmails}
+                    setlistadoEmails={setlistadoEmails}
+                    idOrdenServicio={idOrdenServicio}
                 />
 
                 <BannerTicket
@@ -334,7 +335,7 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     body1: {
-        flex: 2,
+        flex: 5,
         justifyContent: "flex-start",
         alignItems: "center",
         width: "100%",

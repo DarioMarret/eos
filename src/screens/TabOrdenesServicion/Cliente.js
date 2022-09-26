@@ -1,24 +1,28 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useCallback, useState } from "react";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import BannerOrderServi from "../../components/BannerOrdenServ";
-import { getEquipoTicketStorage } from "../../service/equipoTicketID";
-import { getIngenierosStorageById } from "../../service/ingenieros";
-import { getToken } from "../../service/usuario";
-import { CLIENTE_, ticketID } from "../../utils/constantes";
-import moment from "moment";
-import { GetClienteCustimerName } from "../../service/clientes";
-import { getProvinciasStorageBy } from "../../service/provincias";
-import { CambieEstadoSwitch, EstadoSwitch, ListaDiagnostico } from "../../service/config";
-import db from "../../service/Database/model";
-import { datosClienteOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native"
+import { CambieEstadoSwitch, EstadoSwitch, ListaDiagnostico } from "../../service/config"
+import { datosClienteOSOrdenServicioID } from "../../service/OS_OrdenServicio"
+import { useFocusEffect, useNavigation } from "@react-navigation/native"
+import { getEquipoTicketStorage } from "../../service/equipoTicketID"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { getIngenierosStorageById } from "../../service/ingenieros"
+import { getProvinciasStorageBy } from "../../service/provincias"
+import { GetClienteCustimerName } from "../../service/clientes"
+import BannerOrderServi from "../../components/BannerOrdenServ"
+import { CLIENTE_, ticketID } from "../../utils/constantes"
+import React, { useCallback, useState } from "react"
+import { getToken } from "../../service/usuario"
+import moment from "moment"
+import PickerSelect from "../../components/PickerSelect"
+import { AntDesign } from "@expo/vector-icons"
+import { Picker } from "@react-native-picker/picker"
 
 
 export default function Cliente(props) {
     const { navigation } = props
-    const [isEnabled, setIsEnabled] = useState(false);
+    const [isEnabled, setIsEnabled] = useState(false)
     const [isdisabelsub, setDisableSub] = useState(true)
+
+    const [modalVisible, setModalVisible] = useState(false)
 
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const [ingeniero, setIngeniero] = useState({
@@ -47,8 +51,10 @@ export default function Cliente(props) {
         ProvinciaID: "",
         Sucursal: "",
         grupo: "",
+        Ciudad: "",
     })
 
+    console.log("cliente", cliente)
 
     const [direccion, setDireccion] = useState({
         CantonID: "",
@@ -66,6 +72,7 @@ export default function Cliente(props) {
     const SwitchGuardar = async () => {
         setIsEnabled(!isEnabled)
         if (isEnabled) {
+            await GuadadoOS()
             let estado = await CambieEstadoSwitch(1, 1)
             console.log("estado", estado.estado)
             await AsyncStorage.setItem(CLIENTE_, JSON.stringify({
@@ -75,7 +82,6 @@ export default function Cliente(props) {
                 ...provincia,
                 ...ingeniero
             }))
-            console.log("ClienSwitch", await AsyncStorage.setItem("ClienSwitch:", JSON.stringify(false)))
         } else {
             let estado = await CambieEstadoSwitch(1, 0)
 
@@ -103,9 +109,9 @@ export default function Cliente(props) {
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect !== null) {
                         const item = JSON.parse(itenSelect)
-                        console.log("item", item)
-                        const { ticket_id, equipo, OrdenServicioID } = item
-                        if (OrdenServicioID !== null) {
+                        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                        console.log("item", Accion)
+                        if (Accion == "FINALIZADO") {//para ver sin editar
                             setDisableSub(false)
                             setIsEnabled(false)
                             var datosClient = await datosClienteOSOrdenServicioID(OrdenServicioID)
@@ -132,12 +138,38 @@ export default function Cliente(props) {
                                     CodigoEquipoCliente: item.CodigoEquipoCliente,
                                 })
                                 setFecha(item.FechaCreacion.split("T")[0])
-
                             })
                             console.log(await datosClienteOSOrdenServicioID(OrdenServicioID))
-
-
                             return
+                        } else if (Accion == "clonar") {// para ver y poder edidar una orden de servicio clone
+                            setCliente({
+                                ...cliente,
+                                CustomerName: OSClone[0].ClienteNombre,
+                            })
+                            setDireccion({
+                                ...direccion,
+                                Direccion: OSClone[0].Direccion,
+                            })
+                            setProvincia({
+                                ...provincia,
+                                descripcion: OSClone[0].Ciudad,
+                            })
+                            setEquipoTicket({
+                                ...equipoTicket,
+                                id_contrato: OSClone[0].contrato_id,
+                                id_equipo: OSClone[0].equipo_id,
+                                codOS: OSClone[0].codOS,
+                                ticket_id: OSClone[0].ticket_id,
+                                Estado: OSClone[0].Estado,
+                                CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
+                            })
+                            return
+                        } else if (Accion == "OrdenSinTicket") {
+                            const os = await AsyncStorage.getItem("OS")
+                            const osItem = JSON.parse(os)
+                            console.log("osItem", osItem)
+                            return
+                        } else if (equipo != null && OrdenServicioID == null && OSClone == null) {
 
                         }
 
@@ -165,11 +197,39 @@ export default function Cliente(props) {
         }, [])
     )
 
+    const GuadadoOS = async () => {
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        const it = JSON.parse(itenSelect)
+        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
+        if (Accion == "clonar") {
+            OSClone[0].ClienteNombre = cliente.CustomerName,
+                OSClone[0].Direccion = direccion.Direccion,
+                OSClone[0].Ciudad = provincia.descripcion,
+                OSClone[0].contrato_id = equipoTicket.id_contrato,
+                OSClone[0].equipo_id = equipoTicket.id_equipo,
+                OSClone[0].codOS = equipoTicket.codOS,
+                OSClone[0].ticket_id = equipoTicket.ticket_id,
+                OSClone[0].Estado = equipoTicket.Estado,
+                OSClone[0].CodigoEquipoCliente = equipoTicket.CodigoEquipoCliente,
+                console.log("OSClone", OSClone)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
+        } else if (Accion == "OrdenSinTicket") {
+            const os = await AsyncStorage.getItem("OS")
+            const osItem = JSON.parse(os)
+            osItem.Direccion = cliente.Direccion,
+            osItem.Ciudad = cliente.Ciudad,
+            osItem.ClienteID = cliente.CustomerID,
+            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+            console.log("osItem", osItem)
+        }
+    }
+
     return (
         <View style={styles.container}>
 
             <View style={styles.ContenedorCliente}>
                 <ScrollView
+                    showsVerticalScrollIndicator={false}
                     style={{
                         width: "100%",
                     }}
@@ -206,13 +266,32 @@ export default function Cliente(props) {
                     }}>Datos del Cliente</Text>
 
                     <View style={styles.ContainerInputs}>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Cliente"
-                            value={cliente.CustomerName}
-                            onChangeText={(text) => setCliente({ ...cliente, CustomerName: text })}
-                            editable={isEnabled}
-                        />
+                        <View style={{
+                            borderWidth: 1,
+                            borderColor: "#CECECA",
+                            width: "100%",
+                            height: 60,
+                            borderRadius: 10,
+                            padding: 10,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 20,
+                        }}>
+                            <TextInput
+                                style={{ width: "90%", height: "100%" }}
+                                placeholder="Cliente"
+                                value={cliente.CustomerName}
+                                onChangeText={(text) => setCliente({ ...cliente, CustomerName: text })}
+                                editable={isEnabled}
+                            />
+                            <AntDesign
+                                onPress={() => setModalVisible(!modalVisible)}
+                                name='search1'
+                                size={24}
+                                color='#000000'
+                            />
+                        </View>
                         <TextInput
                             style={styles.input}
                             placeholder="Código equipo cliente"
@@ -220,19 +299,45 @@ export default function Cliente(props) {
                             onChangeText={(text) => setEquipoTicket({ ...equipoTicket, id_equipo: text })}
                             editable={isEnabled}
                         />
-                        <TextInput
+                        <View
+                            style={{
+                                ...styles.input,
+                                borderWidth: 1,
+                                borderColor: '#CECECA',
+                                width: "100%",
+                                height: 60, borderRadius: 10, padding: 10, marginBottom: 20,
+                            }}
+                        >
+                            <Picker
+                                selectedValue={cliente.Direccion}
+                                onValueChange={(itemValue) => setCliente({
+                                    ...cliente,
+                                    Direccion: itemValue
+                                })} >
+                                {
+                                    cliente.CustomerName ?
+                                        cliente.Sucursal.map((item, index) => {
+                                            // console.log("item", item),
+                                            return <Picker.Item key={index + 1} label={item.Direccion} value={item.Direccion} />
+
+                                        })
+                                        : null
+                                }
+                            </Picker>
+                        </View>
+                        {/* <TextInput
                             style={styles.input}
                             placeholder="Dirección"
                             value={direccion.Direccion}
                             onChangeText={(text) => setDireccion({ ...direccion, Direccion: text })}
                             editable={isEnabled}
-                        />
+                        /> */}
                         <TextInput
                             style={styles.input}
                             placeholder="Ciudad"
-                            value={provincia.descripcion}
+                            value={cliente.Ciudad}
                             onChangeText={(text) => setProvincia({ ...provincia, descripcion: text })}
-                            editable={isEnabled}
+                            editable={false}
                         />
                         <View style={{
                             ...styles.wFull,
@@ -263,8 +368,12 @@ export default function Cliente(props) {
                         </View>
                     </View>
                 </ScrollView>
-
             </View>
+            <PickerSelect
+                modalVisible={modalVisible}
+                setModalVisible={setModalVisible}
+                setCliente={setCliente}
+            />
             <BannerOrderServi
                 {...props}
                 navigation={navigation}

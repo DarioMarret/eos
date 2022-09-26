@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   View,
   Button,
+  Switch,
+  Alert,
 } from "react-native";
 import Banner from "../../components/Banner";
 import { AntDesign } from "@expo/vector-icons";
@@ -23,86 +25,98 @@ export default function IngresoHoras(props) {
   const { navigation } = props;
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
-  const [infoPicker, setInfoPicker] = useState("");
-  const [dateForms, setDateForms] = useState({
-    dateInit: null,
-    timeOriginOut: null,
-    timeArrivedClient: null,
-    timeInitWork: null,
-    timeFinishWork: null,
-    timeOutClient: null,
-    timeNextDestine: null,
-  });
-  const changeTime = () => {
-    setDatePickerVisibility(true);
-  };
+
+  const [tiempoOS, setTiempoOS] = useState("")
+
   const showDatePicker = (name) => {
-    setInfoPicker(name);
+    setTiempoOS(name);
     setDatePickerVisibility(true);
   };
+
+  //parala fecha
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
   };
   const handleConfirm = (date) => {
-    setDateForms({ ...dateForms, [infoPicker]: Moment(date).format('DD/MM/YYYY') })
-    console.log(dateForms)
+    setFechas({ ...fechas, Fecha: Moment(date).format('YYYY-MM-DD') })
     hideDatePicker();
   };
+  //fin
+
   const showTimePicker = (name) => {
-    setInfoPicker(name);
+    setTiempoOS(name);
     setTimePickerVisibility(true);
   };
   const hideTimePicker = () => {
     setTimePickerVisibility(false);
   };
+
   const handleConfirmTime = (time) => {
-    setDateForms({ ...dateForms, [infoPicker]: Moment(time).format('LT') })
+    setFechas({ ...fechas, [tiempoOS]: Moment(time).format('HH:mm:ss') })
     hideTimePicker();
   }
 
   const [fechas, setFechas] = useState({
-    fechaIngreso: "",
-    salidaOrigen: "",
-    arriboCliente: "",
-    inicioTrabajo: "",
-    finTrabajo: "",
-    salidaCliente: "",
-    siguienteDestino: "",
+    Fecha: "", //fecha de ingreso
+    HoraSalidaOrigen: "",//salida origen
+    HoraLlegadaCliente: "",//arribo cliente
+    HoraInicioTrabajo: "",
+    HoraFinTrabajo: "",
+    HoraSalidaCliente: "",
+    TiempoEspera: 0,
+    TiempoTrabajo: 0,
+    TiempoViaje: 0,
+    Fecha: "",
+    HoraLlegadaSgteDestino: "",
+    TiempoViajeSalida: 0,
+    switch: false,
   })
 
 
   useFocusEffect(
     useCallback(() => {
       (async () => {
-
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
           const item = JSON.parse(itenSelect)
-          const { equipo, OrdenServicioID, ticket_id } = item
-          if (OrdenServicioID != null) {
-            const tiempo = await TiempoOSOrdenServicioID(OrdenServicioID)
-            const tiempos = JSON.parse(tiempo[0].OS_Tiempos)
-            tiempos.map((item) => {
-              setFechas({
-                ...fechas,
-                fechaIngreso: item.Fecha.split('T')[0],
-                salidaOrigen: item.HoraSalidaOrigen,
-                arriboCliente: item.HoraLlegadaCliente,
-                inicioTrabajo: item.HoraInicioTrabajo,
-                finTrabajo: item.HoraFinTrabajo,
-                salidaCliente: item.HoraSalidaCliente,
-                siguienteDestino: item.HoraLlegadaSgteDestino
-              })
+          const { equipo, OrdenServicioID, ticket_id, Accion } = item
+          const OS_Tiempo = await AsyncStorage.getItem("OS_Tiempos")
+          let os_tiempos = JSON.parse(OS_Tiempo)
+          if (Accion == "OrdenSinTicket") {
+            setFechas({
+              ...fechas,
+              ...os_tiempos[0]
             })
-            console.log(tiempos)
-
             return
+          } else if (Accion == "clonar") {
+            setFechas({
+              ...fechas,
+              ...os_tiempos[0]
+            })
+            return
+          } else if (Accion == "FINALIZADO") {
+            setFechas({
+              ...fechas,
+              ...os_tiempos[0]
+            })
+          } else if (Accion == "PROCESO") {
+            setFechas({
+              ...fechas,
+              ...os_tiempos[0]
+            })
           }
         }
       })()
     }, [])
   )
-
+  const SwitchGuardar = async () => {
+    setFechas({
+      ...fechas,
+      switch: !fechas.switch
+    })
+    await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([fechas]))
+    console.log("fechas", fechas)
+  }
 
   return (
     <View style={styles.container}>
@@ -118,14 +132,14 @@ export default function IngresoHoras(props) {
         >
           Ingreso de tiempos
         </Text>
-        <ScrollView>
+        <ScrollView showsVerticalScrollIndicator={false} >
           <View style={styles.ContainerInputs}>
             <View style={styles.input}>
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Fecha de Ingreso'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.fechaIngreso}
+                value={fechas.Fecha}
+                enable={true}
               />
               <AntDesign
                 onPress={() => showDatePicker('dateInit')}
@@ -138,11 +152,11 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Salida origen'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.salidaOrigen}
+                value={fechas.HoraSalidaOrigen}
+                enable={true}
               />
               <AntDesign
-                onPress={() => showTimePicker('timeOriginOut')}
+                onPress={() => showTimePicker('HoraSalidaOrigen')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
@@ -152,11 +166,11 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Arribo cliente'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.arriboCliente}
+                value={fechas.HoraLlegadaCliente}
+                enable={true}
               />
               <AntDesign
-                onPress={() => showTimePicker('timeArrivedClient')}
+                onPress={() => showTimePicker('HoraLlegadaCliente')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
@@ -166,11 +180,11 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Inicio trabajo'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.inicioTrabajo}
+                value={fechas.HoraInicioTrabajo}
+                enable={true}
               />
               <AntDesign
-                onPress={() => showTimePicker('timeInitWork')}
+                onPress={() => showTimePicker('HoraInicioTrabajo')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
@@ -180,11 +194,11 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Fin trabajo'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.finTrabajo}
+                value={fechas.HoraFinTrabajo}
+                enable={true}
               />
               <AntDesign
-                onPress={() => showTimePicker('timeFinishWork')}
+                onPress={() => showTimePicker('HoraFinTrabajo')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
@@ -194,11 +208,11 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Salida cliente'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.salidaCliente}
+                value={fechas.HoraSalidaCliente}
+                enable={true}
               />
               <AntDesign
-                onPress={() => showTimePicker('timeOutClient')}
+                onPress={() => showTimePicker('HoraSalidaCliente')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
@@ -208,11 +222,11 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Hora llegada siguiente destino'
-                onChangeText={(e) => changeTime(e)}
-                value={fechas.siguienteDestino}
+                value={fechas.HoraLlegadaSgteDestino}
+                enable={true}
               />
               <AntDesign
-                onPress={() => showTimePicker('timeNextDestine')}
+                onPress={() => showTimePicker('HoraLlegadaSgteDestino')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
@@ -232,15 +246,40 @@ export default function IngresoHoras(props) {
               onCancel={hideTimePicker}
               style={{ color: "#FF6B00" }}
             />
+
           </View>
+
         </ScrollView>
-      </View>
+        <View>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+            }}
+          >
+            {
+              fechas.switch ?
+                <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
+                : <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
+            }
+            <Switch
+              trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
+              thumbColor={fechas.switch ? "#FF6B00" : "#ffffff"}
+              ios_backgroundColor="#FFAF75"
+              onValueChange={() => SwitchGuardar()}
+              value={fechas.switch}
+            />
+          </View>
+        </View>
+        {/* <View style={{ padding: 50 }} ></View> */}
+      </View >
       <BannerOrderServi
         {...props}
         navigation={navigation}
         screen={"6-INGRESO HORAS"}
       />
-    </View>
+    </View >
   );
 }
 

@@ -1,15 +1,30 @@
-import NetInfo from '@react-native-community/netinfo';
 import DrawerNavigation from './src/navigation/Navigation'
 import Login from './src/screens/Login'
 import userContext from "./src/context/userContext"
-import jwtDecode from "jwt-decode"
+import { MD3LightTheme as DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 import { useEffect, useMemo, useState } from 'react'
-import { desLogeo, getToken, GuardarToken, RefresLogin } from './src/service/usuario'
+import { desLogeo, getToken, GuardarToken } from './src/service/usuario'
 import { CardaUtil, TrucateTable } from './src/service/CargaUtil';
 import { StatusBar } from 'expo-status-bar';
 import { MenuProvider } from 'react-native-popup-menu';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos } from './src/utils/constantes';
 
-
+const theme = {
+  ...DefaultTheme,
+  myOwnProperty: true,
+  colors: {
+    myOwnColor: '#FF6B00',
+    primary: '#FF6B00',
+  },
+  animation: {
+    scale: 0.3
+  },
+  font: {
+    family: 'Roboto',
+    size: 16,
+  }
+};
 export default function App() {
 
 
@@ -21,20 +36,16 @@ export default function App() {
       if (jwt) {
         setToken(jwt)
       } else {
+        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
+        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
+        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
+        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
+        await AsyncStorage.setItem("OS", JSON.stringify(OS))
         setToken(null)
       }
     })()
   }, [])
-
-  NetInfo.fetch().then(state => {
-    // if (state.isConnected === true && Token) {
-    //     RefresLogin().then(() => {
-    //     console.log("Refrescado")
-    //   })
-    // }
-    console.log('Connection type', state.type);
-    console.log('Is connected?', state.isConnected);
-  });
 
   const login = async (data) => {
     return new Promise((resolve, reject) => {
@@ -71,14 +82,16 @@ export default function App() {
   return (
     // <Firmador/>
     <userContext.Provider value={UserData}>
-      <MenuProvider>
-        <StatusBar style="auto" />
-        {Token ? (
-          <DrawerNavigation />
-        ) : (
-          <Login />
-        )}
-      </MenuProvider>
+      <PaperProvider theme={theme}>
+        <MenuProvider>
+          <StatusBar style="auto" />
+          {Token ? (
+            <DrawerNavigation />
+          ) : (
+            <Login />
+          )}
+        </MenuProvider>
+      </PaperProvider>
     </userContext.Provider>
   )
 

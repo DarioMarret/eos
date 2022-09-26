@@ -1,27 +1,28 @@
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Banner from "../../components/Banner";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import { GetEventos, GetEventosByTicket } from "../../service/OSevento";
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useFocusEffect } from "@react-navigation/native"
+import { GetEventos } from "../../service/OSevento"
+import { useCallback, useState } from "react"
+import db from "../../service/Database/model"
+import Banner from "../../components/Banner"
 import moment from "moment";
 
-import calreq from '../../../assets/icons/cal-req.png';
-import calok from '../../../assets/icons/cal-ok.png';
-import calsync from '../../../assets/icons/cal-sync.png';
-import calwait from '../../../assets/icons/cal-wait.png';
-import { EquipoTicket } from "../../service/equipoTicketID";
-import { ticketID } from "../../utils/constantes";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import db from "../../service/Database/model";
+import calsync from '../../../assets/icons/cal-sync.png'
+import calwait from '../../../assets/icons/cal-wait.png'
+import calreq from '../../../assets/icons/cal-req.png'
+import calok from '../../../assets/icons/cal-ok.png'
+import { ticketID } from "../../utils/constantes"
 
 
 
-export default function Manana(prop) {
-    const { navigation } = prop
+export default function Manana(props) {
+    const { navigation } = props
 
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
+    const [time, setTime] = useState(false)
+
 
     useFocusEffect(
         useCallback(() => {
@@ -167,7 +168,10 @@ export default function Manana(prop) {
                 </SafeAreaView>
             </View>
             <Banner
+                {...props}
                 navigation={navigation}
+                setTime={setTime}
+                times={time}
             />
         </View>
     );

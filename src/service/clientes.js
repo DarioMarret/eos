@@ -20,7 +20,7 @@ export const getClientes = async () => {
                 await InserCliente(r)
             })
             resolve(true);
-        });
+        })
     } catch (error) {
         console.log(error);
     }

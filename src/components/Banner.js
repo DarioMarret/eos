@@ -1,6 +1,6 @@
 import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EquipoTicket } from "../service/equipoTicketID";
 import NetInfo from '@react-native-community/netinfo';
 import { Fontisto } from '@expo/vector-icons';
@@ -8,19 +8,37 @@ import React, { useState } from "react";
 import moment from "moment";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
+import { OSOrdenServicioID } from "../service/OS_OrdenServicio";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ticketID } from "../utils/constantes";
 
 export default function Banner(props) {
-    const { navigation } = props
+    const { navigation, setTime, times } = props
 
     const [update, setupdate] = useState(false)
     const [message, setMessage] = useState("Actualizando...")
 
     async function ActualizarEventos() {
+        Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexción estable", [
+            {
+                text: "OK",
+                onPress: () => UP(),
+                style: { color: "#FF6B00" },
+            },
+            {
+                text: "Cancelar",
+                onPress: () => console.log("hola Mundo"),
+                style: { color: "#FF6B00" },
+            }
+        ])
+    }
+    async function UP() {
         setupdate(true)
         const respuesta = await Sincronizar()
         if (respuesta) {
             setupdate(false)
-        }else{
+            setTime(!times)
+        } else {
             setMessage("Sin conexión a internet")
             setupdate(true)
             setTimeout(() => {
@@ -29,8 +47,8 @@ export default function Banner(props) {
         }
     }
 
-    
-    async function Sincronizar(){
+
+    async function Sincronizar() {
         return new Promise((resolve, reject) => {
             NetInfo.fetch().then(state => {
                 if (state.isConnected === true) {
@@ -44,18 +62,28 @@ export default function Banner(props) {
                         var hoy = moment().format('YYYY-MM-DD');
                         var manana = moment().add(1, 'days').format('YYYY-MM-DD');
                         const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                        console.log("ticket_id", ticket_id)
                         ticket_id.map(async (r) => {
                             await EquipoTicket(r.ticket_id)
                             await OrdenServicioAnidadas(r.evento_id)
                         })
+                        resolve(true)
                     })()
-                }else{
+                } else {
                     resolve(false)
                 }
             })
-            resolve(true)
         })
+    }
+    const CrearNuevoOrdenServicioSinTiket = async () => {
+        await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.setItem(ticketID, JSON.stringify({
+            ticket_id: null,
+            equipo: null,
+            OrdenServicioID: null,
+            OSClone: null,
+            Accion: "OrdenSinTicket"
+        }))
+        navigation.navigate("Ordenes")
     }
 
     return (
@@ -68,7 +96,7 @@ export default function Banner(props) {
                             opacity: 1,
                         }}
 
-                        onPress={() => navigation.navigate("Ordenes")}>
+                        onPress={() => CrearNuevoOrdenServicioSinTiket()}>
                         <Text style={{ color: "#FFF", fontSize: 30 }}>+</Text>
                     </TouchableOpacity>
                 </View>

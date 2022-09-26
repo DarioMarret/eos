@@ -3,8 +3,6 @@ import { ConfiiguracionBasicas } from "./config";
 import { getModeloEquipos } from "./modeloquipo";
 import { GetEventosDelDia } from "./OSevento";
 import { getIngenieros } from "./ingenieros";
-import { getProvincias } from "./provincias";
-import { getCantones } from "./cantones";
 import { getClientes } from "./clientes";
 import { getEquipos } from "./equipos";
 import db from "./Database/model";
@@ -13,39 +11,31 @@ import db from "./Database/model";
 export const CardaUtil = async () => {
     try {
         await GetEventosDelDia()
-        await time(1000)
+        await time(500)
         console.log("GetEventosDelDia fin")
 
         await getIngenieros();
-        await time(1000)
+        await time(500)
         console.log("getIngenieros fin")
 
         await getEquipos();
-        await time(1000)
+        await time(500)
         console.log("getEquipos fin")
 
         await getModeloEquipos();
-        await time(1000)
+        await time(500)
         console.log("getModeloEquipos fin")
 
         await getClientes();
-        await time(1000)
+        await time(500)
         console.log("getClientes fin")
 
-        await getProvincias();
-        await time(1000)
-        console.log("getProvincias fin")
-
-        await getCantones();
-        await time(1000)
-        console.log("getCantones fin")
-
         await ConfiiguracionBasicas();
-        await time(1000)
+        await time(500)
         console.log("ConfiiguracionBasicas fin")
 
         await HistorialEquipoIngeniero();
-        await time(1000)
+        await time(500)
         console.log("HistorialEquipoIngeniero fin")
 
     } catch (error) {

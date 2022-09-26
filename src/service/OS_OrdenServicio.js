@@ -17,7 +17,7 @@ export const OSOrdenServicioID = async (OrdenServicioID) => {
         })
         const resultado = await response.json()
         const { Response } = resultado
-        console.log("OSOrdenServicioID-->", Response)
+        // console.log("OSOrdenServicioID-->", Response)
         const res = await InserOSOrdenServicioID(Response)
         return true
 
@@ -177,18 +177,18 @@ const InserOSOrdenServicioID = async (r) => {
     }
 }
 
-async function SelectOSOrdenServicioID(OrdenServicioID) {
+export async function SelectOSOrdenServicioID(OrdenServicioID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(`SELECT * FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
-                        resolve(true)
+                        resolve(_array)
                     } else {
                         resolve(false)
                     }
                 })
-        });
+        })
     })
 }
 
@@ -207,8 +207,25 @@ export async function PDFVisializar(OrdenServicioID) {
         });
     })
 }
+//esta funcion sacar OS_ASUNTO, OS_Firmas, enviado
+export async function SacarOSasunto(OrdenServicioID) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_ASUNTO, OS_Firmas, ClienteNombre FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve({
+                            OS_ASUNTO:_array[0].OS_ASUNTO, 
+                            OS_Firmas:_array[0].OS_Firmas, 
+                            ClienteNombre:_array[0].ClienteNombre})
+                    } else {
+                        resolve(false)
+                    }
+                })
+        });
+    })
+}
 
-//esta funcion vizualizar el pdf
 export async function getRucCliente(OrdenServicioID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {

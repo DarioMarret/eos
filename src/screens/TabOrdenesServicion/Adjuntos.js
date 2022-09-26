@@ -6,30 +6,117 @@ import {
   Switch,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Alert
 } from "react-native";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
 import * as ImageManipulator from 'expo-image-manipulator';
+import { anexos } from '../../utils/constantes';
+import moment from 'moment/moment';
+import { getToken } from '../../service/usuario';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function Adjuntos(props) {
   const { navigation } = props;
-  const [isEnabled, setIsEnabled] = useState(false);
-  const toggleSwitch = () => setIsEnabled((previousState) => !previousState);
+  const [isEnabled, setIsEnabled] = useState(false)
+
+  const [listAdjuntos, setListAdjuntos] = useState([])
+
+  const [adjuntos, setAdjuntos] = useState({
+    OS_OrdenServicio: null,
+    IdAnexo: null,
+    OrdenServicioID: null,
+    Ruta: null,
+    FechaCreacion: null,
+    UsuarioCreacion: null,
+    FechaModificacion: null,
+    UsuarioModificacion: null,
+    Estado: null,
+    Descripcion: null,
+    esOSFisica: false,
+    archivo: null,
+  });
+
+  const toggleSwitch = () => setIsEnabled((previousState) => !previousState)
 
   const pickDocument = async () => {
-    let result = await DocumentPicker.getDocumentAsync({});
+    const result = await DocumentPicker.getDocumentAsync({})
     const file = await ImageManipulator.manipulateAsync(result.uri, [
       { resize: { width: 500, height: 500 } },
     ], { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG });
     FileSystem.readAsStringAsync(file.uri, {
       encoding: FileSystem.EncodingType.Base64
     }).then((res) => {
-      console.log(res);
-    });
-  };
+      setAdjuntos({
+        ...adjuntos,
+        archivo: res,
+        Ruta: result.name,
+      })
+    })
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+        (async () => {
+            const adjuntos = await AsyncStorage.getItem("OS_Anexos")
+            setListAdjuntos(JSON.parse(adjuntos))
+        })()
+    }, [])
+)
+  const saveAdjunto = async () => {
+    const { userId } = await getToken()
+    if (adjuntos.Ruta != null && adjuntos.archivo != null && adjuntos.Descripcion != null) {
+      const os_anexos = await AsyncStorage.getItem("OS_Anexos")
+      const anexosArray = JSON.parse(os_anexos)
+      anexos.archivo = adjuntos.archivo
+      anexos.Ruta = adjuntos.Ruta
+      anexos.Descripcion = adjuntos.Descripcion
+      anexos.Estado = ""
+      anexos.FechaCreacion = moment().format('YYYY-MM-DD HH:mm:ss')
+      anexos.FechaModificacion = moment().format('YYYY-MM-DD HH:mm:ss')
+      anexos.IdAnexo = 0
+      anexos.OS_OrdenServicio = 0
+      anexos.OrdenServicioID = 0
+      anexos.UsuarioCreacion = userId
+      anexos.UsuarioModificacion = userId
+      anexosArray.push(anexos)
+      setListAdjuntos(anexosArray)
+      await AsyncStorage.setItem("OS_Anexos", JSON.stringify(anexosArray))
+      console.log("OS_PartesRepuestos", anexosArray)
+      console.log(anexos)
+      // navigation.navigate('5-ADJUNTOS')
+    }
+  }
+
+  const EliminadrComponenteAgregado = (item) => {
+    Alert.alert(
+        "Eliminar",
+        "¿Está seguro de eliminar el adjunto?",
+        [
+            {
+                text: "Cancelar",
+                onPress: () => console.log("Cancel Pressed"),
+                style: "cancel"
+            },
+            { text: "OK", onPress: () => EliminAdjunto(item) }
+        ],
+        { cancelable: false }
+    )
+}
+
+  const EliminAdjunto = async (item) => {
+    const os_anexos = await AsyncStorage.getItem("OS_Anexos")
+    const anexosArray = JSON.parse(os_anexos)
+    const index = anexosArray.indexOf(item)
+    anexosArray.splice(index, 1)
+    setListAdjuntos(anexosArray)
+    await AsyncStorage.setItem("OS_Anexos", JSON.stringify(anexosArray))
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.ContenedorCliente}>
@@ -64,7 +151,11 @@ export default function Adjuntos(props) {
             </TouchableOpacity>
           </View>
 
-          <TextInput style={styles.input} placeholder='Descripción' />
+          <TextInput
+            style={styles.input}
+            placeholder='Descripción'
+            onChangeText={(text) => setAdjuntos({ ...adjuntos, Descripcion: text })}
+          />
           <View
             style={{
               ...styles.wFull,
@@ -88,7 +179,7 @@ export default function Adjuntos(props) {
           </View>
           <TouchableOpacity
             style={styles.btn}
-            onPress={() => console.log("Crear componente")}
+            onPress={saveAdjunto}
           >
             <Text
               style={{
@@ -102,28 +193,37 @@ export default function Adjuntos(props) {
             </Text>
           </TouchableOpacity>
         </View>
-        <ScrollView style={styles.listContainer}>
-          <View style={styles.fileinfo}>
-            <View>
-              <Text style={styles.textInfo}>OS física : off</Text>
-              <Text style={{ ...styles.textInfo, color: "#000000" }}>
-                nombre del archivo.jpg
-              </Text>
-              <Text style={styles.textInfo}>descripcion del archivo</Text>
-            </View>
-            <AntDesign
-              style={{ marginRight: 10 }}
-              name='delete'
-              size={24}
-              color='#EA0029'
-            />
-          </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          style={styles.listContainer}>
+          {
+            listAdjuntos.map((item, index) => {
+              return (
+                <View style={styles.fileinfo} key={index}>
+                  <View style={{width:"85%"}}>
+                    <Text style={styles.textInfo}>OS física : off</Text>
+                    <Text style={{ ...styles.textInfo, color: "#000000" }}>
+                      {item.Ruta}
+                    </Text>
+                    <Text style={styles.textInfo}>{item.Descripcion}</Text>
+                  </View>
+                  <AntDesign
+                    style={{ marginRight: 10 }}
+                    name='delete'
+                    size={24}
+                    color='#EA0029'
+                    onPress={()=>EliminadrComponenteAgregado(item)}
+                  />
+                </View>
+              )
+            })
+          }
         </ScrollView>
       </View>
       <BannerOrderServi
         {...props}
         navigation={navigation}
-        screen={"5-ADJUNTOS"}
+        screen={"|"}
       />
     </View>
   );
