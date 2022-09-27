@@ -60,7 +60,7 @@ async function InserCliente(r) {
         return true
     }
 }
-async function SelectCliente(CustomerID) {
+export async function SelectCliente(CustomerID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
@@ -68,7 +68,7 @@ async function SelectCliente(CustomerID) {
                 [CustomerID],
                 (tx, results) => {
                     if (results.rows._array.length > 0) {
-                        resolve(true)
+                        resolve(results.rows._array[0])
                     } else {
                         resolve(false)
                     }

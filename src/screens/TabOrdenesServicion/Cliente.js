@@ -6,7 +6,7 @@ import { getEquipoTicketStorage } from "../../service/equipoTicketID"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getIngenierosStorageById } from "../../service/ingenieros"
 import { getProvinciasStorageBy } from "../../service/provincias"
-import { GetClienteCustimerName } from "../../service/clientes"
+import { GetClienteCustimerName, SelectCliente } from "../../service/clientes"
 import BannerOrderServi from "../../components/BannerOrdenServ"
 import { CLIENTE_, ticketID } from "../../utils/constantes"
 import React, { useCallback, useState } from "react"
@@ -23,6 +23,7 @@ export default function Cliente(props) {
     const [isdisabelsub, setDisableSub] = useState(true)
 
     const [modalVisible, setModalVisible] = useState(false)
+    const [check, setCheck] = useState(false)
 
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const [ingeniero, setIngeniero] = useState({
@@ -49,7 +50,7 @@ export default function Cliente(props) {
         CustomerName: "",
         Direccion: "",
         ProvinciaID: "",
-        Sucursal: "",
+        Sucursal: [],
         grupo: "",
         Ciudad: "",
     })
@@ -69,9 +70,8 @@ export default function Cliente(props) {
         id: "",
     })
 
-    const SwitchGuardar = async () => {
-        setIsEnabled(!isEnabled)
-        if (isEnabled) {
+    const SwitchGuardar = async (estado) => {
+        if (!estado) {
             await GuadadoOS()
             let estado = await CambieEstadoSwitch(1, 1)
             console.log("estado", estado.estado)
@@ -82,7 +82,9 @@ export default function Cliente(props) {
                 ...provincia,
                 ...ingeniero
             }))
+            setIsEnabled(true)
         } else {
+            setIsEnabled(false)
             let estado = await CambieEstadoSwitch(1, 0)
 
             console.log("estado", estado.estado)
@@ -114,37 +116,15 @@ export default function Cliente(props) {
                         if (Accion == "FINALIZADO") {//para ver sin editar
                             setDisableSub(false)
                             setIsEnabled(false)
-                            var datosClient = await datosClienteOSOrdenServicioID(OrdenServicioID)
-                            datosClient.map((item) => {
-                                setCliente({
-                                    ...cliente,
-                                    CustomerName: item.ClienteNombre,
-                                })
-                                setDireccion({
-                                    ...direccion,
-                                    Direccion: item.Direccion,
-                                })
-                                setProvincia({
-                                    ...provincia,
-                                    descripcion: item.Ciudad,
-                                })
-                                setEquipoTicket({
-                                    ...equipoTicket,
-                                    id_contrato: item.contrato_id,
-                                    id_equipo: item.equipo_id,
-                                    codOS: item.codOS,
-                                    ticket_id: item.ticket_id,
-                                    Estado: item.Estado,
-                                    CodigoEquipoCliente: item.CodigoEquipoCliente,
-                                })
-                                setFecha(item.FechaCreacion.split("T")[0])
-                            })
-                            console.log(await datosClienteOSOrdenServicioID(OrdenServicioID))
-                            return
-                        } else if (Accion == "clonar") {// para ver y poder edidar una orden de servicio clone
+                            setCheck(true)
+                            let clie = await SelectCliente(OSClone[0].ClienteID)
+                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
+                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
                             setCliente({
                                 ...cliente,
                                 CustomerName: OSClone[0].ClienteNombre,
+                                Sucursal: JSON.parse(clie.Sucursal),
+                                Ciudad: OSClone[0].Ciudad,
                             })
                             setDireccion({
                                 ...direccion,
@@ -163,33 +143,75 @@ export default function Cliente(props) {
                                 Estado: OSClone[0].Estado,
                                 CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
                             })
+                            console.log(await datosClienteOSOrdenServicioID(OrdenServicioID))
+                            setFecha(OSClone[0].FechaCreacion.split("T")[0])
+                            return
+                        } else if (Accion == "clonar") {// para ver y poder edidar una orden de servicio clone
+                            let clie = await SelectCliente(OSClone[0].ClienteID)
+                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
+                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
+                            setCliente({
+                                ...cliente,
+                                CustomerName: OSClone[0].ClienteNombre,
+                                Sucursal: JSON.parse(clie.Sucursal),
+                                Ciudad: OSClone[0].Ciudad,
+                            })
+                            setDireccion({
+                                ...direccion,
+                                Direccion: OSClone[0].Direccion,
+                            })
+                            setProvincia({
+                                ...provincia,
+                                descripcion: OSClone[0].Ciudad,
+                            })
+                            setEquipoTicket({
+                                ...equipoTicket,
+                                id_contrato: OSClone[0].contrato_id,
+                                id_equipo: OSClone[0].equipo_id,
+                                codOS: OSClone[0].codOS,
+                                ticket_id: OSClone[0].ticket_id,
+                                Estado: OSClone[0].Estado,
+                                CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
+                            })
+                            setFecha(OSClone[0].FechaCreacion.split("T")[0])
                             return
                         } else if (Accion == "OrdenSinTicket") {
                             const os = await AsyncStorage.getItem("OS")
                             const osItem = JSON.parse(os)
                             console.log("osItem", osItem)
                             return
-                        } else if (equipo != null && OrdenServicioID == null && OSClone == null) {
-
+                        } else if (Accion == "PENDIENTE") {
+                            // SelectCliente(CustomerID)
+                            let clie = await SelectCliente(OSClone[0].ClienteID)
+                            console.log("cliente PENDIENTE", JSON.parse(clie.Sucursal))
+                            console.log("cliente PENDIENTE", typeof JSON.parse(clie.Sucursal))
+                            setCliente({
+                                ...cliente,
+                                CustomerName: OSClone[0].ClienteNombre,
+                                Sucursal: JSON.parse(clie.Sucursal),
+                                Ciudad: OSClone[0].Ciudad,
+                            })
+                            setDireccion({
+                                ...direccion,
+                                Direccion: OSClone[0].Direccion,
+                            })
+                            setProvincia({
+                                ...provincia,
+                                descripcion: OSClone[0].Ciudad,
+                            })
+                            setEquipoTicket({
+                                ...equipoTicket,
+                                id_contrato: OSClone[0].contrato_id,
+                                id_equipo: OSClone[0].equipo_id,
+                                codOS: OSClone[0].codOS,
+                                ticket_id: OSClone[0].ticket_id,
+                                Estado: OSClone[0].Estado,
+                                CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
+                            })
+                            setFecha(OSClone[0].FechaCreacion.split("T")[0])
+                            return
                         }
-
-
-                        const ticket = await getEquipoTicketStorage(ticket_id)
-                        // return
-                        setEquipoTicket(ticket)
-                        // console.log("ticket", ticket)
-                        let cliente = await GetClienteCustimerName(ticket.con_ClienteNombre)
-                        setCliente(cliente[0])
-                        let n_direccion = JSON.parse(cliente[0].Sucursal).length - 1
-                        let direccion = JSON.parse(cliente[0].Sucursal)[n_direccion]
-                        setDireccion(direccion)
-                        console.log("direccion", direccion.ProvinciaId)
-                        const pro = await getProvinciasStorageBy(direccion.ProvinciaId)
-                        setProvincia(pro[0])
                     }
-                    let swit = JSON.parse(await AsyncStorage.getItem("ClienSwitch:"))
-                    setIsEnabled(swit)
-                    console.log("ClienSwitch:", JSON.parse(await AsyncStorage.getItem("ClienSwitch:")))
                 } catch (error) {
                     console.log("error", error)
                 }
@@ -217,11 +239,16 @@ export default function Cliente(props) {
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
             osItem.Direccion = cliente.Direccion,
-            osItem.Ciudad = cliente.Ciudad,
-            osItem.ClienteID = cliente.CustomerID,
-            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+                await AsyncStorage.setItem("OS", JSON.stringify(osItem))
             console.log("osItem", osItem)
         }
+    }
+    const GuardarDireccion = async (value) => {
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.Direccion = value,
+            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        console.log("osItem", osItem)
     }
 
     return (
@@ -310,28 +337,17 @@ export default function Cliente(props) {
                         >
                             <Picker
                                 selectedValue={cliente.Direccion}
-                                onValueChange={(itemValue) => setCliente({
-                                    ...cliente,
-                                    Direccion: itemValue
-                                })} >
+                                enabled={isEnabled}
+                                onValueChange={(itemValue) => GuardarDireccion(itemValue)} >
                                 {
-                                    cliente.CustomerName ?
+                                    typeof cliente.Sucursal == 'object' ?
                                         cliente.Sucursal.map((item, index) => {
-                                            // console.log("item", item),
                                             return <Picker.Item key={index + 1} label={item.Direccion} value={item.Direccion} />
-
                                         })
                                         : null
                                 }
                             </Picker>
                         </View>
-                        {/* <TextInput
-                            style={styles.input}
-                            placeholder="Dirección"
-                            value={direccion.Direccion}
-                            onChangeText={(text) => setDireccion({ ...direccion, Direccion: text })}
-                            editable={isEnabled}
-                        /> */}
                         <TextInput
                             style={styles.input}
                             placeholder="Ciudad"
@@ -348,21 +364,23 @@ export default function Cliente(props) {
                             alignItems: 'center',
                         }}>
                             {
-                                isdisabelsub ?
-                                    <>
-                                        {
-                                            isEnabled ?
-                                                <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
-                                                : <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
-                                        }
-                                        <Switch
-                                            trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
-                                            thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
-                                            ios_backgroundColor="#FFAF75"
-                                            onValueChange={SwitchGuardar}
-                                            value={isEnabled}
-                                        />
-                                    </>
+                                check == false ?
+                                    isdisabelsub ?
+                                        <>
+                                            {
+                                                isEnabled ?
+                                                    <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
+                                                    : <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
+                                            }
+                                            <Switch
+                                                trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
+                                                thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
+                                                ios_backgroundColor="#FFAF75"
+                                                onValueChange={() => SwitchGuardar(isEnabled)}
+                                                value={isEnabled}
+                                            />
+                                        </>
+                                        : null
                                     : null
                             }
                         </View>

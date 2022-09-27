@@ -14,7 +14,7 @@ import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
 import * as ImageManipulator from 'expo-image-manipulator';
-import { anexos } from '../../utils/constantes';
+import { anexos, ticketID } from '../../utils/constantes';
 import moment from 'moment/moment';
 import { getToken } from '../../service/usuario';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -62,8 +62,30 @@ export default function Adjuntos(props) {
   useFocusEffect(
     useCallback(() => {
         (async () => {
-            const adjuntos = await AsyncStorage.getItem("OS_Anexos")
-            setListAdjuntos(JSON.parse(adjuntos))
+
+            try {
+              const itenSelect = await AsyncStorage.getItem(ticketID)
+              if (itenSelect != null) {
+                  const item = JSON.parse(itenSelect)
+                  const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                  // console.log("OSClone", OSClone)
+                  if (Accion == "FINALIZADO") {
+
+                  } else if (Accion == "PENDIENTE") {
+                      
+                    setListAdjuntos(JSON.parse(OSClone[0].OS_Anexos))
+                    console.log("OSClone", OSClone[0].OS_Anexos)
+
+                  } else if (Accion == "OrdenSinTicket") {
+
+                    const adjuntos = await AsyncStorage.getItem("OS_Anexos")
+                    setListAdjuntos(JSON.parse(adjuntos))
+
+                  }
+              }
+          } catch (error) {
+              console.log("error", error)
+          }
         })()
     }, [])
 )

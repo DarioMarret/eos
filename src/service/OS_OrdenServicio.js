@@ -28,7 +28,7 @@ export const OSOrdenServicioID = async (OrdenServicioID) => {
     }
 }
 
-const InserOSOrdenServicioID = async (r) => {
+export const InserOSOrdenServicioID = async (r) => {
     const existe = await SelectOSOrdenServicioID(r.OrdenServicioID)
     if (!existe) {
         return new Promise((resolve, reject) => {
@@ -173,6 +173,7 @@ const InserOSOrdenServicioID = async (r) => {
                     console.log("results OS_OrdenServicio -->", results);
                 }
             })
+            resolve(true)
         });
     }
 }

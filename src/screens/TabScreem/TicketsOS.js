@@ -19,6 +19,8 @@ import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../ser
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
+import { AntDesign } from "@expo/vector-icons";
+import { isChecked, isCheckedCancelaReturn } from "../../service/historiaEquipo";
 
 
 export default function TicketsOS(props) {
@@ -40,14 +42,15 @@ export default function TicketsOS(props) {
             (async () => {
                 const ticket_id = JSON.parse(await AsyncStorage.getItem(ticketID)).ticket_id
                 const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
-                seteventosAnidados(response)
+                seteventosAnidados(response.map((item) => { return { ...item, check: false } }))
             })()
         }, [])
     )
 
     functionColor = (type) => {
         if (type == "PENDIENTE") {
-            return "#FFECDE"
+            return "#FFFFFF"
+            // return "#FFECDE"rosado
         } else if (type == "NUEVO") {
             return "#FFFFFF"
         } else if (type == "FINALIZADO") {
@@ -64,6 +67,7 @@ export default function TicketsOS(props) {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+
                             Rutes(rows._array, ticket_id, OrdenServicioID, null, estado)
                         })
                     })
@@ -87,8 +91,8 @@ export default function TicketsOS(props) {
         OSClone[0]['OrdenServicioID'] = null
         OSClone[0]['OS_Firmas'] = []
         OSClone[0]['OS_Anexos'] = []
-        // OSClone[0]['OS_Tiempos'] = []
         OSClone[0]['codOS'] = null
+        await AsyncStorage.setItem("OS", JSON.stringify(OSClone[0]))
         db.transaction(tx => {
             tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                 db.transaction(tx => {
@@ -120,19 +124,57 @@ export default function TicketsOS(props) {
         const base64 = await PDFVisializar(item)
         setPdfurl(base64)
         setPdfview(false)
-        console.log("VisualizarPdf", base64)
     }
 
     async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
+        equipo[0]['isChecked'] = 'true'
+        var clon;
+        if (accion == "PENDIENTE") {
+            clon = await SelectOSOrdenServicioID(OrdenServicioID)
+            await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
+            // console.log("clon", clon)
+        }
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id,
             equipo,
             OrdenServicioID: OrdenServicioID == null || OrdenServicioID == "" ? null : OrdenServicioID,
-            OSClone: OSClone == null ? null : OSClone,
+            OSClone: OSClone == null ? clon : OSClone,
             Accion: accion
         }))
+        await isChecked(equipo[0].equipo_id)
         navigation.navigate("Ordenes")
+    }
+    async function ColorCheckt(itemIndex) {
+        seteventosAnidados(eventosAnidados.map((item, index) => {
+            if (itemIndex.OrdenServicioID == item.OrdenServicioID) {
+                return {
+                    ...item,
+                    check: !item.check
+                }
+            } else {
+                return {
+                    ...item,
+                    check: false
+                }
+            }
+        }))
+    }
+
+    function Finalizar() {
+        eventosAnidados.map((item, index) => {
+            // if (item.check == true) {
+                console.log("Finalizar",item)
+            // }
+        })
+        // FinalizarOS(item)
+        // const { ticket_id } = JSON.parse(await AsyncStorage.getItem(ticketID))
+        // db.transaction(tx => {
+        //     tx.executeSql(`UPDATE OS_OrdenServicio set OS_FINALIZADA = ? where ticket_id = ?`, [1, ticket_id], (_, { rows }) => {
+        //         console.log("rows", rows)
+        //     })
+        // })
+
     }
 
     return (
@@ -152,24 +194,39 @@ export default function TicketsOS(props) {
                                 <ScrollView showsVerticalScrollIndicator={false} >
                                     {
                                         eventosAnidados.map((item, index) => {
+                                            console.log("item", item)
                                             return (
                                                 <View key={index}
-                                                    style={{ width: '90%', alignSelf: 'center', marginBottom: 10, }}
+                                                    style={{ width: '100%', alignSelf: 'center', marginBottom: 10, }}
                                                 >
-                                                    <TouchableOpacity
-                                                        onPress={() => Ordene(String(item.ticket_id), item.OrdenServicioID, item.ev_estado)}>
-                                                        <View
+                                                    <View
+                                                        style={{
+                                                            flexDirection: 'row',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'center',
+                                                            backgroundColor: functionColor(item.ev_estado),
+                                                            width: '100%',
+                                                            minHeight: 80,
+                                                            paddingHorizontal: 20,
+                                                            borderBottomWidth: 0.5,
+                                                            borderColor: '#858583'
+                                                        }}>
+                                                        <TouchableOpacity
+                                                            onPress={() => ColorCheckt(item)}
                                                             style={{
-                                                                flexDirection: 'row',
-                                                                justifyContent: 'space-between',
+                                                                flexDirection: 'column',
+                                                                justifyContent: 'center',
                                                                 alignItems: 'center',
-                                                                backgroundColor: functionColor(item.ev_estado),
-                                                                width: '100%',
-                                                                minHeight: 80,
-                                                                paddingHorizontal: 20,
-                                                                borderBottomWidth: 0.5,
-                                                                borderColor: '#858583'
+                                                                width: 30,
+                                                                height: 30,
+                                                                borderWidth: 2,
+                                                                borderColor: item.check ? '#188C03' : '#858583',
+                                                                borderRadius: 50,
                                                             }}>
+                                                            <AntDesign name="check" size={24} color={item.check ? '#188C03' : '#858583'} />
+                                                        </TouchableOpacity>
+                                                        <TouchableOpacity
+                                                            onPress={() => Ordene(String(item.ticket_id), item.OrdenServicioID, item.ev_estado)}>
                                                             <View>
                                                                 <Text
                                                                     style={{
@@ -190,84 +247,91 @@ export default function TicketsOS(props) {
                                                                     }}
                                                                 >{item.ev_descripcion}</Text>
                                                             </View>
-                                                            <Menu>
-                                                                <MenuTrigger
-                                                                    text='...'
+                                                        </TouchableOpacity>
+                                                        <Menu>
+                                                            <MenuTrigger
+                                                                text='...'
+                                                                customStyles={{
+                                                                    triggerText: {
+                                                                        fontSize: 35,
+                                                                        color: '#858583',
+                                                                        fontWeight: 'bold',
+                                                                        transform: [{ rotate: '90deg' }],
+                                                                        padding: 10,
+                                                                    },
+                                                                }} />
+                                                            <MenuOptions
+                                                                customStyles={{
+                                                                    optionsContainer: {
+                                                                        width: 150,
+                                                                        backgroundColor: '#FFFFFF',
+                                                                        borderRadius: 5,
+                                                                        padding: 10,
+                                                                        shadowColor: "#000",
+                                                                        shadowOffset: {
+                                                                            width: 0,
+                                                                            height: 2,
+                                                                        },
+                                                                        shadowOpacity: 0.25,
+                                                                        shadowRadius: 3.84,
+                                                                        elevation: 5,
+                                                                    },
+                                                                }}
+                                                            >
+                                                                {
+                                                                    item.ev_estado !== "PENDIENTE" ?
+                                                                        <MenuOption
+                                                                            onSelect={() => AgregarFirma(item.OrdenServicioID)}
+                                                                            text='Agregar Firma'
+                                                                            customStyles={{
+                                                                                optionText: {
+                                                                                    fontSize: 16,
+                                                                                    color: '#000000',
+                                                                                    fontWeight: 'bold',
+                                                                                    paddingBottom: 10,
+                                                                                },
+                                                                            }} /> : null
+                                                                }
+                                                                <MenuOption
+                                                                    onSelect={() => ClonarOS(String(item.ticket_id), item.OrdenServicioID)}
+                                                                    text='Clonar OS'
                                                                     customStyles={{
-                                                                        triggerText: {
-                                                                            fontSize: 35,
-                                                                            color: '#858583',
+                                                                        optionText: {
+                                                                            fontSize: 16,
+                                                                            color: '#000000',
                                                                             fontWeight: 'bold',
-                                                                            transform: [{ rotate: '90deg' }],
-                                                                            padding: 10,
+                                                                            paddingBottom: 10,
                                                                         },
                                                                     }} />
-                                                                <MenuOptions
+                                                                {
+                                                                    item.ev_estado !== "PENDIENTE" ?
+                                                                        <MenuOption
+                                                                            onSelect={() => EnviarOS(item.OrdenServicioID)}
+                                                                            text='Enviar OS'
+                                                                            customStyles={{
+                                                                                optionText: {
+                                                                                    fontSize: 16,
+                                                                                    color: '#000000',
+                                                                                    fontWeight: 'bold',
+                                                                                    paddingBottom: 10,
+                                                                                },
+                                                                            }} /> : null
+                                                                }
+                                                                <MenuOption
+                                                                    onSelect={() => VisualizarPdf(item.OrdenServicioID)}
+                                                                    text='Visializar PDF'
                                                                     customStyles={{
-                                                                        optionsContainer: {
-                                                                            width: 150,
-                                                                            backgroundColor: '#FFFFFF',
-                                                                            borderRadius: 5,
-                                                                            padding: 10,
-                                                                            shadowColor: "#000",
-                                                                            shadowOffset: {
-                                                                                width: 0,
-                                                                                height: 2,
-                                                                            },
-                                                                            shadowOpacity: 0.25,
-                                                                            shadowRadius: 3.84,
-                                                                            elevation: 5,
+                                                                        optionText: {
+                                                                            fontSize: 16,
+                                                                            color: '#000000',
+                                                                            fontWeight: 'bold',
                                                                         },
-                                                                    }}
-                                                                >
-                                                                    <MenuOption
-                                                                        onSelect={() => AgregarFirma(item.OrdenServicioID)}
-                                                                        text='Agregar Firma'
-                                                                        customStyles={{
-                                                                            optionText: {
-                                                                                fontSize: 16,
-                                                                                color: '#000000',
-                                                                                fontWeight: 'bold',
-                                                                                paddingBottom: 10,
-                                                                            },
-                                                                        }} />
-                                                                    <MenuOption
-                                                                        onSelect={() => ClonarOS(String(item.ticket_id), item.OrdenServicioID)}
-                                                                        text='Clonar OS'
-                                                                        customStyles={{
-                                                                            optionText: {
-                                                                                fontSize: 16,
-                                                                                color: '#000000',
-                                                                                fontWeight: 'bold',
-                                                                                paddingBottom: 10,
-                                                                            },
-                                                                        }} />
-                                                                    <MenuOption
-                                                                        onSelect={() => EnviarOS(item.OrdenServicioID)}
-                                                                        text='Enviar OS'
-                                                                        customStyles={{
-                                                                            optionText: {
-                                                                                fontSize: 16,
-                                                                                color: '#000000',
-                                                                                fontWeight: 'bold',
-                                                                                paddingBottom: 10,
-                                                                            },
-                                                                        }} />
-                                                                    <MenuOption
-                                                                        onSelect={() => VisualizarPdf(item.OrdenServicioID)}
-                                                                        text='Visializar PDF'
-                                                                        customStyles={{
-                                                                            optionText: {
-                                                                                fontSize: 16,
-                                                                                color: '#000000',
-                                                                                fontWeight: 'bold',
-                                                                            },
-                                                                        }} />
-                                                                    {/* <MenuOption disabled={true} text='Disabled' /> */}
-                                                                </MenuOptions>
-                                                            </Menu>
-                                                        </View>
-                                                    </TouchableOpacity>
+                                                                    }} />
+                                                                {/* <MenuOption disabled={true} text='Disabled' /> */}
+                                                            </MenuOptions>
+                                                        </Menu>
+                                                    </View>
+
                                                 </View>
                                             )
                                         })
@@ -275,11 +339,28 @@ export default function TicketsOS(props) {
                                 </ScrollView>
                                 {/* </Pressable> */}
                             </View>
-                            <Pressable style={styles.body3} onPress={() => setItemIndex(null)}>
+
+                            <Pressable
+                                onPress={() => setItemIndex(null)}>
                                 <TouchableOpacity style={styles.opacity}>
                                     <Text style={styles.text4}>INGRESAR NUEVO OS AL TICKET</Text>
                                 </TouchableOpacity>
                             </Pressable>
+                            {
+                                eventosAnidados.length > 0
+                                    ?
+                                    eventosAnidados.map((item, index) => {
+                                        if (item.check) {
+                                            return (
+                                                <Pressable onPress={Finalizar}>
+                                                    <TouchableOpacity style={{ ...styles.opacity, backgroundColor: '#FFFFFF', }}>
+                                                        <Text style={{ ...styles.text4, color: '#FF6B00' }}>FINALIZAR OS SELECCIONADO</Text>
+                                                    </TouchableOpacity>
+                                                </Pressable>
+                                            )
+                                        }
+                                    }) : null
+                            }
                         </View>
                         :
                         <View style={styles.body}>
@@ -348,7 +429,7 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     body3: {
-        flex: 2,
+        // flex: ,
         justifyContent: "flex-end",
         alignItems: "center",
         width: "100%",
@@ -361,7 +442,7 @@ const styles = StyleSheet.create({
     opacity: {
         justifyContent: "center",
         alignItems: "center",
-        width: "90%",
+        minWidth: "90%",
         padding: 20,
         backgroundColor: "#FF6B00",
         borderRadius: 30,

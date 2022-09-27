@@ -33,6 +33,7 @@ export const componente = [
         description: "Parte Instalada",
     }
 ]
+
 export const diagnoctico = [
     {
         id: 1,
@@ -51,6 +52,7 @@ export const diagnoctico = [
         description: "Restringido"
     }
 ]
+
 export const estadoSwitch = [
     {
         id: 1,
@@ -80,108 +82,72 @@ export const estadoSwitch = [
 ]
 
 export const OS = {
-    "Acciones": "",
-    "CargoContactoInforme": "",
-    "Causas": "",
-    "Ciudad": "",
-    "ClienteID": "",
-    "ClienteNombre": "",
-    "CodigoEquipoCliente": "",
-    "ComentarioRestringido": "",
-    "ComentarioUpgrade": "",
-    "ContactoInforme": "",
-    "Diagnostico": "",
-    "Direccion": "",
-    "Estado": "",
-    "EstadoEqPrevio": "",
-    "EstadoEquipo": "",
-    "Fecha": "",
-    "FechaCreacion": "",
-    "FechaModificacion": "",
-    "FechaSeguimiento": "",
-    "Finalizado": "",
-    "IdEquipoContrato": "",
-    "IncluyoUpgrade": "",
-    "IngenieroID": "",
-    "Marca": "",
-    "ModeloEquipo": "",
-    "OS_ASUNTO": "",
-    "OS_Anexos": "",
-    "OS_CheckList": "",
-    "OS_Colaboradores": "",
-    "OS_Encuesta": "",
-    "OS_FINALIZADA": "",
-    "OS_Firmas": "",
-    "OS_PartesRepuestos": "",
-    "OS_Tiempos": "",
-    "ObservacionCheckList": "",
-    "ObservacionCliente": "",
-    "ObservacionEquipo": "",
-    "ObservacionIngeniero": "",
-    "OrdenServicioID": "",
-    "Seguimento": "",
-    "Serie": "",
-    "Sintomas": "",
-    "SitioTrabajo": "",
-    "TipoEquipo": "",
-    "TipoVisita": "",
-    "UsuarioCreacion": "",
-    "UsuarioModificacion": "",
-    "cantonId": "",
-    "codOS": "",
-    "contrato_id": "",
-    "empresa_id": "",
-    "enviado": "",
-    "equipo_id": "",
-    "evento_id": "",
-    "incidencia": "",
-    "localidad": "",
-    "nuevaVisita": "",
-    "provinciaId": "",
-    "release": "",
-    "ticket_id": "",
-    "tipoIncidencia": "",
+    provinciaId: null,
+    cantonId: null,
+    tipoIncidencia: "",
+    localidad: null,
+    equ_hardware: null,
+    con_contratoLegal: "",
+    equ_fechaFabricacion: null,
+    equ_systemCode: null,
+    OrdenServicioID: 0,
+    TipoVisita: "04",
+    Fecha: "",
+    Estado: "ACTI",
+    Finalizado: null,
+    evento_id: 0,
+    ticket_id: 0,
+    empresa_id: 1,
+    contrato_id: 0,
+    equipo_id: 0,
+    Serie: null,
+    TipoEquipo: null,
+    ModeloEquipo: null,
+    Marca: "",
+    ObservacionEquipo: null,
+    CodigoEquipoCliente: "",
+    ClienteID: "",
+    ClienteNombre: "",
+    Sintomas: "",
+    Causas: "",
+    Diagnostico: " ",
+    Acciones: "",
+    SitioTrabajo: "",
+    EstadoEquipo: "",
+    ComentarioRestringido: "",
+    IncluyoUpgrade: true,
+    ComentarioUpgrade: "",
+    Seguimento: true,
+    FechaSeguimiento: "",
+    ObservacionCliente: "",
+    ObservacionIngeniero: "",
+    IngenieroID: null,
+    UsuarioCreacion: null,
+    UsuarioModificacion: null,
+    FechaCreacion: "",
+    FechaModificacion: "",
+    IdEquipoContrato: 0,
+    EstadoEqPrevio: "",
+    ContactoInforme: "",
+    CargoContactoInforme: "",
+    ObservacionCheckList: "",
+    Direccion: "",
+    Ciudad: "",
+    incidencia: "",
+    nuevaVisita: true,
+    release: "",
+    OS_Anexos: [],
+    OS_CheckList: [],
+    OS_Colaboradores: [],
+    OS_Encuesta: [],
+    OS_Firmas: [],
+    OS_PartesRepuestos: [],
 }
-export const OS_CheckList = [
-    {
-        "OS_OrdenServicio": 0,
-        "CheckListID": 0,
-        "OrdenServicioID": 0,
-        "empresa_id": 1,
-        "IdCheckList": null,
-        "Checked": true,
-        "UsuarioCreacion": null,
-        "FechaCreacion": null,
-        "UsuarioModificacion": null,
-        "FechaModificacion": null,
-        "Estado": null,
-        "Observacion": null
-    }
-]
-export const OS_Firmas = [
-    {
-        "OS_OrdenServicio": null,
-        "IdFirma": 0,
-        "OrdenServicioID": 0,
-        "Ruta": null,
-        "FechaCreacion": null,
-        "UsuarioCreacion": null,
-        "FechaModificacion": null,
-        "UsuarioModificacion": null,
-        "Estado": null,
-        "Cargo": null,
-        "Nombre": null,
-        "Cedula": null,
-        "Longitud": null,
-        "Latitud": null,
-        "Correo": null,
-        "archivo": null
-    }
-]
-export const OS_PartesRepuestos = [
-]
-export const OS_Anexos = [
-]
+console.log("constantes.js", Object.keys(OS).length);
+export const OS_CheckList = []
+export const OS_Firmas = []
+export const OS_PartesRepuestos = []
+export const OS_Anexos = []
 
 export const OS_Tiempos = []
 
@@ -1193,9 +1159,39 @@ export const Canton = [
 
 
 /// EXAMPLE 2
-
-export const ParteRespuestos = {
+export const os_checklist = {
+    OS_OrdenServicio: 0,
+    CheckListID: 0,
+    OrdenServicioID: 0,
+    empresa_id: 1,
+    IdCheckList: null,
+    Checked: true,
+    UsuarioCreacion: null,
+    FechaCreacion: null,
+    UsuarioModificacion: null,
+    FechaModificacion: null,
+    Estado: "ACTI",
+    Observacion: null
+}
+export const os_firma ={
     OS_OrdenServicio: null,
+    IdFirma: 0,
+    OrdenServicioID: 0,
+    Ruta: null,
+    FechaCreacion: null,
+    UsuarioCreacion: null,
+    FechaModificacion: null,
+    UsuarioModificacion: null,
+    Estado: "ACTI",
+    Cargo: null,
+    Nombre: null,
+    Cedula: null,
+    Longitud: null,
+    Latitud: null,
+    Correo: null,
+    archivo: ""
+}
+export const ParteRespuestos = {
     IdParte: 0,
     OrdenServicioID: 0,
     Tipo: null,
@@ -1208,26 +1204,26 @@ export const ParteRespuestos = {
     UsuarioCreacion: null,
     FechaModificacion: null,
     UsuarioModificacion: null,
-    Estado: null,
+    Estado: "ACTI",
     Garantia: null,
-    componente_id: 0,
-    serie: null,
-    modelo: null,
-    fabricante: null,
-    tamano: null,
-    fechaFabricacion: null,
-    fechaInstalacion: null,
-    voltaje: null,
-    ubicacion: null,
-    potencia: null,
-    numero: null,
-    sistemaOperativo: null,
-    release: null,
-    switch: false,
+    componente_id: null,
+    serie: "",
+    modelo: "",
+    fabricante: "",
+    tamano: "",
+    fechaFabricacion: "",
+    fechaInstalacion: "",
+    voltaje: "",
+    ubicacion: "",
+    potencia: "",
+    numero: "",
+    sistemaOperativo: "",
+    release: "",
+    OS_OrdenServicio: null,
 }
 
 export const anexos = {
-    OS_OrdenServicio: 0,
+    OS_OrdenServicio: null,
     IdAnexo: 0,
     OrdenServicioID: 0,
     Ruta: null,
@@ -1235,7 +1231,7 @@ export const anexos = {
     UsuarioCreacion: null,
     FechaModificacion: null,
     UsuarioModificacion: null,
-    Estado: null,
+    Estado: "ACTI",
     Descripcion: null,
     esOSFisica: false,
     archivo: null,
@@ -1243,7 +1239,7 @@ export const anexos = {
 }
 
 export const timpo = {
-    OS_OrdenServicio: 0,
+    OS_OrdenServicio: null,
     IdTiempo: 0,
     OrdenServicioID: 0,
     HoraSalidaOrigen: null,

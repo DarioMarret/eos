@@ -15,7 +15,7 @@ import { useCallback, useState } from "react";
 import Moment from 'moment';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
-import { ticketID } from "../../utils/constantes";
+import { ticketID, timpo } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
@@ -38,7 +38,8 @@ export default function IngresoHoras(props) {
     setDatePickerVisibility(false);
   };
   const handleConfirm = (date) => {
-    setFechas({ ...fechas, Fecha: Moment(date).format('YYYY-MM-DD') })
+    let fec = new Date()
+    setFechas({ ...fechas, Fecha: fec })
     hideDatePicker();
   };
   //fin
@@ -67,6 +68,7 @@ export default function IngresoHoras(props) {
     TiempoTrabajo: 0,
     TiempoViaje: 0,
     Fecha: "",
+    FechaMostrar: "",
     HoraLlegadaSgteDestino: "",
     TiempoViajeSalida: 0,
     switch: false,
@@ -79,30 +81,37 @@ export default function IngresoHoras(props) {
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
           const item = JSON.parse(itenSelect)
-          const { equipo, OrdenServicioID, ticket_id, Accion } = item
+          const { equipo, OrdenServicioID, ticket_id, OSClone, Accion } = item
           const OS_Tiempo = await AsyncStorage.getItem("OS_Tiempos")
           let os_tiempos = JSON.parse(OS_Tiempo)
           if (Accion == "OrdenSinTicket") {
             setFechas({
               ...fechas,
-              ...os_tiempos[0]
+              ...os_tiempos[0],
+              FechaMostrar: Moment(os_tiempos[0].Fecha).format('DD/MM/YYYY'),
             })
             return
           } else if (Accion == "clonar") {
+            let tem = JSON.parse(OSClone[0].OS_Tiempos)
             setFechas({
               ...fechas,
-              ...os_tiempos[0]
+              ...tem[0],
+              FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
             })
             return
           } else if (Accion == "FINALIZADO") {
+            let tem = JSON.parse(OSClone[0].OS_Tiempos)
             setFechas({
               ...fechas,
-              ...os_tiempos[0]
+              ...tem[0],
+              FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
             })
-          } else if (Accion == "PROCESO") {
+          } else if (Accion == "PENDIENTE") {
+            let tem = JSON.parse(OSClone[0].OS_Tiempos)
             setFechas({
               ...fechas,
-              ...os_tiempos[0]
+              ...tem[0],
+              FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
             })
           }
         }
@@ -110,12 +119,25 @@ export default function IngresoHoras(props) {
     }, [])
   )
   const SwitchGuardar = async () => {
+    timpo.HoraSalidaOrigen = fechas.HoraSalidaOrigen
+    timpo.HoraLlegadaCliente = fechas.HoraLlegadaCliente
+    timpo.HoraInicioTrabajo = fechas.HoraInicioTrabajo
+    timpo.HoraFinTrabajo = fechas.HoraFinTrabajo
+    timpo.HoraSalidaCliente = fechas.HoraSalidaCliente
+    timpo.TiempoEspera = fechas.TiempoEspera
+    timpo.TiempoTrabajo = fechas.TiempoTrabajo
+    timpo.TiempoViaje = fechas.TiempoViaje
+    timpo.Fecha = fechas.Fecha
+    timpo.HoraLlegadaSgteDestino = fechas.HoraLlegadaSgteDestino
+    timpo.TiempoViajeSalida = fechas.TiempoViajeSalida
+
+    await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(timpo))
     setFechas({
       ...fechas,
       switch: !fechas.switch
     })
-    await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([fechas]))
-    console.log("fechas", fechas)
+    await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([timpo]))
+    console.log("fechas", timpo)
   }
 
   return (
@@ -138,7 +160,7 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%" }}
                 placeholder='Fecha de Ingreso'
-                value={fechas.Fecha}
+                value={fechas.FechaMostrar}
                 enable={true}
               />
               <AntDesign

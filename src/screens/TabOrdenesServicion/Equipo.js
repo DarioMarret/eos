@@ -85,6 +85,15 @@ export default function Equipo(props) {
                         const os = await AsyncStorage.getItem("OS")
                         const osItem = JSON.parse(os)
                         console.log("osItem", osItem)
+                    }else if(Accion == "PENDIENTE"){
+                        equipo.map((item, index) => {
+                            setTipo(item.tipo)
+                            setSerie(item.equ_serie)
+                            setModel(item.modelo)
+                        })
+                        setDisableSub(false)
+                        setDisable(true)
+                        setHistorial(equipo)
                     }
                     // else if (OrdenServicioID != null && OSClone != null) {
                     //     setHistorial(equipo)
@@ -161,22 +170,23 @@ export default function Equipo(props) {
             OSClone[0].equipo_id = item.equipo_id,
                 OSClone[0].Serie = item.equ_serie,
                 OSClone[0].TipoEquipo = item.equ_tipoEquipo,
-                OSClone[0].MarcaSerie = item.equ_marca,
+                // OSClone[0].MarcaSerie = item.equ_marca,
                 OSClone[0].ClienteNombreSerie = item.equ_clienteNombre,
                 OSClone[0].Marca = item.marca
             await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
         } else if (Accion == "OrdenSinTicket") {
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
-            osItem.equipo_id = equipoSelect.equipo_id,//#
-            osItem.Serie = equipoSelect.equ_serie,//#
-            osItem.MarcaSerie = equipoSelect.equ_marca,//#
-            osItem.Marca = equipoSelect.marca //#
-            osItem.ClienteNombre = equipoSelect.con_ClienteNombre //#
-            osItem.IdEquipoContrato = equipoSelect.id_equipoContrato //#
-            osItem.EstadoEqPrevio = equipoSelect.equ_estado //#
-            osItem.TipoEquipo = equipoSelect.equ_tipoEquipo //#
-            osItem.ModeloEquipo = equipoSelect.equ_modeloEquipo //#
+            osItem.equipo_id = item.equipo_id,//#
+            osItem.Serie = item.equ_serie,//#
+            // osItem.MarcaSerie = item.equ_marca,//#
+            osItem.Marca = item.marca //#
+            osItem.ClienteNombre = item.con_ClienteNombre //#
+            osItem.ObservacionCliente = "" //#
+            osItem.IdEquipoContrato = Number(item.id_equipoContrato) //#
+            osItem.EstadoEqPrevio = item.equ_estado //#
+            osItem.TipoEquipo = item.equ_tipoEquipo //#
+            osItem.ModeloEquipo = item.equ_modeloEquipo //#
             osItem.IngenieroID = IdUsuario//#
             osItem.empresa_id = 1 //#
             osItem.UsuarioCreacion = userId //#
@@ -368,7 +378,7 @@ export default function Equipo(props) {
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={tipo}
                                 onValueChange={(itemValue) => onChangeTipo(itemValue)}
-
+                                enabled={isdisabelsub}
                             >
                                 <Picker.Item label={tipo} value={""} />
                                 {
@@ -385,7 +395,9 @@ export default function Equipo(props) {
                             <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={model}
+                                enabled={isdisabelsub}
                                 onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+
                                 <Picker.Item label={model} value={""} />
                                 {
                                     modelosub ?

@@ -4,6 +4,7 @@ import { AntDesign } from '@expo/vector-icons'
 import React, { useState } from 'react'
 import { getProvinciasStorageBy } from '../service/provincias';
 import { getCantonesStorageBy } from '../service/cantones';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PickerSelect(props) {
 
@@ -22,11 +23,29 @@ export default function PickerSelect(props) {
     async function handleBuscarCliente() {
         // setSearch(text)
         console.log(search)
-        const list = await GetClienteCustimerName(search)
-        // console.log("list", list);
-        setlistCline(list)
+        if (search.length > 0) {
+            const list = await GetClienteCustimerName(search)
+            // console.log("list", list);
+            setlistCline(list)
+        }
     }
 
+    const handleSelectCliente = async (cliente) => {
+        const pro = await getCantonesStorageBy(cliente.CantonID)
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.Direccion = cliente.Direccion,
+        osItem.Ciudad = pro[0].descripcion,
+        osItem.ClienteID = cliente.CustomerID,
+        osItem.ClienteNombre = cliente.CustomerName,
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        setCliente({
+            ...cliente,
+            Sucursal: JSON.parse(cliente.Sucursal),
+            Ciudad: pro[0].descripcion
+        })
+        setModalVisible(!modalVisible)
+    }
 
     return (
         <Modal
@@ -69,28 +88,21 @@ export default function PickerSelect(props) {
                             listCline.map((listC, index) => {
                                 return (
                                     <View key={index}
-                                        style={{
-                                            width: '100%',
-                                            flexDirection: 'column',
-                                            justifyContent: 'center',
-                                            alignItems: 'flex-start',
-                                            paddingVertical: 0,
-                                            borderBottomWidth: 0.3,
-                                            borderBottomColor: '#B2B2AF',
-                                            marginBottom: 15,
-                                            height: 50
-                                        }}
+
                                     >
                                         <TouchableOpacity
-                                            onPress={async () => {
-                                                const pro = await getCantonesStorageBy(listC.CantonID)
-                                                setCliente({
-                                                    ...listC,
-                                                    Sucursal: JSON.parse(listC.Sucursal),
-                                                    Ciudad: pro[0].descripcion
-                                                })
-                                                setModalVisible(!modalVisible)
+                                            style={{
+                                                width: '100%',
+                                                flexDirection: 'column',
+                                                justifyContent: 'center',
+                                                alignItems: 'flex-start',
+                                                paddingVertical: 0,
+                                                borderBottomWidth: 0.3,
+                                                borderBottomColor: '#B2B2AF',
+                                                marginBottom: 15,
+                                                height: 50
                                             }}
+                                            onPress={() => handleSelectCliente(listC)}
                                         >
                                             <Text>
                                                 {listC.CustomerName}

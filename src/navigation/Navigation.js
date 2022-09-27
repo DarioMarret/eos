@@ -60,12 +60,12 @@ export default function DrawerNavigation(props) {
                     headerTitleStyle: {
                         fontWeight: 'bold',
                     },
-                    headerRight: () => (
-                        <View style={styles.search}>
-                            <TextInput />
-                            <AntDesign name="search1" size={24} color="#FFF" style={{ paddingEnd: 10, }} />
-                        </View>
-                    ),
+                    // headerRight: () => (
+                    //     <View style={styles.search}>
+                    //         <TextInput />
+                    //         <AntDesign name="search1" size={24} color="#FFF" style={{ paddingEnd: 10, }} />
+                    //     </View>
+                    // ),
                 }}
                 initialRouteName="Consultas"
             >

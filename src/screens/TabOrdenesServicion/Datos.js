@@ -41,35 +41,59 @@ export default function Datos(props) {
         Diagnostico: "",
         EstadoEquipo: "",
         Acciones: "",
-        IncluyoUpgrade: 0,
+        IncluyoUpgrade: false,
         ComentarioRestringido: "",
         ComentarioUpgrade: "",
         FechaSeguimiento: "",
-        nuevaVisita: 0,
+        nuevaVisita: false,
         release: "",
         ObservacionIngeniero: "",
         FechaSeguimiento: "",
+        FechaSeguimientoMostrar: "",
         TipoVisita: "",
         TipoVistaDescripcion: "",
-        Seguimento: 0,
+        Seguimento: false,
     })
 
-    function TipoVisitadescripcion(items) {
+    async function TipoVisitadescripcion(items) {
+        console.log("TipoVisitadescripcion", items)
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.TipoVisita = items
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
         setDatos({
             ...datos,
             TipoVisita: items
         })
     }
-    function TipoIncidencia(items) {
+    async function SitioTrabajoValue(items) {
+        setDatos({
+            ...datos,
+            SitioTrabajo: items
+        })
+        console.log("SitioTrabajo", items)
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.SitioTrabajo = items
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+    }
+    async function TipoIncidencia(items) {
+        console.log("TipoIncidencia", items)
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.tipoIncidencia = items
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
         setDatos({
             ...datos,
             tipoIncidencia: items
         })
     }
     const handleConfirmTime = (time) => {
+        let fec = new Date()
         setDatos({
             ...datos,
-            FechaSeguimiento: moment(time).format('YYYY-MM-DD')
+            FechaSeguimiento: fec,
+            FechaSeguimientoMostrar: moment(time).format("DD/MM/YYYY")
         })
         hideTimePicker();
     }
@@ -112,60 +136,45 @@ export default function Datos(props) {
                     const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
                     console.log("OSClone", OSClone)
                     if (Accion == "FINALIZADO") {
+                        console.log("Estamos FINALIZADO")
                         const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
                         // console.log("response", response)
                         response.map(item => setTipo(item.tck_tipoTicket))
                         setIsEnabled(false)
                         setDisableSub(false)
-                        const datosC = await DatosOSOrdenServicioID(OrdenServicioID)
-                        datosC.map(d => {
-                            setDatos({
-                                ...datos,
-                                SitioTrabajo: d.SitioTrabajo,
-                                tipoIncidente: d.tipoIncidente,
-                                Sintomas: d.Sintomas,
-                                Causas: d.Causas,
-                                Diagnostico: d.Diagnostico,
-                                EstadoEquipo: d.EstadoEquipo,
-                                Acciones: d.Acciones,
-                                recordatorio: null,
-                                incluyeupgrade: d.IncluyoUpgrade,
-                                ComentarioRestringido: d.ComentarioRestringido,
-                                ComentarioUpgrade: d.ComentarioUpgrade,
-                                FechaSeguimiento: d.FechaSeguimiento,
-                                requiereVisita: d.FechaSeguimiento,
-                                release: d.release,
-                                observacionIngeniero: d.ObservacionIngeniero,
-                            })
-                        })
-                        return
+                        // const datosC = await DatosOSOrdenServicioID(OrdenServicioID)
+                        // datosC.map(d => {
+                        //     setDatos(d)
+                        // })
+                        // return
                     } else if (Accion == "clonar") {
-                        setIsEnabled(true)
-                        setDisableSub(true)
-                        setDatos({
-                            ...datos,
-                            SitioTrabajo: OSClone[0].SitioTrabajo,
-                            tipoIncidente: OSClone[0].tipoIncidente,
-                            Sintomas: OSClone[0].Sintomas,
-                            Causas: OSClone[0].Causas,
-                            Diagnostico: OSClone[0].Diagnostico,
-                            EstadoEquipo: OSClone[0].EstadoEquipo,
-                            Acciones: OSClone[0].Acciones,
-                            recordatorio: null,
-                            IncluyoUpgrade: OSClone[0].IncluyoUpgrade,
-                            ComentarioRestringido: OSClone[0].ComentarioRestringido,
-                            ComentarioUpgrade: OSClone[0].ComentarioUpgrade,
-                            fechaRecordatorio: OSClone[0].FechaSeguimiento,
-                            FechaSeguimiento: OSClone[0].FechaSeguimiento,
-                            release: OSClone[0].release,
-                            ObservacionIngeniero: OSClone[0].ObservacionIngeniero,
-                        })
-                    } else if (Accion == "OrdenSinTicket") {
+                        console.log("Estamos clonar")
+                        
                         const os = await AsyncStorage.getItem("OS")
                         const osItem = JSON.parse(os)
                         setDatos({
                             ...datos,
-                            ...osItem
+                            ...osItem,
+                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
+                        })
+                        setIsEnabled(true)
+                        setDisableSub(true)
+
+                    } else if (Accion == "OrdenSinTicket") {
+                        console.log("Estamos OrdenSinTicket")
+                        const os = await AsyncStorage.getItem("OS")
+                        const osItem = JSON.parse(os)
+                        console.log("osItem", datos.FechaSeguimientoMostrar)
+                        setDatos({
+                            ...datos,
+                            ...osItem,
+                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
+                        })
+                    }  else if (Accion == "PENDIENTE") {
+                        setDatos({
+                            ...datos,
+                            ...OSClone[0],
+                            FechaSeguimientoMostrar: moment(OSClone[0].FechaSeguimiento).format("DD/MM/YYYY")
                         })
                     }
                 }
@@ -181,10 +190,6 @@ export default function Datos(props) {
                     setIsEnabled(!true)
                 } else {
                     setIsEnabled(!false)
-                }
-                let dat = await AsyncStorage.getItem(DATOS_)
-                if (dat != null) {
-                    setDatos(JSON.parse(dat))
                 }
             })()
         }, [])
@@ -211,36 +216,39 @@ export default function Datos(props) {
         const it = JSON.parse(itenSelect)
         const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
         if (Accion == "clonar") {
-            OSClone[0].ClienteNombre = cliente.CustomerName,
-                OSClone[0].Direccion = direccion.Direccion,
-                OSClone[0].Ciudad = provincia.descripcion,
-                OSClone[0].contrato_id = equipoTicket.id_contrato,
-                OSClone[0].equipo_id = equipoTicket.id_equipo,
-                OSClone[0].codOS = equipoTicket.codOS,
-                OSClone[0].ticket_id = equipoTicket.ticket_id,
-                OSClone[0].Estado = equipoTicket.Estado,
-                OSClone[0].CodigoEquipoCliente = equipoTicket.CodigoEquipoCliente,
-                console.log("OSClone", OSClone)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
-        } else if (Accion == "OrdenSinTicket") {
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
             osItem.Acciones = datos.Acciones,//# accion inmediata
                 osItem.Causas = datos.Causas, //# Problema reportado
-                osItem.SitioTrabajo = datos.SitioTrabajo, //# sitio de trabajo
+                osItem.contrato_id = 397, //# contrat ejemplo
                 osItem.Sintomas = datos.Sintomas, //# sintomas
                 osItem.Diagnostico = datos.Diagnostico, //# diagnostico
                 osItem.EstadoEquipo = datos.EstadoEquipo, //# estado del equipo
                 osItem.ComentarioRestringido = datos.ComentarioRestringido, //# inf. adicional 1
                 osItem.ComentarioUpgrade = datos.ComentarioUpgrade, //# inf. adicional 2
-                osItem.FechaSeguimiento = datos.FechaSeguimiento, //# fecha recordatorio
                 osItem.IncluyoUpgrade = datos.IncluyoUpgrade, //# IncluyoUpgrade estado true false
                 osItem.release = datos.release, //# release
                 osItem.ObservacionIngeniero = datos.ObservacionIngeniero, //# ObservacionIngeniero
                 osItem.nuevaVisita = datos.nuevaVisita, //# requiere nueva visita
                 osItem.Seguimento = datos.Seguimento, //# sequimiento
-                osItem.tipoIncidencia = datos.tipoIncidencia, //# sequimiento
-                osItem.TipoVisita = datos.TipoVisita, //# sequimiento
+                await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+            console.log("osItem", osItem)
+        } else if (Accion == "OrdenSinTicket") {
+            const os = await AsyncStorage.getItem("OS")
+            const osItem = JSON.parse(os)
+            osItem.Acciones = datos.Acciones,//# accion inmediata
+                osItem.Causas = datos.Causas, //# Problema reportado
+                osItem.contrato_id = 397, //# contrat ejemplo
+                osItem.Sintomas = datos.Sintomas, //# sintomas
+                osItem.Diagnostico = datos.Diagnostico, //# diagnostico
+                osItem.EstadoEquipo = datos.EstadoEquipo, //# estado del equipo
+                osItem.ComentarioRestringido = datos.ComentarioRestringido, //# inf. adicional 1
+                osItem.ComentarioUpgrade = datos.ComentarioUpgrade, //# inf. adicional 2
+                osItem.IncluyoUpgrade = datos.IncluyoUpgrade, //# IncluyoUpgrade estado true false
+                osItem.release = datos.release, //# release
+                osItem.ObservacionIngeniero = datos.ObservacionIngeniero, //# ObservacionIngeniero
+                osItem.nuevaVisita = datos.nuevaVisita, //# requiere nueva visita
+                osItem.Seguimento = datos.Seguimento, //# sequimiento
                 await AsyncStorage.setItem("OS", JSON.stringify(osItem))
             console.log("osItem", osItem)
         }
@@ -301,7 +309,7 @@ export default function Datos(props) {
                                 placeholder="Sitio de trabajo"
                                 editable={isEnabled}
                                 value={datos.SitioTrabajo}
-                                onChangeText={(SitioTrabajo) => setDatos({ ...datos, SitioTrabajo })}
+                                onChangeText={async (itemValue) => SitioTrabajoValue(itemValue)}
                             />
                         </View>
                         <View style={{ paddingHorizontal: 20 }} />
@@ -397,10 +405,10 @@ export default function Datos(props) {
                                                 <Picker.Item
                                                     key={index}
                                                     label={item.Descripcion}
-                                                    value={item.Descripcion}
+                                                    value={item.IdCatalogoDetalle}
                                                     selected={true}
                                                 />
-                                                : <Picker.Item key={index} label={item.Descripcion} value={item.Descripcion} />
+                                                : <Picker.Item key={index} label={item.Descripcion} value={item.IdCatalogoDetalle} />
                                         ))
                                         : null
                                 }
@@ -412,7 +420,7 @@ export default function Datos(props) {
                             style={styles.input}
                             placeholder="Acción inmediata"
                             editable={isEnabled}
-                            value={datos.accionInmediata}
+                            value={datos.Acciones}
                             onChangeText={(text) => setDatos({ ...datos, Acciones: text })}
                         />
                         <View style={{
@@ -438,7 +446,7 @@ export default function Datos(props) {
                                     ios_backgroundColor="#FFAF75"
                                     onValueChange={() => {
                                         toggleSwitchRecordatorio()
-                                        setDatos({ ...datos, Seguimento: !isRecordatorio ? 1 : 0 })
+                                        setDatos({ ...datos, Seguimento: !isRecordatorio ? true : false })
                                     }}
                                     value={isRecordatorio}
                                 />
@@ -474,7 +482,7 @@ export default function Datos(props) {
                                     ios_backgroundColor="#FFAF75"
                                     onValueChange={() => {
                                         toggleSwitchUpgrade()
-                                        setDatos({ ...datos, IncluyoUpgrade: !isUpgrade ? 1 : 0 })
+                                        setDatos({ ...datos, IncluyoUpgrade: !isUpgrade ? true : false })
                                     }}
                                     value={isUpgrade}
                                 />
@@ -500,17 +508,27 @@ export default function Datos(props) {
                             marginBottom: 20,
                         }}>
                             <TextInput
-                                style={{ width: "90%", height: "100%" }}
+                                style={{ width: "80%", height: "100%" }}
                                 placeholder='Fecha Recordatorio'
-                                editable={isEnabled}
-                                value={datos.FechaSeguimiento}
+                                editable={false}
+                                value={datos.FechaSeguimientoMostrar}
                             />
-                            <AntDesign
-                                onPress={() => hideTimePicker()}
-                                name='clockcircleo'
-                                size={24}
-                                color='#000000'
-                            />
+                            <View
+                                style={{
+                                    width: "20%",
+                                    height: "100%",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    margin: 0,
+                                }}
+                            >
+                                <AntDesign
+                                    onPress={() => hideTimePicker()}
+                                    name='clockcircleo'
+                                    size={24}
+                                    color='#000000'
+                                />
+                            </View>
                         </View>
                         <View style={{
                             ...styles.wFull,
@@ -527,7 +545,7 @@ export default function Datos(props) {
                                 ios_backgroundColor="#FFAF75"
                                 onValueChange={() => {
                                     toggleSwitchVisita()
-                                    setDatos({ ...datos, nuevaVisita: !isVisita ? 1 : 0 })
+                                    setDatos({ ...datos, nuevaVisita: !isVisita ? true : false })
                                 }}
                                 value={isVisita}
                             />
