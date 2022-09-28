@@ -6,7 +6,7 @@ import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, Toucha
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
-import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas";
+import { getOrdenServicioAnidadasTicket_id, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import db from "../../service/Database/model";
 import {
     Menu,
@@ -21,6 +21,10 @@ import axios from "axios";
 import { getToken } from "../../service/usuario";
 import { AntDesign } from "@expo/vector-icons";
 import { isChecked, isCheckedCancelaReturn } from "../../service/historiaEquipo";
+import { FinalizarOS } from "../../service/OS";
+import moment from "moment";
+import { GetEventosByTicket } from "../../service/OSevento";
+import { EquipoTicket } from "../../service/equipoTicketID";
 
 
 export default function TicketsOS(props) {
@@ -145,6 +149,7 @@ export default function TicketsOS(props) {
         await isChecked(equipo[0].equipo_id)
         navigation.navigate("Ordenes")
     }
+
     async function ColorCheckt(itemIndex) {
         seteventosAnidados(eventosAnidados.map((item, index) => {
             if (itemIndex.OrdenServicioID == item.OrdenServicioID) {
@@ -161,20 +166,29 @@ export default function TicketsOS(props) {
         }))
     }
 
-    function Finalizar() {
+    async function Finalizar() {
+        var OrdenServicioID = []
         eventosAnidados.map((item, index) => {
-            // if (item.check == true) {
-                console.log("Finalizar",item)
-            // }
+            if (item.check == true) {
+                OrdenServicioID.push(item.OrdenServicioID)
+            }
         })
-        // FinalizarOS(item)
-        // const { ticket_id } = JSON.parse(await AsyncStorage.getItem(ticketID))
-        // db.transaction(tx => {
-        //     tx.executeSql(`UPDATE OS_OrdenServicio set OS_FINALIZADA = ? where ticket_id = ?`, [1, ticket_id], (_, { rows }) => {
-        //         console.log("rows", rows)
-        //     })
-        // })
+        const respuesta = await FinalizarOS(OrdenServicioID)
+        if (respuesta == 200) {
+            await Sincronizar()
+        }
+        console.log("Finalizar", respuesta)
+    }
 
+    async function Sincronizar(){
+        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+        var hoy = moment().format('YYYY-MM-DD');
+        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+        ticket_id.map(async (r) => {
+            await EquipoTicket(r.ticket_id)
+            await OrdenServicioAnidadas(r.evento_id)
+        })
     }
 
     return (
@@ -340,23 +354,23 @@ export default function TicketsOS(props) {
                                 {/* </Pressable> */}
                             </View>
 
-                            <Pressable
-                                onPress={() => setItemIndex(null)}>
-                                <TouchableOpacity style={styles.opacity}>
-                                    <Text style={styles.text4}>INGRESAR NUEVO OS AL TICKET</Text>
-                                </TouchableOpacity>
-                            </Pressable>
+
+                            <TouchableOpacity
+                                onPress={() => setItemIndex(null)}
+                                style={styles.opacity}>
+                                <Text style={styles.text4}>INGRESAR NUEVO OS AL TICKET</Text>
+                            </TouchableOpacity>
                             {
                                 eventosAnidados.length > 0
                                     ?
                                     eventosAnidados.map((item, index) => {
                                         if (item.check) {
                                             return (
-                                                <Pressable onPress={Finalizar}>
-                                                    <TouchableOpacity style={{ ...styles.opacity, backgroundColor: '#FFFFFF', }}>
-                                                        <Text style={{ ...styles.text4, color: '#FF6B00' }}>FINALIZAR OS SELECCIONADO</Text>
-                                                    </TouchableOpacity>
-                                                </Pressable>
+                                                <TouchableOpacity
+                                                    onPress={async () => await Finalizar()}
+                                                    style={{ ...styles.opacity, backgroundColor: '#FFFFFF', }}>
+                                                    <Text style={{ ...styles.text4, color: '#FF6B00' }}>FINALIZAR OS SELECCIONADO</Text>
+                                                </TouchableOpacity>
                                             )
                                         }
                                     }) : null

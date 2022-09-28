@@ -1,3 +1,7 @@
+import axios from "axios";
+import { EquipoTicket } from "./equipoTicketID";
+import { OrdenServicioAnidadas } from "./OrdenServicioAnidadas";
+import { GetEventosByTicket } from "./OSevento";
 import { InserOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
@@ -49,22 +53,18 @@ export const PutOS = async (data) => {
  * @returns 
  */
 export const FinalizarOS = async (OrdenServicioID) => {
-
     const { token } = await getToken()
-    const url = `https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${OrdenServicioID}`;
-    const params = {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        }
-    }
-    try {
-        const response = await fetch(url, params);
-        const result = await response.json()
-        console.log("result", result)
-        return result;
-    } catch (error) {
-        return error;
-    }
+    return new Promise((resolve, reject) => {
+        OrdenServicioID.map(async (item, index) => {
+            const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${item}`, {}, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+            })
+            
+            console.log("status", status)
+        })
+        resolve(200)
+    })
 }
