@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Button, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Button, StyleSheet,SafeAreaView, Text, TextInput, TouchableOpacity, ScrollView, View } from "react-native";
 import Signature from 'react-native-signature-canvas';
 import { AntDesign } from '@expo/vector-icons';
 
@@ -126,6 +126,7 @@ export default function Firmador({ onOK, datauser,setModalSignature,enviarFirma,
                 </View>
             </View>
         </View>
+        
     );
 }
 
@@ -176,6 +177,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         width: "100%",
+        height:"20%",
         padding: 10
     },
     input: {
@@ -199,7 +201,6 @@ const styles = StyleSheet.create({
     },
     centeredView: {
         flex: 1,
-        height:"auto",
         justifyContent: "center",
         alignItems: "center",
         marginTop: 22,
@@ -219,8 +220,6 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 5,
         width: "90%",
-        height: "auto",
-        // maxHeight: "90%",
-        overflow: "scroll"
+        height: "90%",
     },
 })

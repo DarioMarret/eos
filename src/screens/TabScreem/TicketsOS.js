@@ -241,12 +241,12 @@ export default function TicketsOS(props) {
         pdfview ?
             (<View style={styles.container} >
                 <Modal
-                    animationType="slide"
                     transparent={true}
                     visible={modalSignature}
                     onRequestClose={() => {
                         setModalSignature(!modalSignature);
                     }}
+                    propagateSwipe={true}
                 >
                     <Firmador enviarFirma={enviarFirma} setModalSignature={setModalSignature} datauser={userData} />
                 </Modal>
