@@ -1,6 +1,6 @@
 import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config"
 import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas"
-import { StyleSheet, Text, TextInput, View, Switch, ScrollView } from "react-native"
+import { StyleSheet, Text, Pressable, TextInput, View, Modal, Switch, TouchableOpacity, ScrollView } from "react-native"
 import { DatosOSOrdenServicioID } from "../../service/OS_OrdenServicio"
 import DateTimePickerModal from "react-native-modal-datetime-picker"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -11,6 +11,7 @@ import { DATOS_, ticketID } from "../../utils/constantes"
 import { Picker } from '@react-native-picker/picker'
 import React, { useCallback, useState } from "react"
 import { AntDesign } from "@expo/vector-icons"
+import Firmador from "../../components/Firmador"
 import moment from "moment"
 
 export default function Datos(props) {
@@ -32,6 +33,8 @@ export default function Datos(props) {
 
     const [isEnabled, setIsEnabled] = useState(false);
     const [isdisabelsub, setDisableSub] = useState(true)
+    
+    const [showCheckList, setShowCheckList] = useState(false)
 
     const [datos, setDatos] = useState({
         SitioTrabajo: "",
@@ -253,9 +256,68 @@ export default function Datos(props) {
             console.log("osItem", osItem)
         }
     }
-
+    const verChecklist = () => {
+        setShowCheckList(true)
+    }
+    const [activities, setActivities ] = useState([
+        {hour:"15:00 PM", observation: ""}
+    ])
+    const [value, onChangeText] = useState("");
     return (
-        <View style={styles.container}>
+        <View style={styles.centeredView}>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={showCheckList}
+                onRequestClose={() => {
+                setShowCheckList(!showCheckList);
+                }}
+            >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        <Text style={styles.modalText}>Checklist</Text>
+                        <View style={styles.boxActivity}>
+                            <View style={styles.infoActivity}>
+                                <Text style={{color: "#666666"}}>ACTIVIDAD #1</Text>
+                                <Text style={{color: "#000000"}}>15:00 PM / COMENTARIO</Text>
+                                <View style={{
+                                    ...styles.inputActivity
+                                }}>
+                                    <TextInput
+                                        multiline
+                                        numberOfLines={4}
+                                        editable
+                                        placeholder="Observación actividad"
+                                        onChangeText={text => onChangeText(text)}
+                                        // style={styles.inputActivity}
+                                    />
+                                </View>
+                            </View>
+                            <View style={styles.iconActivity}>
+                                <AntDesign
+                                    name='checkcircleo'
+                                    size={24}
+                                    color='#000000'
+                                />
+                            </View>
+                        </View>
+                        <View style={{width:"100%" ,flexDirection:"row",justifyContent: "flex-end"}}>
+                            <Pressable
+                                style={styles.button}
+                                onPress={() => setShowCheckList(!showCheckList)}
+                            >
+                                <Text style={{...styles.textStyle, color:"#FF6B00"}}>GRABAR</Text>
+                            </Pressable>
+                            <Pressable
+                                style={styles.button}
+                                onPress={() => setShowCheckList(!showCheckList)}
+                            >
+                                <Text style={styles.textStyle}>CERRAR</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
             <ScrollView showsVerticalScrollIndicator={false} >
                 <View style={styles.ContenedorCliente}>
                     <Text
@@ -311,6 +373,24 @@ export default function Datos(props) {
                                 value={datos.SitioTrabajo}
                                 onChangeText={async (itemValue) => SitioTrabajoValue(itemValue)}
                             />
+                        </View>
+                        <View style={{
+                            flexDirection: "row",
+                            justifyContent: "space-evenly",
+                            alignItems: "center",
+                            marginBottom: 20,
+                            width: "100%",
+                            backgroundColor: "#FFFFFF"
+                        }}>
+                        {/* onPress={() => verChecklist()} */}
+                            <TouchableOpacity style={styles.btn} onPress={() => verChecklist()} >
+                                <Text style={{
+                                    fontSize: 18,
+                                    color: '#FFF',
+                                    fontFamily: 'Roboto',
+                                    marginLeft: 10
+                                }}>VER CHECKLIST</Text>
+                            </TouchableOpacity>
                         </View>
                         <View style={{ paddingHorizontal: 20 }} />
                         <View
@@ -653,4 +733,79 @@ const styles = StyleSheet.create({
         padding: 10,
         marginBottom: "6%"
     },
+    btn: {
+        width: '100%',
+        flexDirection: 'row',
+        borderRadius: 25,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FF6B00',
+        padding: 15,
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22,
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 20,
+        paddingVertical: 20,
+        alignItems: "flex-start",
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+        width: "90%",
+        maxHeight: "90%",
+        overflow: "scroll"
+    },
+    modalText: {
+        marginBottom: 15,
+        marginLeft: 20,
+        textAlign: "left",
+        fontSize: 16
+    },
+    button: {
+    
+    },
+    textStyle: {
+        color: "#7B7B7B",
+        fontWeight: "bold",
+        textAlign: "center",
+        fontSize: 18,
+        padding: 20
+    },
+    boxActivity: {
+        width:"100%",
+        height:"auto",
+        flexDirection: 'row',
+        alignItems: "center",
+        borderBottomColor: '#D6D6D6',
+        borderBottomWidth: 1,
+        paddingVertical: 10,
+        padding: 20
+    },
+    infoActivity:{
+        width: "85%",
+    },
+    inputActivity:{
+        width: "100%",
+        borderRadius: 10,
+        borderColor: "#666666",
+        borderWidth: 1,
+        padding:10,
+        marginTop:10
+    },
+    iconActivity:{
+        width: '15%', 
+        justifyContent: 'center',
+        alignItems: 'center',
+    }
 });

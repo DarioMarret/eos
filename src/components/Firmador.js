@@ -4,7 +4,7 @@ import Signature from 'react-native-signature-canvas';
 import { AntDesign } from '@expo/vector-icons';
 
 
-export default function Firmador({ onOK, datauser, handleCloseFirma }) {
+export default function Firmador({ onOK, datauser,setModalSignature,enviarFirma, handleCloseFirma }) {
     const ref = useRef();
 
     const handleOK = (signature) => {
@@ -12,7 +12,7 @@ export default function Firmador({ onOK, datauser, handleCloseFirma }) {
         console.log(signature);
         datauser.firma = signature
     };
-
+    
     // Called after ref.current.readSignature() reads an empty string
     const handleEmpty = () => {
         console.log("Empty");
@@ -71,7 +71,7 @@ export default function Firmador({ onOK, datauser, handleCloseFirma }) {
     `;
 
     return (
-        <View style={styles.container}>
+        <View style={styles.centeredView}>
             <View style={styles.circlePrimary}>
                 <View style={styles.header}>
                     <Text style={{ fontWeight: 'bold', paddingBottom: 10 }}>Agregar firma</Text>
@@ -85,6 +85,7 @@ export default function Firmador({ onOK, datauser, handleCloseFirma }) {
                         <AntDesign name="delete" size={20} color="red" onPress={handleClear} />
                     </View>
                 </View>
+                <View style={{width:"100%", height:"50%"}}>
                 <Signature
                     ref={ref}
                     onEnd={handleEnd}
@@ -96,6 +97,7 @@ export default function Firmador({ onOK, datauser, handleCloseFirma }) {
                     confirmText="AGREGAR"
                     webStyle={style}
                 />
+                </View>
                 <View style={styles.Inputs}>
                     <TextInput
                         style={styles.input}
@@ -111,15 +113,16 @@ export default function Firmador({ onOK, datauser, handleCloseFirma }) {
                             placeholder="Correo"
                         />
                     </View>
-                    <View style={{ ...styles.CargosCorreo, justifyContent: 'flex-end', margin: 10 }}>
-                        <TouchableOpacity onPress={handleConfirm}>
-                            <Text style={{ color: "#FF6B00" }}>AGREDAR FIRMA</Text>
-                        </TouchableOpacity>
-                        <View style={{ paddingHorizontal: 20 }} />
-                        <TouchableOpacity onPress={handleCloseFirma}>
-                            <Text style={{ color: "#B2B2AF" }}>CERRAR</Text>
-                        </TouchableOpacity>
-                    </View>
+                    
+                </View>
+                <View style={{ width: "100%", flexDirection:"row", justifyContent: 'flex-end', padding: 20}}>
+                    <TouchableOpacity onPress={()=>enviarFirma()}>
+                        <Text style={{ color: "#FF6B00" }}>AGREDAR FIRMA</Text>
+                    </TouchableOpacity>
+                    <View style={{ paddingHorizontal: 20 }} />
+                    <TouchableOpacity onPress={()=>setModalSignature(false)}>
+                        <Text style={{ color: "#B2B2AF" }}>CERRAR</Text>
+                    </TouchableOpacity>
                 </View>
             </View>
         </View>
@@ -144,7 +147,9 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.17,
         shadowRadius: 3.05,
-        elevation: 4
+        elevation: 4,
+        flexDirection: "column",
+        justifyContent: "space-between",
     },
     header: {
         flexDirection: "column",
@@ -191,5 +196,31 @@ const styles = StyleSheet.create({
     text: {
         fontSize: 12,
         color: '#B2B2AF',
+    },
+    centeredView: {
+        flex: 1,
+        height:"auto",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22,
+    },
+    modalView: {
+        margin: 20,
+        backgroundColor: "white",
+        borderRadius: 20,
+        paddingVertical: 20,
+        alignItems: "flex-start",
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 2
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+        width: "90%",
+        height: "auto",
+        // maxHeight: "90%",
+        overflow: "scroll"
     },
 })

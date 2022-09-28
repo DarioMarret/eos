@@ -2,7 +2,7 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { useCallback, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
-import { ActivityIndicator, FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, SafeAreaView, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
@@ -26,7 +26,7 @@ import moment from "moment";
 import { GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import { time, TrucateUpdate } from "../../service/CargaUtil";
-
+import Firmador from "../../components/Firmador"
 
 export default function TicketsOS(props) {
     const { navigation } = props
@@ -42,6 +42,13 @@ export default function TicketsOS(props) {
     const [idOrdenServicio, setIdOrdenServicio] = useState(null)
 
     const [modalVisible, setModalVisible] = useState(false);
+
+    const [modalSignature, setModalSignature] = useState(false);
+    const [userData, setUserData] = useState({
+        NombreUsuario:"",
+        ApellidoUsuario:"",
+        firma: null
+    })
 
     const [pdfview, setPdfview] = useState(true)
     const [pdfurl, setPdfurl] = useState("")
@@ -91,7 +98,13 @@ export default function TicketsOS(props) {
 
 
     async function AgregarFirma(item) {
+        setModalSignature(true)
         console.log("AgregarFirma", item)
+    }
+
+    const enviarFirma = () =>{
+        setModalSignature(false)
+        console.log("enviado")
     }
 
     async function ClonarOS(ticket_id, OrdenServicioID) {
@@ -227,6 +240,16 @@ export default function TicketsOS(props) {
 
         pdfview ?
             (<View style={styles.container} >
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalSignature}
+                    onRequestClose={() => {
+                        setModalSignature(!modalSignature);
+                    }}
+                >
+                    <Firmador enviarFirma={enviarFirma} setModalSignature={setModalSignature} datauser={userData} />
+                </Modal>
                 {
                     eventosAnidados.length > 0 ?
                         <View style={styles.body}>
@@ -573,5 +596,10 @@ const styles = StyleSheet.create({
     textModalInfo: {
         fontSize: 16,
         color: '#666666'
-    }
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        marginTop: 22,
+    },
 });
