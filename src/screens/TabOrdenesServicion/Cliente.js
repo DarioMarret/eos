@@ -179,6 +179,33 @@ export default function Cliente(props) {
                             const os = await AsyncStorage.getItem("OS")
                             const osItem = JSON.parse(os)
                             console.log("osItem", osItem)
+                            let clie = await SelectCliente(osItem.ClienteID)
+                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
+                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
+                            setCliente({
+                                ...cliente,
+                                CustomerName: osItem.ClienteNombre,
+                                Sucursal: JSON.parse(clie.Sucursal),
+                                Ciudad: osItem.Ciudad,
+                            })
+                            setDireccion({
+                                ...direccion,
+                                Direccion: osItem.Direccion,
+                            })
+                            setProvincia({
+                                ...provincia,
+                                descripcion: osItem.Ciudad,
+                            })
+                            setEquipoTicket({
+                                ...equipoTicket,
+                                id_contrato: osItem.contrato_id,
+                                id_equipo: osItem.equipo_id,
+                                codOS: osItem.codOS,
+                                ticket_id: osItem.ticket_id,
+                                Estado: osItem.Estado,
+                                CodigoEquipoCliente: osItem.CodigoEquipoCliente,
+                            })
+                            setFecha(moment().format("YYYY-MM-DD"))
                             return
                         } else if (Accion == "PENDIENTE") {
                             // SelectCliente(CustomerID)

@@ -97,19 +97,18 @@ export default function Adjuntos(props) {
       anexos.archivo = adjuntos.archivo
       anexos.Ruta = adjuntos.Ruta
       anexos.Descripcion = adjuntos.Descripcion
-      anexos.Estado = ""
-      anexos.FechaCreacion = moment().format('YYYY-MM-DD HH:mm:ss')
-      anexos.FechaModificacion = moment().format('YYYY-MM-DD HH:mm:ss')
+      anexos.Estado = "ACTI"
+      anexos.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      anexos.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
       anexos.IdAnexo = 0
-      anexos.OS_OrdenServicio = 0
+      anexos.OS_OrdenServicio = null
       anexos.OrdenServicioID = 0
       anexos.UsuarioCreacion = userId
       anexos.UsuarioModificacion = userId
       anexosArray.push(anexos)
       setListAdjuntos(anexosArray)
       await AsyncStorage.setItem("OS_Anexos", JSON.stringify(anexosArray))
-      console.log("OS_PartesRepuestos", anexosArray)
-      console.log(anexos)
+      console.log("saveAdjunto", anexosArray)
       // navigation.navigate('5-ADJUNTOS')
     }
   }

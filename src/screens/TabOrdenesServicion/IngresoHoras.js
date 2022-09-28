@@ -39,7 +39,11 @@ export default function IngresoHoras(props) {
   };
   const handleConfirm = (date) => {
     let fec = new Date()
-    setFechas({ ...fechas, Fecha: fec })
+    setFechas({
+      ...fechas,
+      Fecha: fec,
+      FechaMostrar: Moment(date).format("DD/MM/YYYY"),
+    })
     hideDatePicker();
   };
   //fin
@@ -67,7 +71,6 @@ export default function IngresoHoras(props) {
     TiempoEspera: 0,
     TiempoTrabajo: 0,
     TiempoViaje: 0,
-    Fecha: "",
     FechaMostrar: "",
     HoraLlegadaSgteDestino: "",
     TiempoViajeSalida: 0,
@@ -88,15 +91,17 @@ export default function IngresoHoras(props) {
             setFechas({
               ...fechas,
               ...os_tiempos[0],
-              FechaMostrar: Moment(os_tiempos[0].Fecha).format('DD/MM/YYYY'),
+              FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
             return
           } else if (Accion == "clonar") {
-            let tem = JSON.parse(OSClone[0].OS_Tiempos)
+            const os = await AsyncStorage.getItem("OS")
+            let OS = JSON.parse(os)
+            let tem = JSON.parse(OS[0].OS_Tiempos)
             setFechas({
               ...fechas,
               ...tem[0],
-              FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
+              FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
             })
             return
           } else if (Accion == "FINALIZADO") {
@@ -107,11 +112,13 @@ export default function IngresoHoras(props) {
               FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
             })
           } else if (Accion == "PENDIENTE") {
-            let tem = JSON.parse(OSClone[0].OS_Tiempos)
+            const os = await AsyncStorage.getItem("OS")
+            let OS = JSON.parse(os)
+            let tem = JSON.parse(OS[0].OS_Tiempos)
             setFechas({
               ...fechas,
               ...tem[0],
-              FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
+              FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
             })
           }
         }

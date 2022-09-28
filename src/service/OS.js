@@ -1,13 +1,8 @@
 import axios from "axios";
-import { EquipoTicket } from "./equipoTicketID";
-import { OrdenServicioAnidadas } from "./OrdenServicioAnidadas";
-import { GetEventosByTicket } from "./OSevento";
 import { InserOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 export const PostOS = async (data) => {
-
-
     const { token } = await getToken()
     const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio`;
     const params = {
@@ -20,13 +15,12 @@ export const PostOS = async (data) => {
     }
     let response = await fetch(url, params);
     let result = await response.json()
+    console.log("PostOS", result)
     await InserOSOrdenServicioID(result.Response)
     return result
-
 }
 
 export const PutOS = async (data) => {
-
     const { token } = await getToken()
     const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio/${data.OrdenServicioID}`;
     const params = {
@@ -62,7 +56,6 @@ export const FinalizarOS = async (OrdenServicioID) => {
                     "Authorization": `Bearer ${token}`
                 }
             })
-            
             console.log("status", status)
         })
         resolve(200)

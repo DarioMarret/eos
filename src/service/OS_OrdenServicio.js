@@ -193,6 +193,21 @@ export async function SelectOSOrdenServicioID(OrdenServicioID) {
     })
 }
 
+export async function DeleteOrdenServicioID(OrdenServicioID) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT * FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(_array)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
+    })
+}
+
 //esta funcion vizualizar el pdf
 export async function PDFVisializar(OrdenServicioID) {
     return new Promise((resolve, reject) => {

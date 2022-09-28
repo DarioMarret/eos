@@ -1,8 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 
 import { useCallback, useState } from "react";
-
-import { FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import NetInfo from '@react-native-community/netinfo';
+import { ActivityIndicator, FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
@@ -15,21 +15,26 @@ import {
     MenuTrigger,
 } from 'react-native-popup-menu';
 import VisualizadorPDF from "../../components/VisualizadorPDF";
-import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { DeleteOrdenServicioID, getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
 import { AntDesign } from "@expo/vector-icons";
-import { isChecked, isCheckedCancelaReturn } from "../../service/historiaEquipo";
+import { HistorialEquipoIngeniero, isChecked, isCheckedCancelaReturn } from "../../service/historiaEquipo";
 import { FinalizarOS } from "../../service/OS";
 import moment from "moment";
-import { GetEventosByTicket } from "../../service/OSevento";
+import { GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import { EquipoTicket } from "../../service/equipoTicketID";
+import { time, TrucateUpdate } from "../../service/CargaUtil";
 
 
 export default function TicketsOS(props) {
     const { navigation } = props
     const [eventosAnidados, seteventosAnidados] = useState([])
+
+    const [Fini, setFini] = useState(false)
+
+    const [loading, setLoading] = useState(false)
 
     const [listadoEmails, setlistadoEmails] = useState([])
 
@@ -65,7 +70,8 @@ export default function TicketsOS(props) {
     }
 
     async function Ordene(ticket_id, OrdenServicioID, estado) {
-        // console.log("ticket_id", ticket_id)
+        console.log("ticket_id", ticket_id)
+        console.log("estado", estado)
         try {
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
@@ -133,7 +139,7 @@ export default function TicketsOS(props) {
     async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
         equipo[0]['isChecked'] = 'true'
         var clon;
-        if (accion == "PENDIENTE") {
+        if (accion == "PENDIENTE" || accion == "FINALIZADO") {
             clon = await SelectOSOrdenServicioID(OrdenServicioID)
             await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
             // console.log("clon", clon)
@@ -164,9 +170,14 @@ export default function TicketsOS(props) {
                 }
             }
         }))
+        CeckFini()
+    }
+    function CeckFini() {
+        eventosAnidados.filter((item) => item.check == true).length > 0 ? setFini(false) : setFini(true)
     }
 
     async function Finalizar() {
+        setLoading(true)
         var OrdenServicioID = []
         eventosAnidados.map((item, index) => {
             if (item.check == true) {
@@ -175,19 +186,40 @@ export default function TicketsOS(props) {
         })
         const respuesta = await FinalizarOS(OrdenServicioID)
         if (respuesta == 200) {
-            await Sincronizar()
+            const re = await Sincronizar()
+            if (re) {
+                setFini(false)
+                setLoading(false)
+                navigation.navigate("Consultas")
+            }
         }
         console.log("Finalizar", respuesta)
     }
 
-    async function Sincronizar(){
-        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-        var hoy = moment().format('YYYY-MM-DD');
-        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-        ticket_id.map(async (r) => {
-            await EquipoTicket(r.ticket_id)
-            await OrdenServicioAnidadas(r.evento_id)
+    async function Sincronizar() {
+        return new Promise((resolve, reject) => {
+            NetInfo.fetch().then(state => {
+                if (state.isConnected === true) {
+                    (async () => {
+                        await TrucateUpdate()
+                        time(1500)
+                        await HistorialEquipoIngeniero()
+                        await time(1000)
+                        await GetEventosDelDia()
+                        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                        var hoy = moment().format('YYYY-MM-DD');
+                        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                        ticket_id.map(async (r) => {
+                            await EquipoTicket(r.ticket_id)
+                            await OrdenServicioAnidadas(r.evento_id)
+                        })
+                        resolve(true)
+                    })()
+                } else {
+                    resolve(false)
+                }
+            })
         })
     }
 
@@ -204,6 +236,20 @@ export default function TicketsOS(props) {
                                 fontSize: 15,
                             }}>Ticket #{eventosAnidados[0].ticket_id}</Text>
                             <View style={{ ...styles.body1 }} >
+                                <ActivityIndicator
+                                    animating={loading}
+                                    color="#FF6B00"
+                                    size="large"
+                                    style={{
+                                        position: 'absolute',
+                                        left: 0,
+                                        right: 0,
+                                        top: 0,
+                                        bottom: 0,
+                                        alignItems: 'center',
+                                    }}
+
+                                />
                                 {/* <Pressable onPress={() => setItemIndex(null)}> */}
                                 <ScrollView showsVerticalScrollIndicator={false} >
                                     {
@@ -216,7 +262,7 @@ export default function TicketsOS(props) {
                                                     <View
                                                         style={{
                                                             flexDirection: 'row',
-                                                            justifyContent: 'space-between',
+                                                            justifyContent: 'space-around',
                                                             alignItems: 'center',
                                                             backgroundColor: functionColor(item.ev_estado),
                                                             width: '100%',
@@ -225,20 +271,24 @@ export default function TicketsOS(props) {
                                                             borderBottomWidth: 0.5,
                                                             borderColor: '#858583'
                                                         }}>
-                                                        <TouchableOpacity
-                                                            onPress={() => ColorCheckt(item)}
-                                                            style={{
-                                                                flexDirection: 'column',
-                                                                justifyContent: 'center',
-                                                                alignItems: 'center',
-                                                                width: 30,
-                                                                height: 30,
-                                                                borderWidth: 2,
-                                                                borderColor: item.check ? '#188C03' : '#858583',
-                                                                borderRadius: 50,
-                                                            }}>
-                                                            <AntDesign name="check" size={24} color={item.check ? '#188C03' : '#858583'} />
-                                                        </TouchableOpacity>
+                                                        {
+                                                            item.ev_estado == "PENDIENTE" ?
+                                                                <TouchableOpacity
+                                                                    onPress={() => ColorCheckt(item)}
+                                                                    style={{
+                                                                        flexDirection: 'column',
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center',
+                                                                        width: 30,
+                                                                        height: 30,
+                                                                        borderWidth: 2,
+                                                                        borderColor: item.check ? '#188C03' : '#858583',
+                                                                        borderRadius: 50,
+                                                                    }}>
+                                                                    <AntDesign name="check" size={24} color={item.check ? '#188C03' : '#858583'} />
+                                                                </TouchableOpacity>
+                                                                : null
+                                                        }
                                                         <TouchableOpacity
                                                             onPress={() => Ordene(String(item.ticket_id), item.OrdenServicioID, item.ev_estado)}>
                                                             <View>
@@ -361,19 +411,14 @@ export default function TicketsOS(props) {
                                 <Text style={styles.text4}>INGRESAR NUEVO OS AL TICKET</Text>
                             </TouchableOpacity>
                             {
-                                eventosAnidados.length > 0
-                                    ?
-                                    eventosAnidados.map((item, index) => {
-                                        if (item.check) {
-                                            return (
-                                                <TouchableOpacity
-                                                    onPress={async () => await Finalizar()}
-                                                    style={{ ...styles.opacity, backgroundColor: '#FFFFFF', }}>
-                                                    <Text style={{ ...styles.text4, color: '#FF6B00' }}>FINALIZAR OS SELECCIONADO</Text>
-                                                </TouchableOpacity>
-                                            )
-                                        }
-                                    }) : null
+
+                                Fini ?
+                                    <TouchableOpacity
+                                        onPress={async () => await Finalizar()}
+                                        style={{ ...styles.opacity, backgroundColor: '#FFFFFF', }}>
+                                        <Text style={{ ...styles.text4, color: '#FF6B00' }}>FINALIZAR OS SELECCIONADO</Text>
+                                    </TouchableOpacity>
+                                    : null
                             }
                         </View>
                         :

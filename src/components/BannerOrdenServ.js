@@ -2,12 +2,17 @@ import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } fr
 import { Fontisto } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import tabNavigation from "../hook/tabNavigation";
-import { getHistorialEquiposStorageChecked } from "../service/historiaEquipo";
+import { getHistorialEquiposStorageChecked, HistorialEquipoIngeniero } from "../service/historiaEquipo";
 import { PostOS, PutOS } from "../service/OS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
-import { useState } from "react";
+import { useState } from "react"
+import NetInfo from '@react-native-community/netinfo';
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos, ticketID } from "../utils/constantes";
+import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
+import { time, TrucateUpdate } from "../service/CargaUtil";
+import { EquipoTicket } from "../service/equipoTicketID";
+import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 
 export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
@@ -91,6 +96,7 @@ export default function BannerOrderServi(props) {
                 OS.OS_Tiempos = JSON.parse(os_tiemp)
                 OS.OS_Firmas = JSON.parse(os_firma)
                 OS.OS_Anexos = JSON.parse(os_anexo)
+                console.log("OS.OS_Anexos",typeof OS.OS_Anexos)
                 
                 let O = await PostOS(OS)
                 await LimpiandoDatos()
@@ -102,7 +108,7 @@ export default function BannerOrderServi(props) {
                 let P = await PutOS(OS)
                 await LimpiandoDatos()
                 setModalVisible(false)
-                console.log("CLONACION GUARDAR_", P)
+                console.log("ACUALIZAR GUARDAR_", P)
 
             } 
             // else if (Accion == "clonar") {
@@ -111,24 +117,25 @@ export default function BannerOrderServi(props) {
         }
 
 
-        OS.OrdenServicioID = 0
-        OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        OS.OS_Colaboradores = []
-        OS.OS_PartesRepuestos = JSON.parse(os_part)
-        OS.OS_CheckList = JSON.parse(os_checl)
-        OS.OS_Tiempos = JSON.parse(os_tiemp)
-        OS.OS_Firmas = JSON.parse(os_firma)
-        OS.OS_Anexos = JSON.parse(os_anexo)
-        console.log(OS)
-        const res = await PostOS(OS)
-        await LimpiandoDatos()
-        setModalVisible(false)
-        console.log("GUARDAR_OS", res)
+        // OS.OrdenServicioID = 0
+        // OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        // OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        // OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        // OS.OS_Colaboradores = []
+        // OS.OS_PartesRepuestos = JSON.parse(os_part)
+        // OS.OS_CheckList = JSON.parse(os_checl)
+        // OS.OS_Tiempos = JSON.parse(os_tiemp)
+        // OS.OS_Firmas = JSON.parse(os_firma)
+        // OS.OS_Anexos = JSON.parse(os_anexo)
+        // console.log(OS)
+        // const res = await PostOS(OS)
+        // await LimpiandoDatos()
+        // setModalVisible(false)
+        // console.log("GUARDAR_OS", res)
     }
 
     async function LimpiandoDatos(){
+        await Sincronizar()
         await AsyncStorage.removeItem("OS_PartesRepuestos")
         await AsyncStorage.removeItem("OS_CheckList")
         await AsyncStorage.removeItem("OS_Tiempos")
@@ -143,6 +150,34 @@ export default function BannerOrderServi(props) {
         await AsyncStorage.setItem("OS", JSON.stringify(OS))
         navigation.navigate("Consultas")
     }
+
+    async function Sincronizar() {
+        return new Promise((resolve, reject) => {
+            NetInfo.fetch().then(state => {
+                if (state.isConnected === true) {
+                    (async () => {
+                        await TrucateUpdate()
+                        time(1500)
+                        await HistorialEquipoIngeniero()
+                        await time(1000)
+                        await GetEventosDelDia()
+                        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                        var hoy = moment().format('YYYY-MM-DD');
+                        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                        ticket_id.map(async (r) => {
+                            await EquipoTicket(r.ticket_id)
+                            await OrdenServicioAnidadas(r.evento_id)
+                        })
+                        resolve(true)
+                    })()
+                } else {
+                    resolve(false)
+                }
+            })
+        })
+    }
+
 
     return (
         <>

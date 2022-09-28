@@ -91,7 +91,7 @@ export const OS = {
     equ_fechaFabricacion: null,
     equ_systemCode: null,
     OrdenServicioID: 0,
-    TipoVisita: "04",
+    TipoVisita: "",
     Fecha: "",
     Estado: "ACTI",
     Finalizado: null,
@@ -1235,7 +1235,6 @@ export const anexos = {
     Descripcion: null,
     esOSFisica: false,
     archivo: null,
-    switch: false,
 }
 
 export const timpo = {

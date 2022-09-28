@@ -1,4 +1,4 @@
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
+import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useFocusEffect } from "@react-navigation/native"
 import { GetEventos } from "../../service/OSevento"
@@ -12,6 +12,7 @@ import calwait from '../../../assets/icons/cal-wait.png'
 import calreq from '../../../assets/icons/cal-req.png'
 import calok from '../../../assets/icons/cal-ok.png'
 import { ticketID } from "../../utils/constantes"
+import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas"
 
 
 
@@ -22,11 +23,13 @@ export default function Manana(props) {
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
     const [time, setTime] = useState(false)
+    const [loading, setLoading] = useState(false)
 
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setLoading(true)
                 var date = moment().add(1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
@@ -35,6 +38,8 @@ export default function Manana(props) {
                         console.log("rows", rows._array)
                     })
                 })
+
+                setLoading(false)
             })()
         }, [])
     )
@@ -67,33 +72,42 @@ export default function Manana(props) {
         }
     }
     async function Ordene(ticket_id) {
+        console.log("ticket_id", ticket_id)
         try {
-            db.transaction(tx => {
-                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("id_equipo-->", rows._array[0].id_equipo)
-                    db.transaction(tx => {
-                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            console.log("equipo selecionado Manana row", rows._array)
-                            Rutes(rows._array, ticket_id)
+            const anidada = await getOrdenServicioAnidadas(ticket_id)
+            if (anidada == null) {
+                console.log("no hay anidadas")
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                        console.log("id_equipo-->", rows._array[0].id_equipo)
+                        db.transaction(tx => {
+                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                                console.log("equipo selecionado hoy row", rows._array)
+                                Rutes(rows._array, ticket_id)
+                            })
                         })
                     })
                 })
-            })
+            }
+            if (anidada.length > 0) {
+                console.log("hay anidadas")
+                Rutes([], ticket_id)
+            }
         } catch (error) {
             console.log("error", error)
         }
     }
 
     async function Rutes(equipo, ticket_id) {
-        if (equipo) {
+        if (equipo.length != 0) {
             await AsyncStorage.removeItem(ticketID)
             await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
             navigation.navigate("Ordenes")
         }
 
-        if (equipo == null) {
+        if (equipo.length == 0) {
             await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
             navigation.navigate("Ticket")
         }
     }
@@ -159,6 +173,19 @@ export default function Manana(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
+                <ActivityIndicator
+                    animating={loading}
+                    color="#FF6B00"
+                    size="large"
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                    }}
+                />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}

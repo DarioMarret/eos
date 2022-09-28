@@ -82,10 +82,23 @@ export default function Equipo(props) {
                         setHistorial(equipo)
                         return
                     }else if(Accion == "OrdenSinTicket"){
+                        
                         const os = await AsyncStorage.getItem("OS")
                         const osItem = JSON.parse(os)
                         console.log("osItem", osItem)
+
                     }else if(Accion == "PENDIENTE"){
+
+                        equipo.map((item, index) => {
+                            setTipo(item.tipo)
+                            setSerie(item.equ_serie)
+                            setModel(item.modelo)
+                        })
+                        setDisableSub(false)
+                        setDisable(true)
+                        setHistorial(equipo)
+
+                    }else if(Accion == "FINALIZADO"){
                         equipo.map((item, index) => {
                             setTipo(item.tipo)
                             setSerie(item.equ_serie)
@@ -166,15 +179,15 @@ export default function Equipo(props) {
         const itenSelect = await AsyncStorage.getItem(ticketID)
         const it = JSON.parse(itenSelect)
         const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
-        if (Accion == "clonar") {
-            OSClone[0].equipo_id = item.equipo_id,
-                OSClone[0].Serie = item.equ_serie,
-                OSClone[0].TipoEquipo = item.equ_tipoEquipo,
-                // OSClone[0].MarcaSerie = item.equ_marca,
-                OSClone[0].ClienteNombreSerie = item.equ_clienteNombre,
-                OSClone[0].Marca = item.marca
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
-        } else if (Accion == "OrdenSinTicket") {
+        // if (Accion == "clonar") {
+        //     OSClone[0].equipo_id = item.equipo_id,
+        //         OSClone[0].Serie = item.equ_serie,
+        //         OSClone[0].TipoEquipo = item.equ_tipoEquipo,
+        //         // OSClone[0].MarcaSerie = item.equ_marca,
+        //         OSClone[0].ClienteNombreSerie = item.equ_clienteNombre,
+        //         OSClone[0].Marca = item.marca
+        //     await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
+        // } else if (Accion == "OrdenSinTicket") {
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
             osItem.equipo_id = item.equipo_id,//#
@@ -193,7 +206,7 @@ export default function Equipo(props) {
             osItem.UsuarioModificacion = userId //#
             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
             console.log(osItem)
-        }
+        // }
     }
 
     const showSelect = (index, item) => {

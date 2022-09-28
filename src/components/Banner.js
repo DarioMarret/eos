@@ -8,7 +8,7 @@ import React, { useState } from "react";
 import moment from "moment";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
-import { OSOrdenServicioID } from "../service/OS_OrdenServicio";
+// import { OSOrdenServicioID } from "../service/OS_OrdenServicio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID } from "../utils/constantes";
 

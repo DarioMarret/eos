@@ -1,4 +1,4 @@
-import { Button, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Button, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
 import { OrdenServicioAnidadas, getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
@@ -25,11 +25,13 @@ export default function Hoy(props) {
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
     const [time, setTime] = useState(false)
+    const [loading, setLoading] = useState(false)
     const { navigation } = props
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setLoading(true)
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
                 if (updateMinuto) {
                     NetInfo.fetch().then(state => {
@@ -40,10 +42,11 @@ export default function Hoy(props) {
                                 await ActualizarFechaUltimaActualizacion()
                             })()
                         }
-                    });
+                    })
                 }
-                var date = moment().format('YYYY-MM-DD');
+                var date = moment().add(1, 'days').format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
+                console.log(respuesta)
                 setEventos(respuesta)
                 await getTPTCKStorage()
                 NetInfo.fetch().then(state => {
@@ -53,7 +56,7 @@ export default function Hoy(props) {
                             var hoy = moment().format('YYYY-MM-DD');
                             var manana = moment().add(1, 'days').format('YYYY-MM-DD');
                             const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                            console.log("tickets", ticket_id)
+                            // console.log("tickets", ticket_id)
                             ticket_id.map(async (r) => {
                                 await EquipoTicket(r.ticket_id)
                                 await OrdenServicioAnidadas(r.evento_id)
@@ -61,8 +64,9 @@ export default function Hoy(props) {
                         })()
                     }
                 })
+                setLoading(false)
             })()
-        }, [time])
+        }, [])
     )
 
     const typeImage = () => {
@@ -191,6 +195,19 @@ export default function Hoy(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
+                <ActivityIndicator
+                    animating={loading}
+                    color="#FF6B00"
+                    size="large"
+                    style={{
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        alignItems: 'center',
+                    }}
+                />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}
