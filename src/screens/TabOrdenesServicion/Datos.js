@@ -134,22 +134,27 @@ export default function Datos(props) {
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
                     const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
-                    console.log("OSClone", OSClone)
+                    // console.log("OSClone", OSClone[0].tipoIncidencia)
                     if (Accion == "FINALIZADO") {
                         console.log("Estamos FINALIZADO")
-                        const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
-                        // console.log("response", response)
-                        response.map(item => setTipo(item.tck_tipoTicket))
+                        const os = await AsyncStorage.getItem("OS")
+                        const osItem = JSON.parse(os)
+                        delete osItem.OS_ASUNTO
+                        delete osItem.OS_Anexos
+                        delete osItem.OS_FINALIZADA
+                        console.log("osItem", osItem)
+                        console.log("osItem", datos.FechaSeguimientoMostrar)
+                        setDatos({
+                            ...datos,
+                            ...osItem,
+                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
+                        })
                         setIsEnabled(false)
                         setDisableSub(false)
-                        // const datosC = await DatosOSOrdenServicioID(OrdenServicioID)
-                        // datosC.map(d => {
-                        //     setDatos(d)
-                        // })
-                        // return
+                        return
                     } else if (Accion == "clonar") {
                         console.log("Estamos clonar")
-                        
+
                         const os = await AsyncStorage.getItem("OS")
                         const osItem = JSON.parse(os)
                         setDatos({
@@ -170,7 +175,14 @@ export default function Datos(props) {
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
-                    }  else if (Accion == "PENDIENTE") {
+                    } else if (Accion == "PENDIENTE") {
+                        setDatos({
+                            ...datos,
+                            ...OSClone[0],
+                            FechaSeguimientoMostrar: moment(OSClone[0].FechaSeguimiento).format("DD/MM/YYYY")
+                        })
+
+                    } else if (Accion == "NUEVO OS TICKET") {
                         setDatos({
                             ...datos,
                             ...OSClone[0],

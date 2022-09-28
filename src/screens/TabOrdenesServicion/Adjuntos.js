@@ -26,6 +26,8 @@ export default function Adjuntos(props) {
 
   const [listAdjuntos, setListAdjuntos] = useState([])
 
+  const [fini, setFini] = useState(true)
+
   const [adjuntos, setAdjuntos] = useState({
     OS_OrdenServicio: null,
     IdAnexo: null,
@@ -61,34 +63,46 @@ export default function Adjuntos(props) {
 
   useFocusEffect(
     useCallback(() => {
-        (async () => {
+      (async () => {
 
-            try {
-              const itenSelect = await AsyncStorage.getItem(ticketID)
-              if (itenSelect != null) {
-                  const item = JSON.parse(itenSelect)
-                  const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
-                  // console.log("OSClone", OSClone)
-                  if (Accion == "FINALIZADO") {
+        try {
+          const itenSelect = await AsyncStorage.getItem(ticketID)
+          if (itenSelect != null) {
+            const item = JSON.parse(itenSelect)
+            const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+            // console.log("OSClone", OSClone)
+            if (Accion == "FINALIZADO") {
+              console.log("Accion", Accion)
+              setFini(false)
+              const os = await AsyncStorage.getItem("OS")
+              const osItem = JSON.parse(os)
+              let adjunto = JSON.parse(osItem.OS_Anexos)
+              console.log("osItem", adjunto[0])
 
-                  } else if (Accion == "PENDIENTE") {
-                      
-                    setListAdjuntos(JSON.parse(OSClone[0].OS_Anexos))
-                    console.log("OSClone", OSClone[0].OS_Anexos)
 
-                  } else if (Accion == "OrdenSinTicket") {
+            } else if (Accion == "PENDIENTE") {
 
-                    const adjuntos = await AsyncStorage.getItem("OS_Anexos")
-                    setListAdjuntos(JSON.parse(adjuntos))
+              setListAdjuntos(JSON.parse(OSClone[0].OS_Anexos))
+              console.log("OSClone", OSClone[0].OS_Anexos)
 
-                  }
-              }
-          } catch (error) {
-              console.log("error", error)
+            } else if (Accion == "OrdenSinTicket") {
+
+              const adjuntos = await AsyncStorage.getItem("OS_Anexos")
+              setListAdjuntos(JSON.parse(adjuntos))
+
+            } else if (Accion == "NUEVO OS TICKET") {
+
+              const adjuntos = await AsyncStorage.getItem("OS_Anexos")
+              setListAdjuntos(JSON.parse(adjuntos))
+
+            }
           }
-        })()
+        } catch (error) {
+          console.log("error", error)
+        }
+      })()
     }, [])
-)
+  )
   const saveAdjunto = async () => {
     const { userId } = await getToken()
     if (adjuntos.Ruta != null && adjuntos.archivo != null && adjuntos.Descripcion != null) {
@@ -115,19 +129,19 @@ export default function Adjuntos(props) {
 
   const EliminadrComponenteAgregado = (item) => {
     Alert.alert(
-        "Eliminar",
-        "¿Está seguro de eliminar el adjunto?",
-        [
-            {
-                text: "Cancelar",
-                onPress: () => console.log("Cancel Pressed"),
-                style: "cancel"
-            },
-            { text: "OK", onPress: () => EliminAdjunto(item) }
-        ],
-        { cancelable: false }
+      "Eliminar",
+      "¿Está seguro de eliminar el adjunto?",
+      [
+        {
+          text: "Cancelar",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel"
+        },
+        { text: "OK", onPress: () => EliminAdjunto(item) }
+      ],
+      { cancelable: false }
     )
-}
+  }
 
   const EliminAdjunto = async (item) => {
     const os_anexos = await AsyncStorage.getItem("OS_Anexos")
@@ -137,7 +151,12 @@ export default function Adjuntos(props) {
     setListAdjuntos(anexosArray)
     await AsyncStorage.setItem("OS_Anexos", JSON.stringify(anexosArray))
   }
-
+  function AlertFini() {
+    Alert.alert(
+      "Error",
+      "No se puede agregar adjuntos, la orden de servicio ya fue finalizada",
+    )
+  }
   return (
     <View style={styles.container}>
       <View style={styles.ContenedorCliente}>
@@ -198,21 +217,40 @@ export default function Adjuntos(props) {
               value={isEnabled}
             />
           </View>
-          <TouchableOpacity
-            style={styles.btn}
-            onPress={saveAdjunto}
-          >
-            <Text
-              style={{
-                fontSize: 18,
-                color: "#FFF",
-                fontFamily: "Roboto",
-                marginLeft: 10,
-              }}
-            >
-              Aceptar
-            </Text>
-          </TouchableOpacity>
+          {
+            fini ?
+              <TouchableOpacity
+                style={styles.btn}
+                onPress={saveAdjunto}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    color: "#FFF",
+                    fontFamily: "Roboto",
+                    marginLeft: 10,
+                  }}
+                >
+                  Aceptar
+                </Text>
+              </TouchableOpacity>
+              :
+              <TouchableOpacity
+                style={styles.btn}
+                onPress={AlertFini}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    color: "#FFF",
+                    fontFamily: "Roboto",
+                    marginLeft: 10,
+                  }}
+                >
+                  Aceptar
+                </Text>
+              </TouchableOpacity>
+          }
         </View>
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -221,7 +259,7 @@ export default function Adjuntos(props) {
             listAdjuntos.map((item, index) => {
               return (
                 <View style={styles.fileinfo} key={index}>
-                  <View style={{width:"85%"}}>
+                  <View style={{ width: "85%" }}>
                     <Text style={styles.textInfo}>OS física : off</Text>
                     <Text style={{ ...styles.textInfo, color: "#000000" }}>
                       {item.Ruta}
@@ -233,7 +271,7 @@ export default function Adjuntos(props) {
                     name='delete'
                     size={24}
                     color='#EA0029'
-                    onPress={()=>EliminadrComponenteAgregado(item)}
+                    onPress={() => EliminadrComponenteAgregado(item)}
                   />
                 </View>
               )

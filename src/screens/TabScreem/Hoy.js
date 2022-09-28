@@ -2,7 +2,7 @@ import { ActivityIndicator, Button, FlatList, Image, SafeAreaView, ScrollView, S
 import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
 import { OrdenServicioAnidadas, getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
-import { HistorialEquipoIngeniero } from "../../service/historiaEquipo";
+import { HistorialEquipoIngeniero, isChecked } from "../../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import { useFocusEffect } from "@react-navigation/native";
@@ -11,6 +11,7 @@ import NetInfo from '@react-native-community/netinfo';
 import { ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
 import Banner from "../../components/Banner";
+import { time } from "../../service/CargaUtil";
 import moment from "moment";
 
 import calsync from '../../../assets/icons/cal-sync.png';
@@ -19,12 +20,14 @@ import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import { RefresLogin } from "../../service/usuario";
 import { getTPTCKStorage } from "../../service/catalogos";
+import LoadingActi from "../../components/LoadingActi";
+import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
-    const [time, setTime] = useState(false)
+    const [times, setTime] = useState(false)
     const [loading, setLoading] = useState(false)
     const { navigation } = props
 
@@ -44,9 +47,8 @@ export default function Hoy(props) {
                         }
                     })
                 }
-                var date = moment().add(1, 'days').format('YYYY-MM-DD');
+                var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
-                console.log(respuesta)
                 setEventos(respuesta)
                 await getTPTCKStorage()
                 NetInfo.fetch().then(state => {
@@ -56,7 +58,6 @@ export default function Hoy(props) {
                             var hoy = moment().format('YYYY-MM-DD');
                             var manana = moment().add(1, 'days').format('YYYY-MM-DD');
                             const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                            // console.log("tickets", ticket_id)
                             ticket_id.map(async (r) => {
                                 await EquipoTicket(r.ticket_id)
                                 await OrdenServicioAnidadas(r.evento_id)
@@ -86,8 +87,10 @@ export default function Hoy(props) {
     }
 
 
-    async function Ordene(ticket_id) {
+    async function Ordene(ticket_id, estado) {
+        setLoading(true)
         console.log("ticket_id", ticket_id)
+        console.log("estado", estado)
         try {
             const anidada = await getOrdenServicioAnidadas(ticket_id)
             if (anidada == null) {
@@ -97,8 +100,9 @@ export default function Hoy(props) {
                         console.log("id_equipo-->", rows._array[0].id_equipo)
                         db.transaction(tx => {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                                console.log("equipo selecionado hoy row", rows._array)
-                                Rutes(rows._array, ticket_id)
+                                // console.log("equipo selecionado hoy row", rows._array)
+                                console.log("equipo selecionado hoy row", JSON.parse(rows._array[0].historial)[0].OrdenServicioID)
+                                Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
                             })
                         })
                     })
@@ -113,18 +117,36 @@ export default function Hoy(props) {
         }
     }
 
-    async function Rutes(equipo, ticket_id) {
-        if (equipo.length != 0) {
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
-            navigation.navigate("Ordenes")
+    async function Rutes(equipo, ticket_id, OrdenServicioID, estado) {
+        try {
+            if (equipo.length != 0) {
+                equipo[0]['isChecked'] = 'true'
+                var clon = await SelectOSOrdenServicioID(OrdenServicioID)
+                await AsyncStorage.removeItem(ticketID)
+                await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
+                await AsyncStorage.setItem(ticketID, JSON.stringify({
+                    ticket_id,
+                    equipo,
+                    OrdenServicioID,
+                    OSClone: clon,
+                    Accion: estado
+                }))
+                await isChecked(equipo[0].equipo_id)
+                time(800)
+                setLoading(false)
+                navigation.navigate("Ordenes")
+            }
+
+            if (equipo.length == 0) {
+                // await AsyncStorage.removeItem(ticketID)
+                await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
+                setLoading(false)
+                navigation.navigate("Ticket")
+            }
+        } catch (error) {
+            console.log("error", error)
         }
 
-        if (equipo.length == 0) {
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
-            navigation.navigate("Ticket")
-        }
     }
 
 
@@ -144,7 +166,7 @@ export default function Hoy(props) {
         return [
             <View key={index}>
                 <TouchableOpacity
-                    onPress={() => Ordene(String(item.ticket_id))}>
+                    onPress={() => Ordene(String(item.ticket_id), item.ev_estado)}>
 
                     <View style={{
                         flexDirection: 'row',
@@ -195,19 +217,7 @@ export default function Hoy(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
-                <ActivityIndicator
-                    animating={loading}
-                    color="#FF6B00"
-                    size="large"
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        alignItems: 'center',
-                    }}
-                />
+                <LoadingActi loading={loading} />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}
@@ -220,7 +230,7 @@ export default function Hoy(props) {
                 {...props}
                 navigation={navigation}
                 setTime={setTime}
-                times={time}
+                times={times}
             />
         </View>
     );

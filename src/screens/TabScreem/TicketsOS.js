@@ -26,6 +26,7 @@ import moment from "moment";
 import { GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import { time, TrucateUpdate } from "../../service/CargaUtil";
+import LoadingActi from "../../components/LoadingActi";
 
 
 export default function TicketsOS(props) {
@@ -56,7 +57,7 @@ export default function TicketsOS(props) {
         }, [])
     )
 
-    functionColor = (type) => {
+    const functionColor = (type) => {
         if (type == "PENDIENTE") {
             return "#FFFFFF"
             // return "#FFECDE"rosado
@@ -137,12 +138,13 @@ export default function TicketsOS(props) {
     }
 
     async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
+        setLoading(true)
         equipo[0]['isChecked'] = 'true'
         var clon;
         if (accion == "PENDIENTE" || accion == "FINALIZADO") {
             clon = await SelectOSOrdenServicioID(OrdenServicioID)
             await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
-            // console.log("clon", clon)
+            console.log(accion, clon)
         }
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
@@ -153,9 +155,45 @@ export default function TicketsOS(props) {
             Accion: accion
         }))
         await isChecked(equipo[0].equipo_id)
+        setLoading(false)
         navigation.navigate("Ordenes")
     }
 
+    async function IngresarNuevoOsTicket() {
+        setLoading(true)
+        var equipo = []
+        db.transaction(tx => {
+            tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [eventosAnidados[0].ticket_id], (_, { rows }) => {
+                db.transaction(tx => {
+                    tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                        equipo = rows._array
+                    })
+                })
+            })
+        })
+        var clon = await SelectOSOrdenServicioID(eventosAnidados[0].OrdenServicioID)
+        clon.OS_Anexos = []
+        clon.OS_CheckList = []
+        clon.OS_Colaboradores = []
+        clon.OS_Encuesta = []
+        clon.OS_Firmas = []
+        clon.OS_PartesRepuestos = []
+        clon.OrdenServicioID = 0
+        clon.OS_Firmas = []
+        delete clon.codOS
+        await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
+        await AsyncStorage.removeItem(ticketID)
+        await AsyncStorage.setItem(ticketID, JSON.stringify({
+            ticket_id: eventosAnidados[0].ticket_id,
+            equipo,
+            OrdenServicioID: eventosAnidados[0].OrdenServicioID,
+            OSClone: clon,
+            Accion: "NUEVO OS TICKET"
+        }))
+        setLoading(false)
+        navigation.navigate("Ordenes")
+
+    }
     async function ColorCheckt(itemIndex) {
         seteventosAnidados(eventosAnidados.map((item, index) => {
             if (itemIndex.OrdenServicioID == item.OrdenServicioID) {
@@ -193,7 +231,6 @@ export default function TicketsOS(props) {
                 navigation.navigate("Consultas")
             }
         }
-        console.log("Finalizar", respuesta)
     }
 
     async function Sincronizar() {
@@ -236,21 +273,7 @@ export default function TicketsOS(props) {
                                 fontSize: 15,
                             }}>Ticket #{eventosAnidados[0].ticket_id}</Text>
                             <View style={{ ...styles.body1 }} >
-                                <ActivityIndicator
-                                    animating={loading}
-                                    color="#FF6B00"
-                                    size="large"
-                                    style={{
-                                        position: 'absolute',
-                                        left: 0,
-                                        right: 0,
-                                        top: 0,
-                                        bottom: 0,
-                                        alignItems: 'center',
-                                    }}
-
-                                />
-                                {/* <Pressable onPress={() => setItemIndex(null)}> */}
+                                <LoadingActi loading={loading} />
                                 <ScrollView showsVerticalScrollIndicator={false} >
                                     {
                                         eventosAnidados.map((item, index) => {
@@ -406,7 +429,7 @@ export default function TicketsOS(props) {
 
 
                             <TouchableOpacity
-                                onPress={() => setItemIndex(null)}
+                                onPress={async () => await IngresarNuevoOsTicket()}
                                 style={styles.opacity}>
                                 <Text style={styles.text4}>INGRESAR NUEVO OS AL TICKET</Text>
                             </TouchableOpacity>

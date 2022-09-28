@@ -17,6 +17,7 @@ export default function Componentes(props) {
     const [compo, setCompo] = useState("")
     const [incidente, setIncidente] = useState([]);
 
+    const [fini, setFini] = useState(true)
 
     const [isEnabled, setIsEnabled] = useState(false);
 
@@ -96,8 +97,13 @@ export default function Componentes(props) {
                         const item = JSON.parse(itenSelect)
                         const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
                         if (Accion == "FINALIZADO") {
+                            setFini(false)
 
-                            
+                            const parte = await AsyncStorage.getItem("OS")
+                            console.log("parte-->", JSON.parse(parte).OS_PartesRepuestos)
+                            let pat = JSON.parse(parte).OS_PartesRepuestos
+                            setComponent(JSON.parse(pat))
+
                         } else if (Accion == "PENDIENTE") {
 
                             setComponent(JSON.parse(OSClone[0].OS_PartesRepuestos))
@@ -123,43 +129,6 @@ export default function Componentes(props) {
             })()
         }, [])
     )
-
-    const SwitchGuardar = async () => {
-        setIsEnabled(!isEnabled)
-        if (isEnabled) {
-            let estado = await CambieEstadoSwitch(3, 1)
-            console.log("estado datos", estado.estado)
-            await AsyncStorage.setItem(COMPONENTE_, JSON.stringify({
-                ...componente
-            }))
-            await GuadadoOS()
-        } else {
-            let estado = await CambieEstadoSwitch(3, 0)
-
-            console.log("estado datos", estado.estado)
-        }
-    }
-
-    const GuadadoOS = async (item) => {
-        const { userId } = await getToken()
-        const itenSelect = await AsyncStorage.getItem(ticketID)
-        const it = JSON.parse(itenSelect)
-        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
-        if (Accion == "clonar") {
-            const parte = await AsyncStorage.getItem("OS")
-            let pat = JSON.parse(parte).OS_PartesRepuestos
-            let comp = JSON.parse(pat)
-            comp.push(componente)
-            console.log("comp", comp)
-            await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
-        } else if (Accion == "OrdenSinTicket") {
-            const parte = await AsyncStorage.getItem("OS_PartesRepuestos")
-            let comp = JSON.parse(parte)
-            comp.push(componente)
-            console.log("comp", comp)
-            await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
-        }
-    }
 
     const AgregarComponet = async () => {
         if (componente.Codigo == null && componente.Descripcion == null && componente.Cantidad == null && componente.Tipo == null) {
@@ -216,8 +185,15 @@ export default function Componentes(props) {
                 console.log("comp", comp)
                 await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
 
-            }else if(Accion == "FINALIZADO"){
-                Alert.alert("Info", "No se puede agregar componentes a una orden finalizada")
+            }else if (Accion == "NUEVO OS TICKET") {
+
+                const parte = await AsyncStorage.getItem("OS")
+                let pat = JSON.parse(parte).OS_PartesRepuestos
+                let comp = JSON.parse(pat)
+                comp.push(componente)
+                console.log("comp", comp)
+                await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
+
             }
         }
     }
@@ -432,6 +408,7 @@ export default function Componentes(props) {
                         value={componente.Codigo}
                         editable={isEnabled}
                         onChangeText={(text) => setComponente({ ...componente, Codigo: text })} />
+
                     <View style={{
                         flexDirection: "row",
                         justifyContent: "space-evenly",
@@ -440,19 +417,34 @@ export default function Componentes(props) {
                         width: "100%",
                         backgroundColor: "#FFFFFF"
                     }}>
-                        <TouchableOpacity style={styles.btn} onPress={() => AgregarComponet()}>
-                            <AntDesign name="plus" size={24} color="#FFF" />
-                            <Text style={{
-                                fontSize: 18,
-                                color: '#FFF',
-                                fontFamily: 'Roboto',
-                                marginLeft: 10
-                            }}>AGREGAR COMPONENTE</Text>
-                        </TouchableOpacity>
+                        {
+                            fini ?
+                                <TouchableOpacity style={styles.btn} onPress={() => AgregarComponet()}>
+                                    <AntDesign name="plus" size={24} color="#FFF" />
+                                    <Text style={{
+                                        fontSize: 18,
+                                        color: '#FFF',
+                                        fontFamily: 'Roboto',
+                                        marginLeft: 10
+                                    }}>AGREGAR COMPONENTE</Text>
+                                </TouchableOpacity> :
+                                <TouchableOpacity style={styles.btn} onPress={() => {
+                                    Alert.alert(
+                                        "Alerta",
+                                        "No se puede agregar un componente con orden de servicio finalizada",
+                                    )
+                                }}>
+                                    <AntDesign name="plus" size={24} color="#FFF" />
+                                    <Text style={{
+                                        fontSize: 18,
+                                        color: '#FFF',
+                                        fontFamily: 'Roboto',
+                                        marginLeft: 10
+                                    }}>AGREGAR COMPONENTE</Text>
+                                </TouchableOpacity>
+                        }
                     </View>
-                    <View
-                    // style={{ flexDirection: "column" }}
-                    >
+                    <View>
                         <SafeAreaView>
                             <FlatList
                                 data={Component}
@@ -462,26 +454,6 @@ export default function Componentes(props) {
                         </SafeAreaView>
 
                     </View>
-                    {/* <View
-                        style={{
-                            flexDirection: 'row',
-                            justifyContent: 'flex-end',
-                            alignItems: 'center',
-                        }}
-                    >
-                        {
-                            isEnabled ?
-                                <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
-                                : <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
-                        }
-                        <Switch
-                            trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
-                            thumbColor={isEnabled ? "#FF6B00" : "#ffffff"}
-                            ios_backgroundColor="#FFAF75"
-                            onValueChange={SwitchGuardar}
-                            value={isEnabled}
-                        />
-                    </View> */}
                     <View style={{ paddingBottom: 50 }} ></View>
                 </View>
             </ScrollView>

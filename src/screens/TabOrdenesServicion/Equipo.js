@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Picker } from '@react-native-picker/picker'
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, ticketID } from "../../utils/constantes"
 import { getToken } from "../../service/usuario"
+import LoadingActi from "../../components/LoadingActi"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -19,6 +20,8 @@ export default function Equipo(props) {
     const [modelo, setModelo] = useState([])
     const [modelosub, setModeloSub] = useState([])
     const [historial, setHistorial] = useState([])
+
+    const [loading, setLoading] = useState(false)
 
     const [isLoading, setIsLoading] = useState(false)
 
@@ -58,6 +61,7 @@ export default function Equipo(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setLoading(true)
                 const response = await getEquiposStorage()
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
@@ -68,6 +72,7 @@ export default function Equipo(props) {
                     const item = JSON.parse(itenSelect)
                     const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
                     console.log("equipo", equipo)
+                    // console.log("Accion", item)
                     if (Accion == "clonar") {
                         const eqi = await DatosEquipo(OrdenServicioID)
                         isChecked(eqi[0].equipo_id)
@@ -89,13 +94,15 @@ export default function Equipo(props) {
 
                     }else if(Accion == "PENDIENTE"){
 
+                        console.log("PENDIENTE")
+
                         equipo.map((item, index) => {
                             setTipo(item.tipo)
                             setSerie(item.equ_serie)
                             setModel(item.modelo)
                         })
-                        setDisableSub(false)
-                        setDisable(true)
+                        // setDisableSub(false)
+                        // setDisable(true)
                         setHistorial(equipo)
 
                     }else if(Accion == "FINALIZADO"){
@@ -107,6 +114,11 @@ export default function Equipo(props) {
                         setDisableSub(false)
                         setDisable(true)
                         setHistorial(equipo)
+                    }else if (Accion == "NUEVO OS TICKET"){
+
+                        console.log("NUEVO OS TICKET")
+                        
+                        setHistorial(equipo)
                     }
                     // else if (OrdenServicioID != null && OSClone != null) {
                     //     setHistorial(equipo)
@@ -116,6 +128,7 @@ export default function Equipo(props) {
                     //     return
                     // }
                 }
+                setLoading(false)
             })()
         }, [])
     )
@@ -383,6 +396,7 @@ export default function Equipo(props) {
         <View style={styles.container}>
             {/* <ActivityIndicador size={100} color="#FF6B00" /> */}
             <View style={styles.contenedor}>
+            <LoadingActi loading={loading} />
                 <View style={styles.ContainetEquipo}>
                     <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>

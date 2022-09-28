@@ -21,10 +21,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 
 
+
 export default function IngresoHoras(props) {
   const { navigation } = props;
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
+
+  const [fini, setFini] = useState(true);
 
   const [tiempoOS, setTiempoOS] = useState("")
 
@@ -86,6 +89,7 @@ export default function IngresoHoras(props) {
           const item = JSON.parse(itenSelect)
           const { equipo, OrdenServicioID, ticket_id, OSClone, Accion } = item
           const OS_Tiempo = await AsyncStorage.getItem("OS_Tiempos")
+          var os = await AsyncStorage.getItem("OS")
           let os_tiempos = JSON.parse(OS_Tiempo)
           if (Accion == "OrdenSinTicket") {
             setFechas({
@@ -95,9 +99,8 @@ export default function IngresoHoras(props) {
             })
             return
           } else if (Accion == "clonar") {
-            const os = await AsyncStorage.getItem("OS")
             let OS = JSON.parse(os)
-            let tem = JSON.parse(OS[0].OS_Tiempos)
+            let tem = JSON.parse(OS.OS_Tiempos)
             setFechas({
               ...fechas,
               ...tem[0],
@@ -105,16 +108,25 @@ export default function IngresoHoras(props) {
             })
             return
           } else if (Accion == "FINALIZADO") {
-            let tem = JSON.parse(OSClone[0].OS_Tiempos)
+            setFini(false)
+            let OS = JSON.parse(os)
+            let tem = JSON.parse(OS.OS_Tiempos)
             setFechas({
               ...fechas,
               ...tem[0],
               FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
             })
           } else if (Accion == "PENDIENTE") {
-            const os = await AsyncStorage.getItem("OS")
             let OS = JSON.parse(os)
-            let tem = JSON.parse(OS[0].OS_Tiempos)
+            let tem = JSON.parse(OS.OS_Tiempos)
+            setFechas({
+              ...fechas,
+              ...tem[0],
+              FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
+            })
+          } else if (Accion == "NUEVO OS TICKET") {
+            let OS = JSON.parse(os)
+            let tem = JSON.parse(OS.OS_Tiempos)
             setFechas({
               ...fechas,
               ...tem[0],
@@ -280,26 +292,29 @@ export default function IngresoHoras(props) {
 
         </ScrollView>
         <View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-            }}
-          >
-            {
-              fechas.switch ?
-                <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
-                : <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
-            }
-            <Switch
-              trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
-              thumbColor={fechas.switch ? "#FF6B00" : "#ffffff"}
-              ios_backgroundColor="#FFAF75"
-              onValueChange={() => SwitchGuardar()}
-              value={fechas.switch}
-            />
-          </View>
+          {
+            fini ?
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'flex-end',
+                  alignItems: 'center',
+                }}
+              >
+                {
+                  fechas.switch ?
+                    <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
+                    : <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
+                }
+                <Switch
+                  trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
+                  thumbColor={fechas.switch ? "#FF6B00" : "#ffffff"}
+                  ios_backgroundColor="#FFAF75"
+                  onValueChange={() => SwitchGuardar()}
+                  value={fechas.switch}
+                />
+              </View> : null
+          }
         </View>
         {/* <View style={{ padding: 50 }} ></View> */}
       </View >

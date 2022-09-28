@@ -1,4 +1,4 @@
-import { ActivityIndicator, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import tabNavigation from "../hook/tabNavigation";
@@ -43,7 +43,7 @@ export default function BannerOrderServi(props) {
             }
         }
     }
-    
+
     function changeScreenAnterior() {
         let index = tab.indexOf(name)
         if (index >= 0 && index <= tab.length) {
@@ -79,6 +79,17 @@ export default function BannerOrderServi(props) {
             const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
             if (Accion == "clonar") {
 
+                OS.OrdenServicioID = 0
+                OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                OS.OS_Colaboradores = []
+                OS.OS_PartesRepuestos = JSON.parse(os_part)
+                OS.OS_CheckList = JSON.parse(os_checl)
+                OS.OS_Tiempos = JSON.parse(os_tiemp)
+                OS.OS_Firmas = JSON.parse(os_firma)
+                OS.OS_Anexos = JSON.parse(os_anexo)
+
                 let res = await PostOS(OS)
                 await LimpiandoDatos()
                 setModalVisible(false)
@@ -96,45 +107,142 @@ export default function BannerOrderServi(props) {
                 OS.OS_Tiempos = JSON.parse(os_tiemp)
                 OS.OS_Firmas = JSON.parse(os_firma)
                 OS.OS_Anexos = JSON.parse(os_anexo)
-                console.log("OS.OS_Anexos",typeof OS.OS_Anexos)
-                
+                console.log("OS.OS_Anexos", typeof OS.OS_Anexos)
+
                 let O = await PostOS(OS)
                 await LimpiandoDatos()
                 setModalVisible(false)
                 console.log("GUARDAR_OS", O)
 
             } else if (Accion == "PENDIENTE") {
+                try {
+                    if(typeof OS.OS_Encuesta == 'object' && OS.OS_Encuesta.length > 0){
+                        OS.OS_Encuesta.map((item, index) => {
+                            OS.OS_Encuesta[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Encuesta = []
+                    }
+                    if(typeof OS.OS_PartesRepuestos == 'object' && OS.OS_PartesRepuestos.length > 0){
+                        OS.OS_PartesRepuestos.map((item, index) => {
+                            OS.OS_PartesRepuestos[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_PartesRepuestos = []
+                    }
+                    if(typeof OS.OS_CheckList == 'object' && OS.OS_CheckList.length > 0){
+                        OS.OS_CheckList.map((item, index) => {
+                            OS.OS_CheckList[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_CheckList = []
+                    }
+                    if(typeof OS.OS_Tiempos == 'object' && OS.OS_Tiempos.length > 0){
+                        OS.OS_Tiempos.map((item, index) => {
+                            OS.OS_Tiempos[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Tiempos = []
+                    }
+                    if(typeof OS.OS_Firmas == 'object' && OS.OS_Firmas.length > 0){
+                        OS.OS_Firmas.map((item, index) => {
+                            OS.OS_Firmas[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Firmas = []
+                    }
+                    if(typeof OS.OS_Anexos == 'object' && OS.OS_Anexos.length > 0){
+                        OS.OS_Anexos.map((item, index) => {
+                            OS.OS_Anexos[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Anexos = []
+                    }
+                    OS.OS_Colaboradores = []
+                    OS.Estado = "TROC"
+                    delete OS.OS_ASUNTO
+                    let P = await PutOS(OS)
+                    if (P == 204) {
+                        await LimpiandoDatos()
+                        setModalVisible(false)
+                    } else {
+                        setModalVisible(false)
+                        Alert.alert("Error", "No se pudo actualizar la orden de servicio")
+                    }
+                } catch (error) {
+                    setModalVisible(false)
+                    console.log("error", error)
+                    Alert.alert("Error", "Error al actualizar la orden de servicio")
+                }
 
-                let P = await PutOS(OS)
-                await LimpiandoDatos()
-                setModalVisible(false)
-                console.log("ACUALIZAR GUARDAR_", P)
+            } else if (Accion == "NUEVO OS TICKET") {
 
-            } 
+                try {
+                    if(typeof OS.OS_Encuesta == 'object' && OS.OS_Encuesta.length > 0){
+                        OS.OS_Encuesta.map((item, index) => {
+                            OS.OS_Encuesta[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Encuesta = []
+                    }
+                    if(typeof OS.OS_PartesRepuestos == 'object' && OS.OS_PartesRepuestos.length > 0){
+                        OS.OS_PartesRepuestos.map((item, index) => {
+                            OS.OS_PartesRepuestos[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_PartesRepuestos = []
+                    }
+                    if(typeof OS.OS_CheckList == 'object' && OS.OS_CheckList.length > 0){
+                        OS.OS_CheckList.map((item, index) => {
+                            OS.OS_CheckList[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_CheckList = []
+                    }
+                    if(typeof OS.OS_Tiempos == 'object' && OS.OS_Tiempos.length > 0){
+                        OS.OS_Tiempos.map((item, index) => {
+                            OS.OS_Tiempos[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Tiempos = []
+                    }
+                    if(typeof OS.OS_Firmas == 'object' && OS.OS_Firmas.length > 0){
+                        OS.OS_Firmas.map((item, index) => {
+                            OS.OS_Firmas[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Firmas = []
+                    }
+                    if(typeof OS.OS_Anexos == 'object' && OS.OS_Anexos.length > 0){
+                        OS.OS_Anexos.map((item, index) => {
+                            OS.OS_Anexos[index].Estado ='TROC'
+                        })
+                    }else{
+                        OS.OS_Anexos = []
+                    }
+                    OS.OS_Colaboradores = []
+                    delete OS.OS_ASUNTO
+                    let P = await PutOS(OS)
+                    if (P == 204) {
+                        await LimpiandoDatos()
+                        setModalVisible(false)
+                    } else {
+                        setModalVisible(false)
+                        Alert.alert("Error", "No se pudo actualizar la orden de servicio")
+                    }
+                } catch (error) {
+                    setModalVisible(false)
+                    console.log("error", error)
+                    Alert.alert("Error", "Error al actualizar la orden de servicio")
+                }
+            }
             // else if (Accion == "clonar") {
 
             // }
         }
-
-
-        // OS.OrdenServicioID = 0
-        // OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        // OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        // OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        // OS.OS_Colaboradores = []
-        // OS.OS_PartesRepuestos = JSON.parse(os_part)
-        // OS.OS_CheckList = JSON.parse(os_checl)
-        // OS.OS_Tiempos = JSON.parse(os_tiemp)
-        // OS.OS_Firmas = JSON.parse(os_firma)
-        // OS.OS_Anexos = JSON.parse(os_anexo)
-        // console.log(OS)
-        // const res = await PostOS(OS)
-        // await LimpiandoDatos()
-        // setModalVisible(false)
-        // console.log("GUARDAR_OS", res)
     }
 
-    async function LimpiandoDatos(){
+    async function LimpiandoDatos() {
         await Sincronizar()
         await AsyncStorage.removeItem("OS_PartesRepuestos")
         await AsyncStorage.removeItem("OS_CheckList")

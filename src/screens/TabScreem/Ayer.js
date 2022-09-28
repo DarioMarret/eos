@@ -1,4 +1,4 @@
-import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Banner from "../../components/Banner";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
@@ -15,6 +15,7 @@ import { ticketID } from "../../utils/constantes";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
 import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
+import LoadingActi from "../../components/LoadingActi";
 
 
 
@@ -25,9 +26,12 @@ export default function Ayer(props) {
     const [bg, setBg] = useState("")
     const [time, setTime] = useState(false)
 
+    const [loading, setLoading] = useState(false)
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setLoading(true)
                 await GetEventosDelDia()
                 var date = moment().add(-1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
@@ -37,11 +41,7 @@ export default function Ayer(props) {
                     await EquipoTicket(r.ticket_id)
                     await OrdenServicioAnidadas(r.evento_id)
                 })
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("rows", rows._array.length)
-                    })
-                })
+                setLoading(false)
             })()
         }, [])
     )
@@ -166,6 +166,7 @@ export default function Ayer(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
+                <LoadingActi loading={loading} />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}

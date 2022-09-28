@@ -142,6 +142,7 @@ export const OS = {
     OS_Encuesta: [],
     OS_Firmas: [],
     OS_PartesRepuestos: [],
+    OS_Tiempos: [],
 }
 console.log("constantes.js", Object.keys(OS).length);
 export const OS_CheckList = []
@@ -1164,8 +1165,8 @@ export const os_checklist = {
     CheckListID: 0,
     OrdenServicioID: 0,
     empresa_id: 1,
-    IdCheckList: null,
-    Checked: true,
+    IdCheckList: null,//#CONSULTA
+    Checked: false,
     UsuarioCreacion: null,
     FechaCreacion: null,
     UsuarioModificacion: null,

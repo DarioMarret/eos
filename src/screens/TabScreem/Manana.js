@@ -13,6 +13,7 @@ import calreq from '../../../assets/icons/cal-req.png'
 import calok from '../../../assets/icons/cal-ok.png'
 import { ticketID } from "../../utils/constantes"
 import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas"
+import LoadingActi from "../../components/LoadingActi"
 
 
 
@@ -173,19 +174,7 @@ export default function Manana(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
-                <ActivityIndicator
-                    animating={loading}
-                    color="#FF6B00"
-                    size="large"
-                    style={{
-                        position: 'absolute',
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                        alignItems: 'center',
-                    }}
-                />
+                <LoadingActi loading={loading} />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}
