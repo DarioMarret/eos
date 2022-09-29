@@ -19,6 +19,7 @@ import moment from 'moment/moment';
 import { getToken } from '../../service/usuario';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { ESTADO } from '../../service/OS';
 
 export default function Adjuntos(props) {
   const { navigation } = props;
@@ -48,8 +49,8 @@ export default function Adjuntos(props) {
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({})
     const file = await ImageManipulator.manipulateAsync(result.uri, [
-      { resize: { width: 500, height: 500 } },
-    ], { compress: 0.5, format: ImageManipulator.SaveFormat.JPEG });
+      { resize: { width: 600, height: 600 } },
+    ], { format: ImageManipulator.SaveFormat.JPEG });
     FileSystem.readAsStringAsync(file.uri, {
       encoding: FileSystem.EncodingType.Base64
     }).then((res) => {
@@ -69,31 +70,43 @@ export default function Adjuntos(props) {
           const itenSelect = await AsyncStorage.getItem(ticketID)
           if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
-            const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+            const { OSClone, Accion } = item
             // console.log("OSClone", OSClone)
             if (Accion == "FINALIZADO") {
+
               console.log("Accion", Accion)
               setFini(false)
               const os = await AsyncStorage.getItem("OS")
               const osItem = JSON.parse(os)
-              let adjunto = JSON.parse(osItem.OS_Anexos)
+              let adjunto = osItem.OS_Anexos
+              setListAdjuntos(adjunto)
               console.log("osItem", adjunto[0])
 
 
             } else if (Accion == "PENDIENTE") {
 
-              setListAdjuntos(JSON.parse(OSClone[0].OS_Anexos))
-              console.log("OSClone", OSClone[0].OS_Anexos)
+              console.log("PENDIENTE")
+              const os = await AsyncStorage.getItem("OS")
+              const osItem = JSON.parse(os)
+              let adjunto = osItem.OS_Anexos
+              setListAdjuntos(adjunto)
+              console.log("osItem", typeof adjunto)
 
             } else if (Accion == "OrdenSinTicket") {
 
-              const adjuntos = await AsyncStorage.getItem("OS_Anexos")
-              setListAdjuntos(JSON.parse(adjuntos))
+              const os = await AsyncStorage.getItem("OS")
+              const osItem = JSON.parse(os)
+              let adjunto = osItem.OS_Anexos
+              setListAdjuntos(adjunto)
+              console.log("osItem", adjunto[0])
 
             } else if (Accion == "NUEVO OS TICKET") {
 
-              const adjuntos = await AsyncStorage.getItem("OS_Anexos")
-              setListAdjuntos(JSON.parse(adjuntos))
+              const os = await AsyncStorage.getItem("OS")
+              const osItem = JSON.parse(os)
+              let adjunto = osItem.OS_Anexos
+              setListAdjuntos(adjunto)
+              console.log("osItem", adjunto)
 
             }
           }
@@ -103,27 +116,34 @@ export default function Adjuntos(props) {
       })()
     }, [])
   )
+
   const saveAdjunto = async () => {
     const { userId } = await getToken()
     if (adjuntos.Ruta != null && adjuntos.archivo != null && adjuntos.Descripcion != null) {
-      const os_anexos = await AsyncStorage.getItem("OS_Anexos")
-      const anexosArray = JSON.parse(os_anexos)
-      anexos.archivo = adjuntos.archivo
-      anexos.Ruta = adjuntos.Ruta
-      anexos.Descripcion = adjuntos.Descripcion
-      anexos.Estado = "ACTI"
-      anexos.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-      anexos.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-      anexos.IdAnexo = 0
-      anexos.OS_OrdenServicio = null
-      anexos.OrdenServicioID = 0
-      anexos.UsuarioCreacion = userId
-      anexos.UsuarioModificacion = userId
-      anexosArray.push(anexos)
-      setListAdjuntos(anexosArray)
-      await AsyncStorage.setItem("OS_Anexos", JSON.stringify(anexosArray))
-      console.log("saveAdjunto", anexosArray)
-      // navigation.navigate('5-ADJUNTOS')
+      const itenSelect = await AsyncStorage.getItem(ticketID)
+      if (itenSelect != null) {
+        const item = JSON.parse(itenSelect)
+        const { Accion } = item
+
+        const os_anexos = await AsyncStorage.getItem("OS")
+        var OSanexos = JSON.parse(os_anexos)
+        OSanexos.OS_Anexos
+
+        anexos.archivo = adjuntos.archivo
+        anexos.Ruta = adjuntos.Ruta
+        anexos.Descripcion = adjuntos.Descripcion
+        anexos.Estado = ESTADO(Accion)
+        anexos.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        anexos.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        anexos.IdAnexo = 0
+        anexos.OS_OrdenServicio = null
+        anexos.OrdenServicioID = 0
+        anexos.UsuarioCreacion = userId
+        anexos.UsuarioModificacion = userId
+        OSanexos.OS_Anexos.push(anexos)
+        setListAdjuntos(OSanexos.OS_Anexos)
+        await AsyncStorage.setItem("OS", JSON.stringify(OSanexos))
+      }
     }
   }
 

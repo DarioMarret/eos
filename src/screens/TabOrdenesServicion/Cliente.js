@@ -15,6 +15,7 @@ import moment from "moment"
 import PickerSelect from "../../components/PickerSelect"
 import { AntDesign } from "@expo/vector-icons"
 import { Picker } from "@react-native-picker/picker"
+import LoadingActi from "../../components/LoadingActi"
 
 
 export default function Cliente(props) {
@@ -31,6 +32,8 @@ export default function Cliente(props) {
         NombreUsuario: "",
         adicional: "",
     })
+
+    const [loading, setLoading] = useState(false)
 
     const [fecha, setFecha] = useState(moment().format('YYYY/MM/DD'))
 
@@ -55,7 +58,6 @@ export default function Cliente(props) {
         Ciudad: "",
     })
 
-    console.log("cliente", cliente)
 
     const [direccion, setDireccion] = useState({
         CantonID: "",
@@ -91,186 +93,83 @@ export default function Cliente(props) {
         }
     }
 
+    async function getCliente() {
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        let clie = await SelectCliente(osItem.ClienteID)
+        setCliente({
+            ...cliente,
+            CustomerName: osItem.ClienteNombre,
+            Sucursal: JSON.parse(clie.Sucursal),
+            Ciudad: osItem.Ciudad,
+        })
+        setDireccion({
+            ...direccion,
+            Direccion: osItem.Direccion,
+        })
+        setProvincia({
+            ...provincia,
+            descripcion: osItem.Ciudad,
+        })
+        setEquipoTicket({
+            ...equipoTicket,
+            id_contrato: osItem.contrato_id,
+            id_equipo: osItem.equipo_id,
+            codOS: osItem.codOS,
+            ticket_id: osItem.ticket_id,
+            Estado: osItem.Estado,
+            CodigoEquipoCliente: osItem.CodigoEquipoCliente,
+        })
+        setFecha(osItem.FechaCreacion.split("T")[0])
+    }
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setLoading(true)
                 try {
 
                     const { userId } = await getToken()
                     const ingeniero = await getIngenierosStorageById(userId)
-                    console.log("ingeniero", ingeniero)
                     setIngeniero(ingeniero)
-                    console.log("EstadoSwitch", await EstadoSwitch(1))
-                    let est = await EstadoSwitch(1)
-                    if (est.estado == 1) {
-                        setIsEnabled(true)
-                    } else {
-                        setIsEnabled(false)
-                    }
+                    // let est = await EstadoSwitch(1)
+                    // if (est.estado == 1) {
+                    //     setIsEnabled(true)
+                    // } else {
+                    //     setIsEnabled(false)
+                    // }
+
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect !== null) {
                         const item = JSON.parse(itenSelect)
-                        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                        const { Accion } = item
                         console.log("item", Accion)
                         if (Accion == "FINALIZADO") {//para ver sin editar
+
                             setDisableSub(false)
                             setIsEnabled(false)
                             setCheck(true)
-                            let clie = await SelectCliente(OSClone[0].ClienteID)
-                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
-                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
-                            setCliente({
-                                ...cliente,
-                                CustomerName: OSClone[0].ClienteNombre,
-                                Sucursal: JSON.parse(clie.Sucursal),
-                                Ciudad: OSClone[0].Ciudad,
-                            })
-                            setDireccion({
-                                ...direccion,
-                                Direccion: OSClone[0].Direccion,
-                            })
-                            setProvincia({
-                                ...provincia,
-                                descripcion: OSClone[0].Ciudad,
-                            })
-                            setEquipoTicket({
-                                ...equipoTicket,
-                                id_contrato: OSClone[0].contrato_id,
-                                id_equipo: OSClone[0].equipo_id,
-                                codOS: OSClone[0].codOS,
-                                ticket_id: OSClone[0].ticket_id,
-                                Estado: OSClone[0].Estado,
-                                CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
-                            })
-                            console.log(await datosClienteOSOrdenServicioID(OrdenServicioID))
-                            setFecha(OSClone[0].FechaCreacion.split("T")[0])
-                            return
+                            await getCliente()
+
                         } else if (Accion == "clonar") {// para ver y poder edidar una orden de servicio clone
-                            let clie = await SelectCliente(OSClone[0].ClienteID)
-                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
-                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
-                            setCliente({
-                                ...cliente,
-                                CustomerName: OSClone[0].ClienteNombre,
-                                Sucursal: JSON.parse(clie.Sucursal),
-                                Ciudad: OSClone[0].Ciudad,
-                            })
-                            setDireccion({
-                                ...direccion,
-                                Direccion: OSClone[0].Direccion,
-                            })
-                            setProvincia({
-                                ...provincia,
-                                descripcion: OSClone[0].Ciudad,
-                            })
-                            setEquipoTicket({
-                                ...equipoTicket,
-                                id_contrato: OSClone[0].contrato_id,
-                                id_equipo: OSClone[0].equipo_id,
-                                codOS: OSClone[0].codOS,
-                                ticket_id: OSClone[0].ticket_id,
-                                Estado: OSClone[0].Estado,
-                                CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
-                            })
-                            setFecha(OSClone[0].FechaCreacion.split("T")[0])
-                            return
+
+                            await getCliente()
+
                         } else if (Accion == "OrdenSinTicket") {
-                            const os = await AsyncStorage.getItem("OS")
-                            const osItem = JSON.parse(os)
-                            console.log("osItem", osItem)
-                            let clie = await SelectCliente(osItem.ClienteID)
-                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
-                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
-                            setCliente({
-                                ...cliente,
-                                CustomerName: osItem.ClienteNombre,
-                                Sucursal: JSON.parse(clie.Sucursal),
-                                Ciudad: osItem.Ciudad,
-                            })
-                            setDireccion({
-                                ...direccion,
-                                Direccion: osItem.Direccion,
-                            })
-                            setProvincia({
-                                ...provincia,
-                                descripcion: osItem.Ciudad,
-                            })
-                            setEquipoTicket({
-                                ...equipoTicket,
-                                id_contrato: osItem.contrato_id,
-                                id_equipo: osItem.equipo_id,
-                                codOS: osItem.codOS,
-                                ticket_id: osItem.ticket_id,
-                                Estado: osItem.Estado,
-                                CodigoEquipoCliente: osItem.CodigoEquipoCliente,
-                            })
-                            setFecha(moment().format("YYYY-MM-DD"))
-                            return
+
+                            await getCliente()
+
                         } else if (Accion == "PENDIENTE") {
-                            // SelectCliente(CustomerID)
-                            let clie = await SelectCliente(OSClone[0].ClienteID)
-                            console.log("cliente PENDIENTE", JSON.parse(clie.Sucursal))
-                            console.log("cliente PENDIENTE", typeof JSON.parse(clie.Sucursal))
-                            setCliente({
-                                ...cliente,
-                                CustomerName: OSClone[0].ClienteNombre,
-                                Sucursal: JSON.parse(clie.Sucursal),
-                                Ciudad: OSClone[0].Ciudad,
-                            })
-                            setDireccion({
-                                ...direccion,
-                                Direccion: OSClone[0].Direccion,
-                            })
-                            setProvincia({
-                                ...provincia,
-                                descripcion: OSClone[0].Ciudad,
-                            })
-                            setEquipoTicket({
-                                ...equipoTicket,
-                                id_contrato: OSClone[0].contrato_id,
-                                id_equipo: OSClone[0].equipo_id,
-                                codOS: OSClone[0].codOS,
-                                ticket_id: OSClone[0].ticket_id,
-                                Estado: OSClone[0].Estado,
-                                CodigoEquipoCliente: OSClone[0].CodigoEquipoCliente,
-                            })
-                            setFecha(OSClone[0].FechaCreacion.split("T")[0])
-                            return
+                            setIsEnabled(true)
+                            await getCliente()
+
                         } else if (Accion == "NUEVO OS TICKET") {
-                            const os = await AsyncStorage.getItem("OS")
-                            const osItem = JSON.parse(os)
-                            console.log("osItem", osItem)
-                            let clie = await SelectCliente(osItem.ClienteID)
-                            console.log("cliente CLONAR", JSON.parse(clie.Sucursal))
-                            console.log("cliente CLONAR", typeof JSON.parse(clie.Sucursal))
-                            setCliente({
-                                ...cliente,
-                                CustomerName: osItem.ClienteNombre,
-                                Sucursal: JSON.parse(clie.Sucursal),
-                                Ciudad: osItem.Ciudad,
-                            })
-                            setDireccion({
-                                ...direccion,
-                                Direccion: osItem.Direccion,
-                            })
-                            setProvincia({
-                                ...provincia,
-                                descripcion: osItem.Ciudad,
-                            })
-                            setEquipoTicket({
-                                ...equipoTicket,
-                                id_contrato: osItem.contrato_id,
-                                id_equipo: osItem.equipo_id,
-                                codOS: osItem.codOS,
-                                ticket_id: osItem.ticket_id,
-                                Estado: osItem.Estado,
-                                CodigoEquipoCliente: osItem.CodigoEquipoCliente,
-                            })
-                            setFecha(moment().format("YYYY-MM-DD"))
-                            return
+
+                            await getCliente()
+
                         }
                     }
+                    setLoading(false)
                 } catch (error) {
                     console.log("error", error)
                 }
@@ -302,18 +201,24 @@ export default function Cliente(props) {
             console.log("osItem", osItem)
         }
     }
+    
     const GuardarDireccion = async (value) => {
+        console.log("value", value)
         const os = await AsyncStorage.getItem("OS")
         const osItem = JSON.parse(os)
         osItem.Direccion = value,
-            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-        console.log("osItem", osItem)
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        setCliente({
+            ...cliente,
+            Direccion: value,
+        })
     }
 
     return (
         <View style={styles.container}>
 
             <View style={styles.ContenedorCliente}>
+                <LoadingActi loading={loading} />
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     style={{
@@ -365,11 +270,15 @@ export default function Cliente(props) {
                             marginBottom: 20,
                         }}>
                             <TextInput
-                                style={{ width: "90%", height: "100%" }}
+                                style={{
+                                    width: "90%",
+                                    height: "100%",
+                                    color: "#000000",
+                                }}
                                 placeholder="Cliente"
                                 value={cliente.CustomerName}
                                 onChangeText={(text) => setCliente({ ...cliente, CustomerName: text })}
-                                editable={isEnabled}
+                                editable={false}
                             />
                             <AntDesign
                                 onPress={() => setModalVisible(!modalVisible)}
@@ -383,7 +292,7 @@ export default function Cliente(props) {
                             placeholder="Código equipo cliente"
                             value={equipoTicket.id_equipo}
                             onChangeText={(text) => setEquipoTicket({ ...equipoTicket, id_equipo: text })}
-                            editable={isEnabled}
+                            editable={true}
                         />
                         <View
                             style={{
@@ -400,21 +309,31 @@ export default function Cliente(props) {
                                 onValueChange={(itemValue) => GuardarDireccion(itemValue)} >
                                 {
                                     typeof cliente.Sucursal == 'object' ?
-                                        cliente.Sucursal.map((item, index) => {
-                                            return <Picker.Item key={index + 1} label={item.Direccion} value={item.Direccion} />
-                                        })
+                                        cliente.Sucursal.map((item, index) => (
+                                            item.Direccion == cliente.Direccion ?
+                                                <Picker.Item
+                                                    key={index + 1}
+                                                    label={item.Direccion}
+                                                    value={item.Direccion}
+                                                    selected={true}
+                                                />
+                                                : <Picker.Item key={index} label={item.Direccion} value={item.Direccion} />
+                                        ))
                                         : null
                                 }
                             </Picker>
                         </View>
                         <TextInput
-                            style={styles.input}
+                            style={{
+                                ...styles.input,
+                                color: "#000000",
+                            }}
                             placeholder="Ciudad"
                             value={cliente.Ciudad}
                             onChangeText={(text) => setProvincia({ ...provincia, descripcion: text })}
                             editable={false}
                         />
-                        <View style={{
+                        {/* <View style={{
                             ...styles.wFull,
                             height: 60,
                             width: '100%',
@@ -442,7 +361,7 @@ export default function Cliente(props) {
                                         : null
                                     : null
                             }
-                        </View>
+                        </View> */}
                     </View>
                 </ScrollView>
             </View>

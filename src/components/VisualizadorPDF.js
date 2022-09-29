@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, Dimensions, View, TouchableOpacity, Text } from 'react-native'
-import PDFReader from 'rn-pdf-reader-js'
+import PDFReader from 'rn-pdf-reader-js-improved'
 
 
 export default function VisualizadorPDF(props) {

@@ -16,15 +16,16 @@ export const PostOS = async (data) => {
     }
     let response = await fetch(url, params);
     let result = await response.json()
-    console.log("PostOS", result)
     await InserOSOrdenServicioID(result.Response)
-    return result
+    return result.Code
 }
 
 export const PutOS = async (data) => {
     console.log(typeof data)
     const { token } = await getToken()
     console.log("PutOS", data.OrdenServicioID)
+
+    console.log("PutOS", data)
 
     try {
         const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${data.OrdenServicioID}`, data, {
@@ -39,28 +40,6 @@ export const PutOS = async (data) => {
         console.log("PutOS", error)
         return false
     }
-
-
-
-    // const url = `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${data.OrdenServicioID}`;
-    // const params = {
-    //     method: "PUT",
-    //     headers: {
-    //         "Content-Type": "application/json",
-    //         "Authorization": `Bearer ${token}`
-    //     },
-    //     body: JSON.stringify(data),
-    // }
-    // try {
-    //     const response = await fetch(url, params);
-    //     const result = await response.json()
-    //     console.log("result", result)
-    //     time(500)
-    //     return true;
-    // } catch (error) {
-    //     console.log("PutOSError", error)
-    //     return false;
-    // }
 }
 
 /**
@@ -82,4 +61,99 @@ export const FinalizarOS = async (OrdenServicioID) => {
         })
         resolve(200)
     })
+}
+
+
+// Language: javascript
+
+
+// Path: src/service/OS_OrdenServicio.js
+
+
+
+export const ParseOS = (data, accion) => {
+    if (accion == "NUEVO OS TICKET") {
+
+        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
+        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
+        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
+        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
+        data[0].OS_Colaboradores = []
+        data[0].OrdenServicioID = 0
+        data[0].OS_Encuesta = []
+        data[0].OS_Anexos = []
+        delete data[0].OS_FINALIZADA
+        delete data[0].OS_ASUNTO
+        data[0].Estado = "ACTI"
+        delete data[0].codOS
+        return data[0]
+
+    } else if (accion == "PENDIENTE") {
+
+        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
+        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
+        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
+        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
+        data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        data[0].OS_Colaboradores = []
+        data[0].OS_Encuesta = []
+        delete data[0].OS_FINALIZADA
+        delete data[0].OS_ASUNTO
+        data[0].Estado = "PROC"
+        delete data[0].codOS
+        return data[0]
+
+    } else if (accion == "FINALIZADO") {
+        
+        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
+        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
+        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
+        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
+        data[0].OS_Colaboradores = []
+        data[0].OS_Encuesta = []
+        data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        return data[0]
+
+    } else if (accion == "clonar") {
+        
+        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
+        data[0].OS_PartesRepuestos = []
+        data[0].OS_Colaboradores = []
+        data[0].OrdenServicioID = 0
+        data[0].OS_CheckList = []
+        data[0].OS_Encuesta = []
+        data[0].OS_Firmas = []
+        data[0].OS_Anexos = []
+        delete data[0].OS_FINALIZADA
+        delete data[0].OS_ASUNTO
+        data[0].Estado = "ACTI"
+        delete data[0].codOS
+        return data[0]
+
+    }else if (accion == "FIRMAR") {
+        
+        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
+        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
+        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
+        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
+        data[0].OS_Colaboradores = []
+        data[0].OS_Encuesta = []
+        data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        return data[0]
+    }
+}
+
+export const ESTADO = (accion) => {
+    switch (accion) {
+        case "clonar":
+            return "ACTI"
+        case "NUEVO OS TICKET":
+            return "ACTI"
+        case "PENDIENTE":
+            return "TROC"
+        case "OrdenSinTicket":
+            return "ACTI"
+        default:
+            break;
+    }
 }

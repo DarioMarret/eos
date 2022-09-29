@@ -19,6 +19,7 @@ import { ticketID, timpo } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import LoadingActi from "../../components/LoadingActi";
 
 
 
@@ -26,6 +27,8 @@ export default function IngresoHoras(props) {
   const { navigation } = props;
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
+
+  const [loading, setLoading] = useState(false)
 
   const [fini, setFini] = useState(true);
 
@@ -59,8 +62,13 @@ export default function IngresoHoras(props) {
     setTimePickerVisibility(false);
   };
 
-  const handleConfirmTime = (time) => {
-    setFechas({ ...fechas, [tiempoOS]: Moment(time).format('HH:mm:ss') })
+  const handleConfirmTime = async (time) => {
+    var os = await AsyncStorage.getItem("OS")
+    console.log(time);
+    let OS = JSON.parse(os)
+    OS.OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
+    await AsyncStorage.setItem("OS", JSON.stringify(OS))
+    setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") });
     hideTimePicker();
   }
 
@@ -84,60 +92,86 @@ export default function IngresoHoras(props) {
   useFocusEffect(
     useCallback(() => {
       (async () => {
+        setLoading(true)
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
           const item = JSON.parse(itenSelect)
           const { equipo, OrdenServicioID, ticket_id, OSClone, Accion } = item
           const OS_Tiempo = await AsyncStorage.getItem("OS_Tiempos")
           var os = await AsyncStorage.getItem("OS")
-          let os_tiempos = JSON.parse(OS_Tiempo)
           if (Accion == "OrdenSinTicket") {
+
+            console.log("OrdenSinTicket")
+            let OS = JSON.parse(os)
+            let tem = OS.OS_Tiempos
             setFechas({
               ...fechas,
-              ...os_tiempos[0],
+              ...tem[0],
               FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
-            return
+
           } else if (Accion == "clonar") {
+
+            console.log("CLONAR")
             let OS = JSON.parse(os)
-            let tem = JSON.parse(OS.OS_Tiempos)
+            let tem = OS.OS_Tiempos
             setFechas({
               ...fechas,
               ...tem[0],
               FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
             })
-            return
+
           } else if (Accion == "FINALIZADO") {
+
+            console.log("FINALIZADO")
             setFini(false)
             let OS = JSON.parse(os)
-            let tem = JSON.parse(OS.OS_Tiempos)
+            let tem = OS.OS_Tiempos
+            console.log(tem)
             setFechas({
               ...fechas,
               ...tem[0],
               FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
             })
+
           } else if (Accion == "PENDIENTE") {
+
+            console.log("PENDIENTE")
             let OS = JSON.parse(os)
-            let tem = JSON.parse(OS.OS_Tiempos)
+            let tem = OS.OS_Tiempos
             setFechas({
               ...fechas,
               ...tem[0],
               FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
             })
+
           } else if (Accion == "NUEVO OS TICKET") {
+            console.log("NUEVO OS TICKET")
+
             let OS = JSON.parse(os)
-            let tem = JSON.parse(OS.OS_Tiempos)
+            OS.OS_Tiempos.length > 0
+              ? (
+                OS.OS_Tiempos[0].IdTiempo = 0,
+                OS.OS_Tiempos[0].OrdenServicioID = 0
+              )
+              : null
+            let tem = OS.OS_Tiempos
+            console.log(tem)
+
             setFechas({
               ...fechas,
               ...tem[0],
               FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
             })
+
           }
         }
+        setLoading(false)
       })()
     }, [])
   )
   const SwitchGuardar = async () => {
+
     timpo.HoraSalidaOrigen = fechas.HoraSalidaOrigen
     timpo.HoraLlegadaCliente = fechas.HoraLlegadaCliente
     timpo.HoraInicioTrabajo = fechas.HoraInicioTrabajo
@@ -175,6 +209,7 @@ export default function IngresoHoras(props) {
         </Text>
         <ScrollView showsVerticalScrollIndicator={false} >
           <View style={styles.ContainerInputs}>
+            <LoadingActi loading={loading} />
             <View style={styles.input}>
               <TextInput
                 style={{ width: "90%", height: "100%" }}
@@ -282,7 +317,7 @@ export default function IngresoHoras(props) {
             />
             <DateTimePickerModal
               isVisible={isTimePickerVisible}
-              mode='time'
+              mode='datetime'
               onConfirm={handleConfirmTime}
               onCancel={hideTimePicker}
               style={{ color: "#FF6B00" }}
@@ -291,31 +326,7 @@ export default function IngresoHoras(props) {
           </View>
 
         </ScrollView>
-        <View>
-          {
-            fini ?
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'flex-end',
-                  alignItems: 'center',
-                }}
-              >
-                {
-                  fechas.switch ?
-                    <Text style={{ fontSize: 16, marginRight: 4 }}>Guardado:</Text>
-                    : <Text style={{ fontSize: 16, marginRight: 4 }}>Editable:</Text>
-                }
-                <Switch
-                  trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
-                  thumbColor={fechas.switch ? "#FF6B00" : "#ffffff"}
-                  ios_backgroundColor="#FFAF75"
-                  onValueChange={() => SwitchGuardar()}
-                  value={fechas.switch}
-                />
-              </View> : null
-          }
-        </View>
+
         {/* <View style={{ padding: 50 }} ></View> */}
       </View >
       <BannerOrderServi

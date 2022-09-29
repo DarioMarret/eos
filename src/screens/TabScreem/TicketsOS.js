@@ -2,9 +2,9 @@ import { useFocusEffect } from "@react-navigation/native";
 
 import { useCallback, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
-import { ActivityIndicator, FlatList, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, SafeAreaView, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ticketID } from "../../utils/constantes";
+import { os_firma, ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
 import { getOrdenServicioAnidadasTicket_id, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import db from "../../service/Database/model";
@@ -21,13 +21,14 @@ import axios from "axios";
 import { getToken } from "../../service/usuario";
 import { AntDesign } from "@expo/vector-icons";
 import { HistorialEquipoIngeniero, isChecked, isCheckedCancelaReturn } from "../../service/historiaEquipo";
-import { FinalizarOS } from "../../service/OS";
+import { FinalizarOS, ParseOS } from "../../service/OS";
 import moment from "moment";
 import { GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import { time, TrucateUpdate } from "../../service/CargaUtil";
 import LoadingActi from "../../components/LoadingActi";
 
+import Firmador from "../../components/Firmador"
 
 export default function TicketsOS(props) {
     const { navigation } = props
@@ -39,10 +40,13 @@ export default function TicketsOS(props) {
 
     const [listadoEmails, setlistadoEmails] = useState([])
 
-    const [itemIndex, setItemIndex] = useState(null)
+    const [OrdenServicioID, setOrdenServicioID] = useState(null)
     const [idOrdenServicio, setIdOrdenServicio] = useState(null)
 
     const [modalVisible, setModalVisible] = useState(false);
+
+    const [modalSignature, setModalSignature] = useState(false);
+    const [userData, setUserData] = useState(os_firma)
 
     const [pdfview, setPdfview] = useState(true)
     const [pdfurl, setPdfurl] = useState("")
@@ -78,7 +82,6 @@ export default function TicketsOS(props) {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-
                             Rutes(rows._array, ticket_id, OrdenServicioID, null, estado)
                         })
                     })
@@ -91,24 +94,32 @@ export default function TicketsOS(props) {
 
 
 
-    async function AgregarFirma(item) {
-        console.log("AgregarFirma", item)
+    async function AgregarFirma(OrdenServicioID) {
+        setLoading(true)
+        let clon = await SelectOSOrdenServicioID(OrdenServicioID)
+        let parse = ParseOS(clon, "FIRMAR")
+        await AsyncStorage.setItem("OS", JSON.stringify(parse))
+        setUserData(parse.OS_Firmas)
+        time(1000)
+        setLoading(false)
+        setModalSignature(true)
+        console.log("AgregarFirma", OrdenServicioID)
+    }
+
+    const enviarFirma = () => {
+        setModalSignature(false)
+        console.log("enviado")
     }
 
     async function ClonarOS(ticket_id, OrdenServicioID) {
         const OSClone = await SelectOSOrdenServicioID(OrdenServicioID)
-        OSClone[0]['OS_ASUNTO'] = []
-        OSClone[0]['OS_FINALIZADA'] = null
-        OSClone[0]['OrdenServicioID'] = null
-        OSClone[0]['OS_Firmas'] = []
-        OSClone[0]['OS_Anexos'] = []
-        OSClone[0]['codOS'] = null
+        let clon = ParseOS(OSClone, "clonar")
         await AsyncStorage.setItem("OS", JSON.stringify(OSClone[0]))
         db.transaction(tx => {
             tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                        Rutes(rows._array, ticket_id, OrdenServicioID, OSClone, "clonar")
+                        Rutes(rows._array, ticket_id, OrdenServicioID, clon, "clonar")
                     })
                 })
             })
@@ -143,8 +154,8 @@ export default function TicketsOS(props) {
         var clon;
         if (accion == "PENDIENTE" || accion == "FINALIZADO") {
             clon = await SelectOSOrdenServicioID(OrdenServicioID)
-            await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
-            console.log(accion, clon)
+            let parse = ParseOS(clon, accion)
+            await AsyncStorage.setItem("OS", JSON.stringify(parse))
         }
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
@@ -172,16 +183,8 @@ export default function TicketsOS(props) {
             })
         })
         var clon = await SelectOSOrdenServicioID(eventosAnidados[0].OrdenServicioID)
-        clon.OS_Anexos = []
-        clon.OS_CheckList = []
-        clon.OS_Colaboradores = []
-        clon.OS_Encuesta = []
-        clon.OS_Firmas = []
-        clon.OS_PartesRepuestos = []
-        clon.OrdenServicioID = 0
-        clon.OS_Firmas = []
-        delete clon.codOS
-        await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
+        let parse = ParseOS(clon, "NUEVO OS TICKET")
+        await AsyncStorage.setItem("OS", JSON.stringify(parse))
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id: eventosAnidados[0].ticket_id,
@@ -264,6 +267,22 @@ export default function TicketsOS(props) {
 
         pdfview ?
             (<View style={styles.container} >
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={modalSignature}
+                    onRequestClose={() => {
+                        setModalSignature(!modalSignature);
+                    }}
+                >
+                    <Firmador
+                        enviarFirma={enviarFirma}
+                        setModalSignature={setModalSignature}
+                        datauser={userData}
+                        setUserData={setUserData}
+                        OrdenServicioID={OrdenServicioID}
+                    />
+                </Modal>
                 {
                     eventosAnidados.length > 0 ?
                         <View style={styles.body}>
@@ -596,5 +615,10 @@ const styles = StyleSheet.create({
     textModalInfo: {
         fontSize: 16,
         color: '#666666'
-    }
+    },
+    centeredView: {
+        flex: 1,
+        justifyContent: "center",
+        marginTop: 22,
+    },
 });

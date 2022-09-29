@@ -66,101 +66,40 @@ export default function BannerOrderServi(props) {
 
     async function GUARDAR_OS() {
         setModalVisible(true)
-        const os_part = await AsyncStorage.getItem("OS_PartesRepuestos")
-        const os_checl = await AsyncStorage.getItem("OS_CheckList")
-        const os_tiemp = await AsyncStorage.getItem("OS_Tiempos")
-        const os_firma = await AsyncStorage.getItem("OS_Firmas")
-        const os_anexo = await AsyncStorage.getItem("OS_Anexos")
         const os = await AsyncStorage.getItem("OS")
         var OS = JSON.parse(os)
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
-            const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
-            if (Accion == "clonar") {
+            const { Accion } = item
+            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
 
-                OS.OrdenServicioID = 0
-                OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                OS.OS_Colaboradores = []
-                OS.OS_PartesRepuestos = JSON.parse(os_part)
-                OS.OS_CheckList = JSON.parse(os_checl)
-                OS.OS_Tiempos = JSON.parse(os_tiemp)
-                OS.OS_Firmas = JSON.parse(os_firma)
-                OS.OS_Anexos = JSON.parse(os_anexo)
+                try {
+                    OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
 
-                let res = await PostOS(OS)
-                await LimpiandoDatos()
-                setModalVisible(false)
-                console.log("CLONACION GUARDAR_", res)
-
-            } else if (Accion == "OrdenSinTicket") {
-
-                OS.OrdenServicioID = 0
-                OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                OS.OS_Colaboradores = []
-                OS.OS_PartesRepuestos = JSON.parse(os_part)
-                OS.OS_CheckList = JSON.parse(os_checl)
-                OS.OS_Tiempos = JSON.parse(os_tiemp)
-                OS.OS_Firmas = JSON.parse(os_firma)
-                OS.OS_Anexos = JSON.parse(os_anexo)
-                console.log("OS.OS_Anexos", typeof OS.OS_Anexos)
-
-                let O = await PostOS(OS)
-                await LimpiandoDatos()
-                setModalVisible(false)
-                console.log("GUARDAR_OS", O)
+                    let P = await PostOS(OS)
+                    if (P == "200") {
+                        await LimpiandoDatos()
+                        setModalVisible(false)
+                    } else {
+                        setModalVisible(false)
+                        Alert.alert("Error", "No se pudo crear la orden de servicio")
+                    }
+                } catch (error) {
+                    setModalVisible(false)
+                    console.log("error", error)
+                    Alert.alert("Error", "Error al crear la orden de servicio")
+                }
 
             } else if (Accion == "PENDIENTE") {
+
                 try {
-                    if(typeof OS.OS_Encuesta == 'object' && OS.OS_Encuesta.length > 0){
-                        OS.OS_Encuesta.map((item, index) => {
-                            OS.OS_Encuesta[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Encuesta = []
-                    }
-                    if(typeof OS.OS_PartesRepuestos == 'object' && OS.OS_PartesRepuestos.length > 0){
-                        OS.OS_PartesRepuestos.map((item, index) => {
-                            OS.OS_PartesRepuestos[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_PartesRepuestos = []
-                    }
-                    if(typeof OS.OS_CheckList == 'object' && OS.OS_CheckList.length > 0){
-                        OS.OS_CheckList.map((item, index) => {
-                            OS.OS_CheckList[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_CheckList = []
-                    }
-                    if(typeof OS.OS_Tiempos == 'object' && OS.OS_Tiempos.length > 0){
-                        OS.OS_Tiempos.map((item, index) => {
-                            OS.OS_Tiempos[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Tiempos = []
-                    }
-                    if(typeof OS.OS_Firmas == 'object' && OS.OS_Firmas.length > 0){
-                        OS.OS_Firmas.map((item, index) => {
-                            OS.OS_Firmas[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Firmas = []
-                    }
-                    if(typeof OS.OS_Anexos == 'object' && OS.OS_Anexos.length > 0){
-                        OS.OS_Anexos.map((item, index) => {
-                            OS.OS_Anexos[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Anexos = []
-                    }
-                    OS.OS_Colaboradores = []
-                    OS.Estado = "TROC"
-                    delete OS.OS_ASUNTO
+
+                    OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     let P = await PutOS(OS)
                     if (P == 204) {
                         await LimpiandoDatos()
@@ -175,70 +114,8 @@ export default function BannerOrderServi(props) {
                     Alert.alert("Error", "Error al actualizar la orden de servicio")
                 }
 
-            } else if (Accion == "NUEVO OS TICKET") {
-
-                try {
-                    if(typeof OS.OS_Encuesta == 'object' && OS.OS_Encuesta.length > 0){
-                        OS.OS_Encuesta.map((item, index) => {
-                            OS.OS_Encuesta[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Encuesta = []
-                    }
-                    if(typeof OS.OS_PartesRepuestos == 'object' && OS.OS_PartesRepuestos.length > 0){
-                        OS.OS_PartesRepuestos.map((item, index) => {
-                            OS.OS_PartesRepuestos[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_PartesRepuestos = []
-                    }
-                    if(typeof OS.OS_CheckList == 'object' && OS.OS_CheckList.length > 0){
-                        OS.OS_CheckList.map((item, index) => {
-                            OS.OS_CheckList[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_CheckList = []
-                    }
-                    if(typeof OS.OS_Tiempos == 'object' && OS.OS_Tiempos.length > 0){
-                        OS.OS_Tiempos.map((item, index) => {
-                            OS.OS_Tiempos[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Tiempos = []
-                    }
-                    if(typeof OS.OS_Firmas == 'object' && OS.OS_Firmas.length > 0){
-                        OS.OS_Firmas.map((item, index) => {
-                            OS.OS_Firmas[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Firmas = []
-                    }
-                    if(typeof OS.OS_Anexos == 'object' && OS.OS_Anexos.length > 0){
-                        OS.OS_Anexos.map((item, index) => {
-                            OS.OS_Anexos[index].Estado ='TROC'
-                        })
-                    }else{
-                        OS.OS_Anexos = []
-                    }
-                    OS.OS_Colaboradores = []
-                    delete OS.OS_ASUNTO
-                    let P = await PutOS(OS)
-                    if (P == 204) {
-                        await LimpiandoDatos()
-                        setModalVisible(false)
-                    } else {
-                        setModalVisible(false)
-                        Alert.alert("Error", "No se pudo actualizar la orden de servicio")
-                    }
-                } catch (error) {
-                    setModalVisible(false)
-                    console.log("error", error)
-                    Alert.alert("Error", "Error al actualizar la orden de servicio")
-                }
             }
-            // else if (Accion == "clonar") {
-
-            // }
+   
         }
     }
 

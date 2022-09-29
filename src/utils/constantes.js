@@ -1184,12 +1184,12 @@ export const os_firma ={
     FechaModificacion: null,
     UsuarioModificacion: null,
     Estado: "ACTI",
-    Cargo: null,
-    Nombre: null,
-    Cedula: null,
+    Cargo: "",
+    Nombre: "",
+    Cedula: "",
     Longitud: null,
     Latitud: null,
-    Correo: null,
+    Correo: "",
     archivo: ""
 }
 export const ParteRespuestos = {

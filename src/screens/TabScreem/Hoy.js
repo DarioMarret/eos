@@ -22,6 +22,7 @@ import { RefresLogin } from "../../service/usuario";
 import { getTPTCKStorage } from "../../service/catalogos";
 import LoadingActi from "../../components/LoadingActi";
 import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { ParseOS } from "../../service/OS";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -119,16 +120,18 @@ export default function Hoy(props) {
 
     async function Rutes(equipo, ticket_id, OrdenServicioID, estado) {
         try {
+            console.log("estado", estado)
             if (equipo.length != 0) {
                 equipo[0]['isChecked'] = 'true'
                 var clon = await SelectOSOrdenServicioID(OrdenServicioID)
+                let parse = ParseOS(clon, estado)
                 await AsyncStorage.removeItem(ticketID)
-                await AsyncStorage.setItem("OS", JSON.stringify(clon[0]))
+                await AsyncStorage.setItem("OS", JSON.stringify(parse))
                 await AsyncStorage.setItem(ticketID, JSON.stringify({
                     ticket_id,
                     equipo,
                     OrdenServicioID,
-                    OSClone: clon,
+                    OSClone: parse,
                     Accion: estado
                 }))
                 await isChecked(equipo[0].equipo_id)

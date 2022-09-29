@@ -27,11 +27,11 @@ export default function Componentes(props) {
 
     const [componente, setComponente] = useState({
         OS_OrdenServicio: null,
-        IdParte: null,
-        OrdenServicioID: null,
+        IdParte: 0,
+        OrdenServicioID: 0,
         Tipo: null,
         Codigo: null,
-        Descripcion: null,
+        Descripcion: "",
         Cantidad: null,
         Doa: false,
         Exchange: false,
@@ -39,7 +39,7 @@ export default function Componentes(props) {
         UsuarioCreacion: null,
         FechaModificacion: null,
         UsuarioModificacion: null,
-        Estado: null,
+        Estado: "ACTI",
         Garantia: false,
         componente_id: null,
         serie: "",
@@ -85,7 +85,6 @@ export default function Componentes(props) {
                     const inci = await ListaComponentes()
                     setIncidente(inci)
                     let est = await EstadoSwitch(3)
-                    console.log("est", est);
                     if (est.estado == 1) {
                         setIsEnabled(!true)
                     } else {
@@ -95,24 +94,24 @@ export default function Componentes(props) {
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect != null) {
                         const item = JSON.parse(itenSelect)
-                        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                        const { Accion } = item
                         if (Accion == "FINALIZADO") {
                             setFini(false)
 
                             const parte = await AsyncStorage.getItem("OS")
-                            console.log("parte-->", JSON.parse(parte).OS_PartesRepuestos)
-                            let pat = JSON.parse(parte).OS_PartesRepuestos
-                            setComponent(JSON.parse(pat))
+                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
 
                         } else if (Accion == "PENDIENTE") {
 
-                            setComponent(JSON.parse(OSClone[0].OS_PartesRepuestos))
+                            console.log("PENDIENTE")
+                            const parte = await AsyncStorage.getItem("OS")
+                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
 
                         } else if (Accion == "OrdenSinTicket") {
 
-                            const parte = await AsyncStorage.getItem("OS_PartesRepuestos")
-                            console.log("parte-->", parte)
-                            setComponent(JSON.parse(parte))
+                            console.log("OrdenSinTicket")
+                            const parte = await AsyncStorage.getItem("OS")
+                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
 
                         } else if (Accion == "clonar") {
 
@@ -120,6 +119,12 @@ export default function Componentes(props) {
                             console.log("parte-->", JSON.parse(parte).OS_PartesRepuestos)
                             let pat = JSON.parse(parte).OS_PartesRepuestos
                             setComponent(JSON.parse(pat))
+
+                        } else if (Accion == "NUEVO OS TICKET") {
+
+                            console.log("NUEVO OS TICKET")
+                            const parte = await AsyncStorage.getItem("OS")
+                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
 
                         }
                     }
@@ -139,6 +144,11 @@ export default function Componentes(props) {
             const it = JSON.parse(itenSelect)
             const { Accion } = it
             if (Accion == "OrdenSinTicket") {
+
+                console.log("OrdenSinTicket")
+                const parte = await AsyncStorage.getItem("OS")
+                console.log("parte-->", JSON.parse(parte))
+                let os = JSON.parse(parte)
                 ParteRespuestos.Tipo = componente.Tipo
                 ParteRespuestos.Codigo = componente.Codigo
                 ParteRespuestos.Descripcion = componente.Descripcion
@@ -153,46 +163,81 @@ export default function Componentes(props) {
                 ParteRespuestos.Garantia = componente.Garantia
                 ParteRespuestos.componente_id = null
                 ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
-                const rest = await AsyncStorage.getItem("OS_PartesRepuestos")
-                if (rest != null) {
-                    const res = JSON.parse(rest)
-                    res.push(ParteRespuestos)
-                    await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(res))
-                    console.log("res", res)
-                } else {
-                    await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([ParteRespuestos]))
-                }
-                const result = await AsyncStorage.getItem("OS_PartesRepuestos")
-                const res = JSON.parse(result)
-                console.log("res", res)
-                setComponent(res)
+                os.OS_PartesRepuestos.push(ParteRespuestos)
+                await AsyncStorage.setItem("OS", JSON.stringify(os))
+                setComponent(os.OS_PartesRepuestos)
 
             } else if (Accion == "PENDIENTE") {
 
+                console.log("CLONAR")
                 const parte = await AsyncStorage.getItem("OS")
-                let pat = JSON.parse(parte).OS_PartesRepuestos
-                let comp = JSON.parse(pat)
-                comp.push(componente)
-                console.log("comp", comp)
-                await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
+                console.log("parte-->", JSON.parse(parte))
+                let os = JSON.parse(parte)
+                ParteRespuestos.Tipo = componente.Tipo
+                ParteRespuestos.Codigo = componente.Codigo
+                ParteRespuestos.Descripcion = componente.Descripcion
+                ParteRespuestos.Cantidad = Number(componente.Cantidad)
+                ParteRespuestos.Doa = componente.Doa
+                ParteRespuestos.Exchange = componente.Exchange
+                ParteRespuestos.FechaCreacion = new Date()
+                ParteRespuestos.UsuarioCreacion = userId
+                ParteRespuestos.FechaModificacion = new Date()
+                ParteRespuestos.UsuarioModificacion = userId
+                ParteRespuestos.Estado = "TROC"
+                ParteRespuestos.Garantia = componente.Garantia
+                ParteRespuestos.componente_id = null
+                ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
+                os.OS_PartesRepuestos.push(ParteRespuestos)
+                await AsyncStorage.setItem("OS", JSON.stringify(os))
+                setComponent(os.OS_PartesRepuestos)
 
             } else if (Accion == "clonar") {
 
+                console.log("CLONAR")
                 const parte = await AsyncStorage.getItem("OS")
-                let pat = JSON.parse(parte).OS_PartesRepuestos
-                let comp = JSON.parse(pat)
-                comp.push(componente)
-                console.log("comp", comp)
-                await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
+                console.log("parte-->", JSON.parse(parte))
+                let os = JSON.parse(parte)
+                ParteRespuestos.Tipo = componente.Tipo
+                ParteRespuestos.Codigo = componente.Codigo
+                ParteRespuestos.Descripcion = componente.Descripcion
+                ParteRespuestos.Cantidad = Number(componente.Cantidad)
+                ParteRespuestos.Doa = componente.Doa
+                ParteRespuestos.Exchange = componente.Exchange
+                ParteRespuestos.FechaCreacion = new Date()
+                ParteRespuestos.UsuarioCreacion = userId
+                ParteRespuestos.FechaModificacion = new Date()
+                ParteRespuestos.UsuarioModificacion = userId
+                ParteRespuestos.Estado = "ACTI"
+                ParteRespuestos.Garantia = componente.Garantia
+                ParteRespuestos.componente_id = null
+                ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
+                os.OS_PartesRepuestos.push(ParteRespuestos)
+                await AsyncStorage.setItem("OS", JSON.stringify(os))
+                setComponent(os.OS_PartesRepuestos)
 
-            }else if (Accion == "NUEVO OS TICKET") {
+            } else if (Accion == "NUEVO OS TICKET") {
 
+                console.log("NUEVO OS TICKET")
                 const parte = await AsyncStorage.getItem("OS")
-                let pat = JSON.parse(parte).OS_PartesRepuestos
-                let comp = JSON.parse(pat)
-                comp.push(componente)
-                console.log("comp", comp)
-                await AsyncStorage.setItem(ParteRespuestos, JSON.stringify(comp))
+                console.log("parte-->", JSON.parse(parte))
+                let os = JSON.parse(parte)
+                ParteRespuestos.Tipo = componente.Tipo
+                ParteRespuestos.Codigo = componente.Codigo
+                ParteRespuestos.Descripcion = componente.Descripcion
+                ParteRespuestos.Cantidad = Number(componente.Cantidad)
+                ParteRespuestos.Doa = componente.Doa
+                ParteRespuestos.Exchange = componente.Exchange
+                ParteRespuestos.FechaCreacion = new Date()
+                ParteRespuestos.UsuarioCreacion = userId
+                ParteRespuestos.FechaModificacion = new Date()
+                ParteRespuestos.UsuarioModificacion = userId
+                ParteRespuestos.Estado = "ACTI"
+                ParteRespuestos.Garantia = componente.Garantia
+                ParteRespuestos.componente_id = null
+                ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
+                os.OS_PartesRepuestos.push(ParteRespuestos)
+                await AsyncStorage.setItem("OS", JSON.stringify(os))
+                setComponent(os.OS_PartesRepuestos)
 
             }
         }
@@ -214,53 +259,22 @@ export default function Componentes(props) {
     }
 
     const EliminarComponente = async (item) => {
-        const os_partesRepuestos = await AsyncStorage.getItem("OS_PartesRepuestos")
-        const OS_PartesRepuestos = JSON.parse(os_partesRepuestos)
-        const index = OS_PartesRepuestos.findIndex(x => x.componente_id == item.componente_id)
-        OS_PartesRepuestos.splice(index, 1)
-        setComponent(OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
+        const os_partesRepuestos = JSON.parse(await AsyncStorage.getItem("OS"))
+        const OS_PartesRepuestos = os_partesRepuestos.OS_PartesRepuestos
+        os_partesRepuestos.OS_PartesRepuestos = OS_PartesRepuestos.filter(x => x.idLocal != item.idLocal)
+        console.log("index", os_partesRepuestos.OS_PartesRepuestos)
+        await AsyncStorage.setItem("OS", JSON.stringify(os_partesRepuestos))
+        setComponent(os_partesRepuestos.OS_PartesRepuestos)
     }
-
-    const _iTemView = ({ item }) => {
-        return (
-            <View style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                backgroundColor: "#D6FCD9",
-                padding: 10,
-                borderBottomWidth: 0.5,
-                borderRadius: 0,
-            }}>
-                <View>
-                    <Text style={{
-                        ...styles.text,
-                        textTransform: "uppercase",
-                    }}>{item.Tipo}/ # {item.Codigo}/{"CANT:" + item.Cantidad}</Text>
-                    <Text style={{
-                        ...styles.text,
-                        textTransform: "uppercase",
-                    }}>{item.Descripcion}</Text>
-                    <Text style={styles.text}>DOA:{item.doa == false ? "OFF" : "ON"}/GARANTIA:{item.garantia == false ? "OFF" : "ON"}/EXCHANGE:{item.exchange == false ? "OFF" : "ON"}</Text>
-                </View>
-                <TouchableOpacity
-                    onPress={() => EliminadrComponenteAgregado(item)}
-                >
-                    <AntDesign name="delete" size={20} color="red" />
-                </TouchableOpacity>
-            </View>
-        )
-    }
-
+    //20220910016
     return (
         <View style={styles.container}>
             <ScrollView
-                showsVerticalScrollIndicator={false}
                 style={{
                     width: "100%",
-                    height: "100%",
                 }}
+                showsVerticalScrollIndicator={false}
+                showsHorizontalScrollIndicator={false}
             >
                 <View style={styles.ContenedorCliente}>
                     <Text style={{
@@ -444,14 +458,42 @@ export default function Componentes(props) {
                                 </TouchableOpacity>
                         }
                     </View>
+
                     <View>
-                        <SafeAreaView>
-                            <FlatList
-                                data={Component}
-                                renderItem={_iTemView}
-                                keyExtractor={(item, index) => index.toString()}
-                            />
-                        </SafeAreaView>
+                        {
+                            Component.length > 0 ?
+                                Component.map((item, index) => {
+                                    return (
+                                        <View style={{
+                                            flexDirection: "row",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            backgroundColor: "#D6FCD9",
+                                            padding: 10,
+                                            borderBottomWidth: 0.5,
+                                            borderRadius: 0,
+                                        }}>
+                                            <View>
+                                                <Text style={{
+                                                    ...styles.text,
+                                                    textTransform: "uppercase",
+                                                }}>{item.Tipo}/ # {item.Codigo}/{"CANT:" + item.Cantidad}</Text>
+                                                <Text style={{
+                                                    ...styles.text,
+                                                    textTransform: "uppercase",
+                                                }}>{item.Descripcion}</Text>
+                                                <Text style={styles.text}>DOA:{item.doa == false ? "OFF" : "ON"}/GARANTIA:{item.garantia == false ? "OFF" : "ON"}/EXCHANGE:{item.exchange == false ? "OFF" : "ON"}</Text>
+                                            </View>
+                                            <TouchableOpacity
+                                                onPress={() => EliminadrComponenteAgregado(item)}
+                                            >
+                                                <AntDesign name="delete" size={20} color="red" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    )
+                                }): null
+
+                        }
 
                     </View>
                     <View style={{ paddingBottom: 50 }} ></View>
