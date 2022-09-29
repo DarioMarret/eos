@@ -31,6 +31,8 @@ function InitDB() {
             id_equipoContrato TEXT NULL,
             localidad_id TEXT NULL,
             historial TEXT NULL,
+            checklist TEXT NULL,
+            id_contrato INTEGER NULL,
             isChecked TEXT NULL
         );`)
         })

@@ -68,8 +68,10 @@ async function SelectExisteEquipo(r) {
                                  id_equipoContrato,
                                  localidad_id,
                                  historial,
+                                 checklist,
+                                 id_contrato,
                                  isChecked
-                                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                                 ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
                     r.equipo_id,
                     r.equ_tipoEquipo,
@@ -94,6 +96,8 @@ async function SelectExisteEquipo(r) {
                     r.id_equipoContrato,
                     r.localidad_id,
                     JSON.stringify(r.historial),
+                    JSON.stringify(r.checklist),
+                    id_contrato,
                     "false"
                 ],
             }], false, (err, results) => {
@@ -110,7 +114,7 @@ async function SelectExisteEquipo(r) {
     }
 }
 
-async function SelectExisteEquipoQ(equipo_id) {
+export async function SelectExisteEquipoQ(equipo_id) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(`SELECT * FROM historialEquipo WHERE equipo_id = ?`,
@@ -129,6 +133,9 @@ async function SelectExisteEquipoQ(equipo_id) {
 
 export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
     try {
+        console.log("tipo", tipo)
+        console.log("modelo", modelo)
+        console.log("serie", serie)
         if (tipo === "" && modelo === "" && serie === "") {
             return []
         } else if (tipo !== "" && modelo == "" && serie == "") {
@@ -167,10 +174,12 @@ export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
                     });
                 })
             })
-        } else if (serie.length > 0) {
+        } else if (serie !== "") {
+            console.log("serie", serie);
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
                     tx.executeSql(`select * from historialEquipo where equ_serie like '%${serie}%'`, [], (_, { rows }) => {
+                        console.log(rows._array)
                         resolve(rows._array)
                     });
                 })
@@ -238,6 +247,22 @@ export const getHistorialEquiposStorageChecked = async () => {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
                 tx.executeSql('select * from historialEquipo where isChecked = ?', ["true"], (_, { rows }) => {
+                    // console.log("rows getHistorialEquiposStorageChecked", rows._array);
+                    resolve(rows._array)
+                });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}
+
+export const getHistorialEquiposStorageChecklist = async (equipo_id) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select checklist from historialEquipo where equipo_id = ?', [equipo_id], (_, { rows }) => {
                     // console.log("rows getHistorialEquiposStorageChecked", rows._array);
                     resolve(rows._array)
                 });

@@ -72,7 +72,7 @@ export default function BannerOrderServi(props) {
         if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
             const { Accion } = item
-            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
+            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET" || Accion == "PENDIENTE") {
 
                 try {
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
@@ -87,20 +87,21 @@ export default function BannerOrderServi(props) {
                         setModalVisible(false)
                         Alert.alert("Error", "No se pudo crear la orden de servicio")
                     }
+
                 } catch (error) {
                     setModalVisible(false)
                     console.log("error", error)
                     Alert.alert("Error", "Error al crear la orden de servicio")
                 }
 
-            } else if (Accion == "PENDIENTE") {
+            } else if (Accion == "PROCESO") {
 
                 try {
 
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                    let P = await PutOS(OS)
+                    let P = await PostOS(OS)
                     if (P == 204) {
                         await LimpiandoDatos()
                         setModalVisible(false)

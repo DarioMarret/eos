@@ -14,6 +14,7 @@ import { AntDesign } from "@expo/vector-icons"
 import Firmador from "../../components/Firmador"
 import moment from "moment"
 import LoadingActi from "../../components/LoadingActi"
+import { getHistorialEquiposStorageChecklist } from "../../service/historiaEquipo"
 
 export default function Datos(props) {
     const { navigation } = props
@@ -30,6 +31,9 @@ export default function Datos(props) {
     const [CategoriaTPINC, setCategoriaTPINC] = useState([])
     const [CategoriaESTEQ, setCategoriaESTEQ] = useState([])
 
+
+    const [ofCheck, setOfCheck] = useState(false)
+
     const [tipo, setTipo] = useState("");
 
     const [isEnabled, setIsEnabled] = useState(false);
@@ -38,6 +42,7 @@ export default function Datos(props) {
     const [loading, setLoading] = useState(false)
 
     const [showCheckList, setShowCheckList] = useState(false)
+    const [listCheck, setListCheck] = useState([])
 
     const [datos, setDatos] = useState({
         SitioTrabajo: "",
@@ -71,6 +76,15 @@ export default function Datos(props) {
             ...datos,
             TipoVisita: items
         })
+        if (items == "01" || items == "09") {
+            setOfCheck(true)
+            osItem.equipo_id
+            const list = await getHistorialEquiposStorageChecklist(osItem.equipo_id)
+            console.log("list", list)
+            // setListCheck()
+        } else {
+            setOfCheck(false)
+        }
     }
     async function SitioTrabajoValue(items) {
         setDatos({
@@ -177,6 +191,10 @@ export default function Datos(props) {
                         console.log("Estamos PENDIENTE")
                         const os = await AsyncStorage.getItem("OS")
                         const osItem = JSON.parse(os)
+                        delete osItem.OS_ASUNTO
+                        delete osItem.OS_Anexos
+                        delete osItem.OS_Tiempos
+                        delete osItem.OS_FINALIZADA
                         console.log("osItem", osItem)
                         setDatos({
                             ...osItem,
@@ -233,7 +251,6 @@ export default function Datos(props) {
         const osItem = JSON.parse(os)
         osItem.Acciones = datos.Acciones,//# accion inmediata
             osItem.Causas = datos.Causas, //# Problema reportado
-            osItem.contrato_id = 0, //# contrat ejemplo
             osItem.Sintomas = datos.Sintomas, //# sintomas
             osItem.Diagnostico = datos.Diagnostico, //# diagnostico
             osItem.EstadoEquipo = datos.EstadoEquipo, //# estado del equipo
@@ -245,6 +262,7 @@ export default function Datos(props) {
             osItem.nuevaVisita = datos.nuevaVisita, //# requiere nueva visita
             osItem.Seguimento = datos.Seguimento, //# sequimiento
             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        console.log("osItem", osItem)
     }
 
     const verChecklist = () => {
@@ -277,8 +295,6 @@ export default function Datos(props) {
                                     ...styles.inputActivity
                                 }}>
                                     <TextInput
-                                        multiline
-                                        numberOfLines={2}
                                         editable
                                         placeholder="Observación actividad"
                                         onChangeText={text => onChangeText(text)}
@@ -375,15 +391,17 @@ export default function Datos(props) {
                             width: "100%",
                             backgroundColor: "#FFFFFF"
                         }}>
-                            {/* onPress={() => verChecklist()} */}
-                            <TouchableOpacity style={styles.btn} onPress={() => verChecklist()} >
-                                <Text style={{
-                                    fontSize: 18,
-                                    color: '#FFF',
-                                    fontFamily: 'Roboto',
-                                    marginLeft: 10
-                                }}>VER CHECKLIST</Text>
-                            </TouchableOpacity>
+                            {
+                                ofCheck ?
+                                    <TouchableOpacity style={styles.btn} onPress={() => verChecklist()} >
+                                        <Text style={{
+                                            fontSize: 18,
+                                            color: '#FFF',
+                                            fontFamily: 'Roboto',
+                                            marginLeft: 10
+                                        }}>VER CHECKLIST</Text>
+                                    </TouchableOpacity> : null
+                            }
                         </View>
                         <View style={{ paddingHorizontal: 20 }} />
                         <View

@@ -72,30 +72,11 @@ export default function Cliente(props) {
         id: "",
     })
 
-    const SwitchGuardar = async (estado) => {
-        if (!estado) {
-            await GuadadoOS()
-            let estado = await CambieEstadoSwitch(1, 1)
-            console.log("estado", estado.estado)
-            await AsyncStorage.setItem(CLIENTE_, JSON.stringify({
-                ...cliente,
-                ...equipoTicket,
-                ...direccion,
-                ...provincia,
-                ...ingeniero
-            }))
-            setIsEnabled(true)
-        } else {
-            setIsEnabled(false)
-            let estado = await CambieEstadoSwitch(1, 0)
-
-            console.log("estado", estado.estado)
-        }
-    }
-
     async function getCliente() {
         const os = await AsyncStorage.getItem("OS")
         const osItem = JSON.parse(os)
+        console.log("osItem", osItem.Direccion)
+        // if(osItem.Direccion != null || osItem.Direccion != "" || osItem.Direccion != " "){
         let clie = await SelectCliente(osItem.ClienteID)
         setCliente({
             ...cliente,
@@ -121,6 +102,9 @@ export default function Cliente(props) {
             CodigoEquipoCliente: osItem.CodigoEquipoCliente,
         })
         setFecha(osItem.FechaCreacion.split("T")[0])
+        // }
+        // return
+
     }
 
     useFocusEffect(
@@ -132,12 +116,7 @@ export default function Cliente(props) {
                     const { userId } = await getToken()
                     const ingeniero = await getIngenierosStorageById(userId)
                     setIngeniero(ingeniero)
-                    // let est = await EstadoSwitch(1)
-                    // if (est.estado == 1) {
-                    //     setIsEnabled(true)
-                    // } else {
-                    //     setIsEnabled(false)
-                    // }
+
 
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect !== null) {
@@ -157,7 +136,7 @@ export default function Cliente(props) {
 
                         } else if (Accion == "OrdenSinTicket") {
 
-                            await getCliente()
+                            // await getCliente()
 
                         } else if (Accion == "PENDIENTE") {
                             setIsEnabled(true)
@@ -177,37 +156,26 @@ export default function Cliente(props) {
         }, [])
     )
 
-    const GuadadoOS = async () => {
-        const itenSelect = await AsyncStorage.getItem(ticketID)
-        const it = JSON.parse(itenSelect)
-        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
-        if (Accion == "clonar") {
-            OSClone[0].ClienteNombre = cliente.CustomerName,
-                OSClone[0].Direccion = direccion.Direccion,
-                OSClone[0].Ciudad = provincia.descripcion,
-                OSClone[0].contrato_id = equipoTicket.id_contrato,
-                OSClone[0].equipo_id = equipoTicket.id_equipo,
-                OSClone[0].codOS = equipoTicket.codOS,
-                OSClone[0].ticket_id = equipoTicket.ticket_id,
-                OSClone[0].Estado = equipoTicket.Estado,
-                OSClone[0].CodigoEquipoCliente = equipoTicket.CodigoEquipoCliente,
-                console.log("OSClone", OSClone)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
-        } else if (Accion == "OrdenSinTicket") {
-            const os = await AsyncStorage.getItem("OS")
-            const osItem = JSON.parse(os)
-            osItem.Direccion = cliente.Direccion,
-                await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-            console.log("osItem", osItem)
-        }
+    const GuardarCodigoEquipoCliente = async (text) => {
+
+        console.log("value", value)
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.CodigoEquipoCliente = value,
+            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+
+        setEquipoTicket({
+            ...equipoTicket,
+            CodigoEquipoCliente: text,
+        })
     }
-    
+
     const GuardarDireccion = async (value) => {
         console.log("value", value)
         const os = await AsyncStorage.getItem("OS")
         const osItem = JSON.parse(os)
         osItem.Direccion = value,
-        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
         setCliente({
             ...cliente,
             Direccion: value,
@@ -290,8 +258,8 @@ export default function Cliente(props) {
                         <TextInput
                             style={styles.input}
                             placeholder="Código equipo cliente"
-                            value={equipoTicket.id_equipo}
-                            onChangeText={(text) => setEquipoTicket({ ...equipoTicket, id_equipo: text })}
+                            value={equipoTicket.CodigoEquipoCliente}
+                            onChangeText={(text) => GuardarCodigoEquipoCliente(text)}
                             editable={true}
                         />
                         <View

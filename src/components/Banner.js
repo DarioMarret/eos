@@ -10,7 +10,7 @@ import { time, TrucateUpdate } from "../service/CargaUtil";
 import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
 // import { OSOrdenServicioID } from "../service/OS_OrdenServicio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ticketID } from "../utils/constantes";
+import { OS, ticketID } from "../utils/constantes";
 
 export default function Banner(props) {
     const { navigation, setTime, times } = props
@@ -83,6 +83,7 @@ export default function Banner(props) {
             OSClone: null,
             Accion: "OrdenSinTicket"
         }))
+        await AsyncStorage.setItem("OS", JSON.stringify(OS))
         navigation.navigate("Ordenes")
     }
 

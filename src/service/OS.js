@@ -90,16 +90,17 @@ export const ParseOS = (data, accion) => {
 
     } else if (accion == "PENDIENTE") {
 
-        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
-        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
-        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
-        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
-        data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        data[0].OS_PartesRepuestos = []
+        data[0].OS_CheckList = []
+        data[0].OS_Tiempos = []
+        data[0].OS_Firmas = []
+        data[0].OS_Anexos = []
+        data[0].OrdenServicioID = 0
         data[0].OS_Colaboradores = []
         data[0].OS_Encuesta = []
+        data[0].Estado = "ACTI"
         delete data[0].OS_FINALIZADA
         delete data[0].OS_ASUNTO
-        data[0].Estado = "PROC"
         delete data[0].codOS
         return data[0]
 
@@ -139,6 +140,19 @@ export const ParseOS = (data, accion) => {
         data[0].OS_Colaboradores = []
         data[0].OS_Encuesta = []
         data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        return data[0]
+    }else if (accion == "PROCESO") {
+        
+        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
+        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
+        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
+        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
+        data[0].OS_Colaboradores = []
+        data[0].OS_Encuesta = JSON.parse(data[0].OS_Encuesta)
+        data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        delete data[0].OS_ASUNTO
+        delete data[0].OS_FINALIZADA
+
         return data[0]
     }
 }

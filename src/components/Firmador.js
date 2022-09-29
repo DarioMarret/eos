@@ -1,8 +1,7 @@
 import { useRef, useState } from "react";
-import { Button, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Button, StyleSheet, SafeAreaView, Text, TextInput, TouchableOpacity, ScrollView, View, Alert } from "react-native";
 import Signature from 'react-native-signature-canvas';
 import { AntDesign } from '@expo/vector-icons';
-import { SelectOSOrdenServicioID } from "../service/OS_OrdenServicio";
 import { getToken } from "../service/usuario";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -11,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
     const ref = useRef()
     const [listF, setListF] = useState([])
+    const [obs, setObs] = useState(false)
 
     const handleOK = async (signature) => {
         console.log("signature")
@@ -22,31 +22,56 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
 
 
     const Grabar = async () => {
-        const { userId } = await getToken()
-        const OS = await AsyncStorage.getItem("OS")
-        let OS_OrdenServicioID = JSON.parse(OS)
-        datauser.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        datauser.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        datauser.UsuarioCreacion = userId
-        datauser.UsuarioModificacion = userId
-        console.log("datauser", datauser)
-        OS_OrdenServicioID.OS_Firmas.push(datauser)
-        await AsyncStorage.setItem("OS", JSON.stringify(OS_OrdenServicioID))
-        handleClear()
-        setUserData({
-            ...datauser,
-            archivo: "",
-            Nombre: "",
-            Cargo: "",
-            Correo: "",
-            Observacion: "",
-            FechaCreacion: "",
-            FechaModificacion: "",
-            UsuarioCreacion: "",
-            UsuarioModificacion: "",
-        })
-        setListF(OS_OrdenServicioID.OS_Firmas)
-        console.log("datauser", OS_OrdenServicioID.OS_Firmas.length)
+        if(datauser.Nombre == "" || datauser.Cargo == "" || datauser.Correo == "" || datauser.archivo == ""){
+            console.log("Falta datos", datauser.Nombre)
+            console.log("Falta datos", datauser.Cargo)
+            console.log("Falta datos", datauser.Correo)
+            Alert.alert("Error", "Debe llenar todos los campos")
+        }else{
+            const { userId } = await getToken()
+            const OS = await AsyncStorage.getItem("OS")
+            let OS_OrdenServicioID = JSON.parse(OS)
+            datauser.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            datauser.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            datauser.UsuarioCreacion = userId
+            datauser.UsuarioModificacion = userId
+            console.log("datauser", datauser)
+            OS_OrdenServicioID.OS_Firmas.push(datauser)
+            await AsyncStorage.setItem("OS", JSON.stringify(OS_OrdenServicioID))
+            handleClear()
+            setUserData({
+                ...datauser,
+                archivo: "",
+                Nombre: "",
+                Cargo: "",
+                Correo: "",
+                Observacion: "",
+                FechaCreacion: "",
+                FechaModificacion: "",
+                UsuarioCreacion: "",
+                UsuarioModificacion: "",
+            })
+            setListF(OS_OrdenServicioID.OS_Firmas)
+            console.log("datauser", OS_OrdenServicioID.OS_Firmas.length)
+            setObs(OS_OrdenServicioID.OS_Firmas.length > 0 ? true : false)
+        }
+    }
+    const EliminarFirma = (index) => {
+        Alert.alert("Eliminar Firma", "¿Desea eliminar la firma?", [
+            {
+                text: "Cancelar",
+                onPress: () => console.log("Cancel Pressed"),
+                style: "cancel"
+            },
+            { text: "OK", onPress: async () => {
+                const OS = await AsyncStorage.getItem("OS")
+                let OS_OrdenServicioID = JSON.parse(OS)
+                OS_OrdenServicioID.OS_Firmas.splice(index, 1)
+                await AsyncStorage.setItem("OS", JSON.stringify(OS_OrdenServicioID))
+                setListF(OS_OrdenServicioID.OS_Firmas)
+                setObs(OS_OrdenServicioID.OS_Firmas.length > 0 ? true : false)
+            } }
+        ]);
     }
 
     // Called after ref.current.readSignature() reads an empty string
@@ -137,7 +162,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             <ScrollView
                                 showsHorizontalScrollIndicator={false}
                                 showsVerticalScrollIndicator={false}
-                                style={{ width: "100%", height: 100 }}
+                                style={{ width: "100%", height: 80 }}
                             >
                                 {
                                     listF.map((item, index) => {
@@ -145,7 +170,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                                             <View key={index} style={styles.headerTitle}>
                                                 <Text>{item.Nombre}</Text>
                                                 <Text>{item.Cargo}</Text>
-                                                <TouchableOpacity onPress={() => { }}>
+                                                <TouchableOpacity onPress={() => { EliminarFirma(index)}}>
                                                     <AntDesign name="delete" size={24} color="red" />
                                                 </TouchableOpacity>
                                             </View>
@@ -190,12 +215,15 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             value={datauser.Correo}
                             onChangeText={(text) => setUserData({ ...datauser, Correo: text })}
                         />
-                        <TextInput
-                            style={styles.input}
-                            value={datauser.Observacion}
-                            placeholder="Observacion del Cliente"
-                            onChangeText={(text) => setUserData({ ...datauser, Observacion: text })}
-                        />
+                        {
+                            !obs ? (
+                                <TextInput
+                                    style={styles.input}
+                                    value={datauser.Observacion}
+                                    placeholder="Observacion del Cliente"
+                                    onChangeText={(text) => setUserData({ ...datauser, Observacion: text })}
+                                />) : null
+                        }
 
                     </View>
                     <View style={{ width: "100%", flexDirection: "row", justifyContent: 'flex-end', padding: 15 }}>
@@ -203,13 +231,14 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             <Text style={{ color: "#FF6B00" }}>AGREDAR FIRMA</Text>
                         </TouchableOpacity>
                         <View style={{ paddingHorizontal: 20 }} />
-                        <TouchableOpacity onPress={() => handleClear()}>
+                        <TouchableOpacity onPress={() => setModalSignature(false)}>
                             <Text style={{ color: "#B2B2AF" }}>CERRAR</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
             </View>
         </View>
+
     );
 }
 
@@ -221,7 +250,7 @@ const styles = StyleSheet.create({
     },
     circlePrimary: {
         width: "90%",
-        height: "90%",
+        height: "95%",
         borderRadius: 5,
         backgroundColor: "#FFF",
         shadowColor: "#000000",

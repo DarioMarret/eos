@@ -16,6 +16,10 @@ import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
 import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import LoadingActi from "../../components/LoadingActi";
+import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { ParseOS } from "../../service/OS";
+import { isChecked } from "../../service/historiaEquipo";
+import { time } from "../../service/CargaUtil";
 
 
 
@@ -24,7 +28,7 @@ export default function Ayer(props) {
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
-    const [time, setTime] = useState(false)
+    const [times, setTime] = useState(false)
 
     const [loading, setLoading] = useState(false)
 
@@ -60,7 +64,7 @@ export default function Ayer(props) {
             return calwait
         }
     }
-    async function Ordene(ticket_id) {
+    async function Ordene(ticket_id, estado) {
         console.log("ticket_id", ticket_id)
         try {
             const anidada = await getOrdenServicioAnidadas(ticket_id)
@@ -72,7 +76,8 @@ export default function Ayer(props) {
                         db.transaction(tx => {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
                                 console.log("equipo selecionado hoy row", rows._array)
-                                Rutes(rows._array, ticket_id)
+                                // Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
+                                Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
                             })
                         })
                     })
@@ -87,10 +92,26 @@ export default function Ayer(props) {
         }
     }
 
-    async function Rutes(equipo, ticket_id) {
+    async function Rutes(equipo, ticket_id, OrdenServicioID, estado) {
+        console.log("estado", estado)
+        console.log("ticket_id", ticket_id)
+        console.log("OrdenServicioID", OrdenServicioID)
         if (equipo.length != 0) {
+            equipo[0]['isChecked'] = 'true'
+            var clon = await SelectOSOrdenServicioID(OrdenServicioID)
+            let parse = ParseOS(clon, estado)
             await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
+            await AsyncStorage.setItem("OS", JSON.stringify(parse))
+            await AsyncStorage.setItem(ticketID, JSON.stringify({
+                ticket_id,
+                equipo,
+                OrdenServicioID,
+                OSClone: parse,
+                Accion: estado
+            }))
+            await isChecked(equipo[0].equipo_id)
+            time(800)
+            setLoading(false)
             navigation.navigate("Ordenes")
         }
 
@@ -116,7 +137,7 @@ export default function Ayer(props) {
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity onPress={() => Ordene(String(item.ticket_id))}>
+                <TouchableOpacity onPress={() => Ordene(String(item.ticket_id), item.ev_estado)}>
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
@@ -179,7 +200,7 @@ export default function Ayer(props) {
                 {...props}
                 navigation={navigation}
                 setTime={setTime}
-                times={time}
+                times={times}
             />
         </View>
     );

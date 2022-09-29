@@ -70,7 +70,7 @@ export default function Equipo(props) {
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
-                    const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = item
+                    const { equipo, OrdenServicioID, Accion } = item
                     console.log("equipo", equipo)
                     // console.log("Accion", item)
                     if (Accion == "clonar") {
@@ -85,14 +85,14 @@ export default function Equipo(props) {
                             setModel(item.modelo)
                         })
                         setHistorial(equipo)
-                        return
-                    }else if(Accion == "OrdenSinTicket"){
-                        
+
+                    } else if (Accion == "OrdenSinTicket") {
+
                         const os = await AsyncStorage.getItem("OS")
                         const osItem = JSON.parse(os)
                         console.log("osItem", osItem)
 
-                    }else if(Accion == "PENDIENTE"){
+                    } else if (Accion == "PENDIENTE") {
 
                         console.log("PENDIENTE")
 
@@ -101,11 +101,10 @@ export default function Equipo(props) {
                             setSerie(item.equ_serie)
                             setModel(item.modelo)
                         })
-                        // setDisableSub(false)
-                        // setDisable(true)
+
                         setHistorial(equipo)
 
-                    }else if(Accion == "FINALIZADO"){
+                    } else if (Accion == "FINALIZADO") {
                         equipo.map((item, index) => {
                             setTipo(item.tipo)
                             setSerie(item.equ_serie)
@@ -114,19 +113,12 @@ export default function Equipo(props) {
                         setDisableSub(false)
                         setDisable(true)
                         setHistorial(equipo)
-                    }else if (Accion == "NUEVO OS TICKET"){
+                    } else if (Accion == "NUEVO OS TICKET") {
 
                         console.log("NUEVO OS TICKET")
-                        
+
                         setHistorial(equipo)
                     }
-                    // else if (OrdenServicioID != null && OSClone != null) {
-                    //     setHistorial(equipo)
-                    //     return
-                    // } else if (equipo != null && OrdenServicioID == null && OSClone == null) {
-                    //     setHistorial(equipo)
-                    //     return
-                    // }
                 }
                 setLoading(false)
             })()
@@ -135,29 +127,25 @@ export default function Equipo(props) {
 
 
     async function onChangeTipo(tipo) {
+        setLoading(true)
         setTipo(tipo)
         let result = await getHistorialEquiposStorage(tipo, "", "")
         const respuesta = modelo.filter(e => e.tipo_id === tipo)
         setModeloSub(respuesta)
         setHistorial(result)
+        setLoading(false)
     }
     async function onChangeModelo(model) {
+        setLoading(true)
         setModel(model)
         let result = await getHistorialEquiposStorage(tipo, model, "")
         setHistorial(result)
+        setLoading(false)
     }
 
-    async function onChangeSerie(serie) {
-        if (tipo !== "" && model !== "" && serie !== "") {
-            setSerie(serie)
-            let result = await getHistorialEquiposStorage(tipo, model, serie)
-            setHistorial(result)
-        } else if (tipo == "" && model == "" && serie != "") {
-            setSerie(serie)
-            result = await getHistorialEquiposStorage("", "", serie)
-        }
-        setSerie(model)
-        let result = await getHistorialEquiposStorage(tipo, model, serie)
+    async function onChangeSerie(text) {
+        setSerie(text)
+        let result = await getHistorialEquiposStorage("", "", text)
         setHistorial(result)
     }
 
@@ -187,25 +175,15 @@ export default function Equipo(props) {
         setHistorial(temp);
     }
     const GuadadoOS = async (item) => {
-        const { userId } = await getToken()
-        const { IdUsuario } = await getIngenierosStorageById(userId)
-        const itenSelect = await AsyncStorage.getItem(ticketID)
-        const it = JSON.parse(itenSelect)
-        const { ticket_id, equipo, OrdenServicioID, OSClone, Accion } = it
-        // if (Accion == "clonar") {
-        //     OSClone[0].equipo_id = item.equipo_id,
-        //         OSClone[0].Serie = item.equ_serie,
-        //         OSClone[0].TipoEquipo = item.equ_tipoEquipo,
-        //         // OSClone[0].MarcaSerie = item.equ_marca,
-        //         OSClone[0].ClienteNombreSerie = item.equ_clienteNombre,
-        //         OSClone[0].Marca = item.marca
-        //     await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo, OrdenServicioID, OSClone, Accion }))
-        // } else if (Accion == "OrdenSinTicket") {
+        console.log(item)
+        try {
+            const { userId } = await getToken()
+            const { IdUsuario } = await getIngenierosStorageById(userId)
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
             osItem.equipo_id = item.equipo_id,//#
+            osItem.id_contrato = item.id_contrato,//#
             osItem.Serie = item.equ_serie,//#
-            // osItem.MarcaSerie = item.equ_marca,//#
             osItem.Marca = item.marca //#
             osItem.ClienteNombre = item.con_ClienteNombre //#
             osItem.ObservacionCliente = "" //#
@@ -219,6 +197,9 @@ export default function Equipo(props) {
             osItem.UsuarioModificacion = userId //#
             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
             console.log(osItem)
+        } catch (error) {
+            console.log("GuadadoOS en EQUIPO",error)            
+        }
         // }
     }
 
@@ -396,7 +377,7 @@ export default function Equipo(props) {
         <View style={styles.container}>
             {/* <ActivityIndicador size={100} color="#FF6B00" /> */}
             <View style={styles.contenedor}>
-            <LoadingActi loading={loading} />
+                <LoadingActi loading={loading} />
                 <View style={styles.ContainetEquipo}>
                     <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>
@@ -450,10 +431,10 @@ export default function Equipo(props) {
                                 borderRadius: 10,
                                 padding: 10
                             }}
+                            value={serie}
                             onChangeText={text => onChangeSerie(text)}
                             placeholder="Serie"
                             editable={isdisabelsub}
-                            value={serie}
                         />
                     </View>
                     {/*  */}
