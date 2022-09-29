@@ -11,7 +11,7 @@ import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ticketID } from "../../utils/constantes";
+import { OS, ticketID } from "../../utils/constantes";
 import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
 import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
@@ -77,7 +77,7 @@ export default function Ayer(props) {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
                                 console.log("equipo selecionado hoy row", rows._array)
                                 // Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
-                                Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
+                                Rutes(rows._array, ticket_id, null, estado)
                             })
                         })
                     })
@@ -97,16 +97,15 @@ export default function Ayer(props) {
         console.log("ticket_id", ticket_id)
         console.log("OrdenServicioID", OrdenServicioID)
         if (equipo.length != 0) {
-            equipo[0]['isChecked'] = 'true'
-            var clon = await SelectOSOrdenServicioID(OrdenServicioID)
-            let parse = ParseOS(clon, estado)
+            // equipo[0]['isChecked'] = 'true'
             await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem("OS", JSON.stringify(parse))
+            OS.ticket_id = ticket_id
+            await AsyncStorage.setItem("OS", JSON.stringify(OS))
             await AsyncStorage.setItem(ticketID, JSON.stringify({
                 ticket_id,
                 equipo,
-                OrdenServicioID,
-                OSClone: parse,
+                OrdenServicioID: OrdenServicioID,
+                OSClone: null,
                 Accion: estado
             }))
             await isChecked(equipo[0].equipo_id)

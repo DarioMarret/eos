@@ -32,7 +32,7 @@ function InitDB() {
             localidad_id TEXT NULL,
             historial TEXT NULL,
             checklist TEXT NULL,
-            id_contrato INTEGER NULL,
+            id_contrato INTEGER,
             isChecked TEXT NULL
         );`)
         })

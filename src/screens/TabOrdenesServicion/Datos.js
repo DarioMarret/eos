@@ -80,8 +80,10 @@ export default function Datos(props) {
             setOfCheck(true)
             osItem.equipo_id
             const list = await getHistorialEquiposStorageChecklist(osItem.equipo_id)
-            console.log("list", list)
-            // setListCheck()
+            console.log("list", JSON.parse(list[0].checklist))
+            if (JSON.parse(list[0].checklist) != null) {
+                setListCheck(JSON.parse(list[0].checklist))
+            }
         } else {
             setOfCheck(false)
         }
@@ -287,28 +289,43 @@ export default function Datos(props) {
                 <View style={styles.centeredView}>
                     <View style={styles.modalView}>
                         <Text style={styles.modalText}>Checklist</Text>
-                        <View style={styles.boxActivity}>
-                            <View style={styles.infoActivity}>
-                                <Text style={{ color: "#666666" }}>ACTIVIDAD #1</Text>
-                                <Text style={{ color: "#000000" }}>15:00 PM / COMENTARIO</Text>
-                                <View style={{
-                                    ...styles.inputActivity
-                                }}>
-                                    <TextInput
-                                        editable
-                                        placeholder="Observación actividad"
-                                        onChangeText={text => onChangeText(text)}
-                                    />
-                                </View>
-                            </View>
-                            <View style={styles.iconActivity}>
-                                <AntDesign
-                                    name='checkcircleo'
-                                    size={24}
-                                    color='#000000'
-                                />
-                            </View>
-                        </View>
+                        <ScrollView
+                            showsHorizontalScrollIndicator={false}
+                            showsVerticalScrollIndicator={false}
+                        >
+
+
+                            {
+                                listCheck.length > 0 ?
+                                    listCheck.map((item, index) => {
+                                        return (
+                                            <View style={styles.boxActivity}>
+                                                <View style={styles.infoActivity}>
+                                                    <Text style={{ color: "#666666" }}>ACTIVIDAD #1</Text>
+                                                    <Text style={{ color: "#000000" }}>15:00 PM / COMENTARIO</Text>
+                                                    <View style={{
+                                                        ...styles.inputActivity
+                                                    }}>
+                                                        <TextInput
+                                                            editable
+                                                            placeholder="Observación actividad"
+                                                            onChangeText={text => onChangeText(text, index)}
+                                                        />
+                                                    </View>
+                                                </View>
+                                                <View style={styles.iconActivity}>
+                                                    <AntDesign
+                                                        name='checkcircleo'
+                                                        size={24}
+                                                        color='#000000'
+                                                    />
+                                                </View>
+                                            </View>
+                                        )
+                                    }) : null
+
+                            }
+                        </ScrollView>
                         <View style={{ width: "100%", flexDirection: "row", justifyContent: "flex-end" }}>
                             <Pressable
                                 style={styles.button}

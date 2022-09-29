@@ -6,7 +6,7 @@ import { getEquipoTicketStorage } from "../../service/equipoTicketID"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getIngenierosStorageById } from "../../service/ingenieros"
 import { getProvinciasStorageBy } from "../../service/provincias"
-import { GetClienteCustimerName, SelectCliente } from "../../service/clientes"
+import { GetClienteClienteName, GetClienteCustimerName, SelectCliente } from "../../service/clientes"
 import BannerOrderServi from "../../components/BannerOrdenServ"
 import { CLIENTE_, ticketID } from "../../utils/constantes"
 import React, { useCallback, useState } from "react"
@@ -16,6 +16,7 @@ import PickerSelect from "../../components/PickerSelect"
 import { AntDesign } from "@expo/vector-icons"
 import { Picker } from "@react-native-picker/picker"
 import LoadingActi from "../../components/LoadingActi"
+import { getCantonesStorageBy } from "../../service/cantones"
 
 
 export default function Cliente(props) {
@@ -75,9 +76,10 @@ export default function Cliente(props) {
     async function getCliente() {
         const os = await AsyncStorage.getItem("OS")
         const osItem = JSON.parse(os)
-        console.log("osItem", osItem.Direccion)
+        console.log("osItem", osItem.ClienteNombre)
         // if(osItem.Direccion != null || osItem.Direccion != "" || osItem.Direccion != " "){
-        let clie = await SelectCliente(osItem.ClienteID)
+        let clie = await GetClienteClienteName(osItem.ClienteNombre)
+        console.log("clie", clie)
         setCliente({
             ...cliente,
             CustomerName: osItem.ClienteNombre,
@@ -136,11 +138,45 @@ export default function Cliente(props) {
 
                         } else if (Accion == "OrdenSinTicket") {
 
-                            // await getCliente()
+                            await getCliente()
 
                         } else if (Accion == "PENDIENTE") {
                             setIsEnabled(true)
-                            await getCliente()
+                            // await getCliente()
+                            const os = await AsyncStorage.getItem("OS")
+                            const osItem = JSON.parse(os)
+                            let clie = await GetClienteClienteName(osItem.ClienteNombre)
+                            const pro = await getCantonesStorageBy(clie[0].CantonID)
+                            console.log("pro", JSON.parse(clie[0].Sucursal)[0].Direccion)
+                            osItem.Ciudad = pro[0].descripcion
+                            osItem.Direccion = JSON.parse(clie[0].Sucursal)[0].Direccion
+                            osItem.FechaCreacion = moment().format('YYYY/MM/DD')
+                            console.log("clie", clie[0])
+                            setCliente({
+                                ...cliente,
+                                CustomerName: osItem.ClienteNombre,
+                                Sucursal: JSON.parse(clie[0].Sucursal),
+                                Ciudad: osItem.Ciudad,
+                            })
+                            setDireccion({
+                                ...direccion,
+                                Direccion: osItem.Direccion,
+                            })
+                            setProvincia({
+                                ...provincia,
+                                descripcion: osItem.Ciudad,
+                            })
+                            setEquipoTicket({
+                                ...equipoTicket,
+                                id_contrato: osItem.id_contrato,
+                                id_equipo: osItem.equipo_id,
+                                codOS: osItem.codOS,
+                                ticket_id: osItem.ticket_id,
+                                Estado: osItem.Estado,
+                                CodigoEquipoCliente: osItem.CodigoEquipoCliente,
+                            })
+                            setFecha(moment().format('YYYY/MM/DD'))
+                            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
 
                         } else if (Accion == "NUEVO OS TICKET") {
 

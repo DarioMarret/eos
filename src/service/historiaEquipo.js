@@ -97,7 +97,7 @@ async function SelectExisteEquipo(r) {
                     r.localidad_id,
                     JSON.stringify(r.historial),
                     JSON.stringify(r.checklist),
-                    id_contrato,
+                    r.id_contrato,
                     "false"
                 ],
             }], false, (err, results) => {

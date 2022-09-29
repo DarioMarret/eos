@@ -115,3 +115,18 @@ export const GetClienteCustimerName = async (CustomerName) => {
         return null;
     }
 }
+
+export const GetClienteClienteName = async (CustomerName) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql(`select * from cliente where CustomerName = ?`, [CustomerName], (_, { rows }) => {
+                    resolve(rows._array)
+                });
+            })
+        })
+    } catch (error) {
+        console.log("GetClienteCustimerName-->", error);
+        return null;
+    }
+}

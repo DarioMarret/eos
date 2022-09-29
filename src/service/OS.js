@@ -89,7 +89,8 @@ export const ParseOS = (data, accion) => {
         return data[0]
 
     } else if (accion == "PENDIENTE") {
-
+        
+        console.log("ParseOS PENDIENTE", data[0])
         data[0].OS_PartesRepuestos = []
         data[0].OS_CheckList = []
         data[0].OS_Tiempos = []
