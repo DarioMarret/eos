@@ -1,13 +1,13 @@
 import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config"
 import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas"
-import { StyleSheet, Text, Pressable, TextInput, View, Modal, Switch, TouchableOpacity, ScrollView } from "react-native"
+import { StyleSheet, Text, Pressable, TextInput, View, Modal, Switch, TouchableOpacity, ScrollView, Alert } from "react-native"
 import { DatosOSOrdenServicioID } from "../../service/OS_OrdenServicio"
 import DateTimePickerModal from "react-native-modal-datetime-picker"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import BannerOrderServi from "../../components/BannerOrdenServ"
 import { SelectCategoria } from "../../service/catalogos"
 import { useFocusEffect } from "@react-navigation/native"
-import { DATOS_, ticketID } from "../../utils/constantes"
+import { DATOS_, os_checklist, ticketID } from "../../utils/constantes"
 import { Picker } from '@react-native-picker/picker'
 import React, { useCallback, useState } from "react"
 import { AntDesign } from "@expo/vector-icons"
@@ -15,6 +15,7 @@ import Firmador from "../../components/Firmador"
 import moment from "moment"
 import LoadingActi from "../../components/LoadingActi"
 import { getHistorialEquiposStorageChecklist } from "../../service/historiaEquipo"
+import { getToken } from "../../service/usuario"
 
 export default function Datos(props) {
     const { navigation } = props
@@ -42,7 +43,16 @@ export default function Datos(props) {
     const [loading, setLoading] = useState(false)
 
     const [showCheckList, setShowCheckList] = useState(false)
-    const [listCheck, setListCheck] = useState([])
+    const [listCheck, setListCheck] = useState([
+        {
+            "Checked": false,
+            "check_actividad": "",
+            "check_duracion": "",
+            "check_id": 0,
+            "check_observacion": "",
+            "modelo_id": 0,
+        }
+    ])
 
     const [datos, setDatos] = useState({
         SitioTrabajo: "",
@@ -80,9 +90,16 @@ export default function Datos(props) {
             setOfCheck(true)
             osItem.equipo_id
             const list = await getHistorialEquiposStorageChecklist(osItem.equipo_id)
-            console.log("list", JSON.parse(list[0].checklist))
+            // console.log("list", JSON.parse(list[0].checklist))
             if (JSON.parse(list[0].checklist) != null) {
-                setListCheck(JSON.parse(list[0].checklist))
+                var l = JSON.parse(list[0].checklist).map(item => {
+                    return {
+                        ...item,
+                        Checked: false
+                    }
+                })
+                setListCheck(l)
+                console.log("listCheck", l)
             }
         } else {
             setOfCheck(false)
@@ -268,14 +285,55 @@ export default function Datos(props) {
     }
 
     const verChecklist = () => {
+        setActivities([])
         setShowCheckList(true)
     }
 
-    const [activities, setActivities] = useState([
-        { hour: "15:00 PM", observation: "" }
-    ])
+    const GuardarChecklist = async () => {
+        const os = await AsyncStorage.getItem("OS")
+        const osItem = JSON.parse(os)
+        osItem.CheckList = activities
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        setActivities([])
+        setShowCheckList(false)
 
-    const [value, onChangeText] = useState("");
+    }
+    const [activities, setActivities] = useState([])
+
+    const handleChecklist = async (text, index, item) => {
+        var activ = []
+        const { userId } = await getToken()
+        const existe = activities.some((i) => i.IdCheckList == item.check_id)
+        if (existe) {
+            activities[index].Observacion = text
+            activities[index].IdCheckList = item.check_id
+            activities[index].UsuarioCreacion = userId
+            activities[index].UsuarioModificacion = userId
+            activities[index].Checked = text.length > 1 ? true : false
+            activities[index].FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            activities[index].FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            setActivities(activities)
+            console.log("activities", text.length)
+            listCheck[index].Checked = text.length > 1 ? true : false
+            setListCheck(listCheck)
+        } else {
+            console.log("no existe")
+            os_checklist.Observacion = text
+            os_checklist.IdCheckList = item.check_id
+            os_checklist.UsuarioCreacion = userId
+            os_checklist.UsuarioModificacion = userId
+            os_checklist.Checked = true
+            os_checklist.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            os_checklist.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            activ = activities
+            activ.push(os_checklist)
+            setActivities(activ)
+        }
+        console.log("activities", activities.length)
+    }
+
+
+
     return (
         <View style={styles.centeredView}>
             <Modal
@@ -293,55 +351,64 @@ export default function Datos(props) {
                             showsHorizontalScrollIndicator={false}
                             showsVerticalScrollIndicator={false}
                         >
-
-
                             {
                                 listCheck.length > 0 ?
                                     listCheck.map((item, index) => {
+                                        console.log("item", item)
                                         return (
-                                            <View style={styles.boxActivity}>
+                                            <View style={styles.boxActivity} key={index}>
                                                 <View style={styles.infoActivity}>
-                                                    <Text style={{ color: "#666666" }}>ACTIVIDAD #1</Text>
-                                                    <Text style={{ color: "#000000" }}>15:00 PM / COMENTARIO</Text>
+                                                    <Text style={{ color: "#666666" }}>{item.check_actividad}</Text>
                                                     <View style={{
                                                         ...styles.inputActivity
                                                     }}>
                                                         <TextInput
                                                             editable
                                                             placeholder="Observación actividad"
-                                                            onChangeText={text => onChangeText(text, index)}
+                                                            onChangeText={text => {
+                                                                handleChecklist(text, index, item)
+                                                            }}
                                                         />
                                                     </View>
                                                 </View>
                                                 <View style={styles.iconActivity}>
-                                                    <AntDesign
-                                                        name='checkcircleo'
-                                                        size={24}
-                                                        color='#000000'
-                                                    />
+                                                    <TouchableOpacity
+                                                        onPress={() => {
+                                                            item.Checked = true
+                                                        }}
+                                                     >
+                                                        <AntDesign
+                                                            name='checkcircleo'
+                                                            size={24}
+                                                            color={item.Checked ? '#FF6B00' : '#666666'}
+                                                        />
+                                                    </TouchableOpacity>
                                                 </View>
                                             </View>
                                         )
                                     }) : null
-
                             }
                         </ScrollView>
                         <View style={{ width: "100%", flexDirection: "row", justifyContent: "flex-end" }}>
                             <Pressable
                                 style={styles.button}
-                                onPress={() => setShowCheckList(!showCheckList)}
+                                onPress={() => GuardarChecklist()}
                             >
                                 <Text style={{ ...styles.textStyle, color: "#FF6B00" }}>GRABAR</Text>
                             </Pressable>
                             <Pressable
                                 style={styles.button}
-                                onPress={() => setShowCheckList(!showCheckList)}
+                                onPress={() => {
+                                    setActivities([])
+                                    setShowCheckList(!showCheckList)
+                                }}
                             >
                                 <Text style={styles.textStyle}>CERRAR</Text>
                             </Pressable>
                         </View>
                     </View>
                 </View>
+
             </Modal>
             <ScrollView showsVerticalScrollIndicator={false} >
                 <View style={styles.ContenedorCliente}>
@@ -463,22 +530,28 @@ export default function Datos(props) {
                             }
                         </View>
                         <TextInput
-                            style={styles.input}
+                            style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Problema reportado:"
+                            multiline
+                            numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Causas}
                             onChangeText={(text) => setDatos({ ...datos, Causas: text })}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Sintomas:"
+                            multiline
+                            numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Sintomas}
                             onChangeText={(text) => setDatos({ ...datos, Sintomas: text })}
                         />
                         <TextInput
-                            style={styles.input}
+                           style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Diagnóstico/Resultado visita*:"
+                            multiline
+                            numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Diagnostico}
                             onChangeText={(text) => setDatos({ ...datos, Diagnostico: text })}
@@ -525,8 +598,11 @@ export default function Datos(props) {
 
                         </View>
                         <TextInput
-                            style={styles.input}
+                            // style={styles.input}
+                            style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Acción inmediata"
+                            multiline
+                            numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Acciones}
                             onChangeText={(text) => setDatos({ ...datos, Acciones: text })}

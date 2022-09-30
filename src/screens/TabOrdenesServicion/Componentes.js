@@ -464,15 +464,17 @@ export default function Componentes(props) {
                             Component.length > 0 ?
                                 Component.map((item, index) => {
                                     return (
-                                        <View style={{
-                                            flexDirection: "row",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            backgroundColor: "#D6FCD9",
-                                            padding: 10,
-                                            borderBottomWidth: 0.5,
-                                            borderRadius: 0,
-                                        }}>
+                                        <View
+                                            key={index}
+                                            style={{
+                                                flexDirection: "row",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                backgroundColor: "#D6FCD9",
+                                                padding: 10,
+                                                borderBottomWidth: 0.5,
+                                                borderRadius: 0,
+                                            }}>
                                             <View>
                                                 <Text style={{
                                                     ...styles.text,
@@ -491,7 +493,7 @@ export default function Componentes(props) {
                                             </TouchableOpacity>
                                         </View>
                                     )
-                                }): null
+                                }) : null
 
                         }
 

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { timpo } from "../utils/constantes";
 import { time } from "./CargaUtil";
 import { InserOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";

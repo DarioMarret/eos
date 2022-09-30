@@ -64,12 +64,22 @@ export default function IngresoHoras(props) {
 
   const handleConfirmTime = async (time) => {
     var os = await AsyncStorage.getItem("OS")
-    console.log(time);
     let OS = JSON.parse(os)
-    OS.OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
+    OS.OS_Tiempos = [timpo]
     await AsyncStorage.setItem("OS", JSON.stringify(OS))
-    setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") });
-    hideTimePicker();
+    setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
+    console.log(calcularTime({time}))
+    hideTimePicker()
+  }
+
+  const calcularTime = () => {
+    let time = 0;
+    if (fechas.HoraInicioTrabajo && fechas.HoraFinTrabajo) {
+      console.log("entro", fechas)
+      time = Moment(fechas.HoraInicioTrabajo).diff(Moment(fechas.HoraFinTrabajo), "hours")
+      console.log(time)
+    }
+    return time;
   }
 
   const [fechas, setFechas] = useState({
@@ -103,23 +113,30 @@ export default function IngresoHoras(props) {
 
             console.log("OrdenSinTicket")
             let OS = JSON.parse(os)
-            let tem = OS.OS_Tiempos
-            setFechas({
-              ...fechas,
-              ...tem[0],
-              FechaMostrar: Moment().format('DD/MM/YYYY'),
-            })
+            if (OS.OS_Tiempos.length > 0) {
+              let tem = OS.OS_Tiempos
+              console.log(tem)
+              setFechas({
+                ...fechas,
+                ...tem[0],
+                FechaMostrar: Moment().format('DD/MM/YYYY'),
+              })
+            }
+
 
           } else if (Accion == "clonar") {
 
             console.log("CLONAR")
             let OS = JSON.parse(os)
-            let tem = OS.OS_Tiempos
-            setFechas({
-              ...fechas,
-              ...tem[0],
-              FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
-            })
+            if (OS.OS_Tiempos.length > 0) {
+              let tem = OS.OS_Tiempos
+              console.log(tem)
+              setFechas({
+                ...fechas,
+                ...tem[0],
+                FechaMostrar: Moment().format('DD/MM/YYYY'),
+              })
+            }
 
           } else if (Accion == "FINALIZADO") {
 
@@ -137,32 +154,31 @@ export default function IngresoHoras(props) {
           } else if (Accion == "PENDIENTE") {
 
             console.log("PENDIENTE")
+
             let OS = JSON.parse(os)
-            let tem = OS.OS_Tiempos
-            setFechas({
-              ...fechas,
-              ...tem[0],
-              FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
-            })
+            if (OS.OS_Tiempos.length > 0) {
+              let tem = OS.OS_Tiempos
+              console.log(tem)
+              setFechas({
+                ...fechas,
+                ...tem[0],
+                FechaMostrar: Moment().format('DD/MM/YYYY'),
+              })
+            }
 
           } else if (Accion == "NUEVO OS TICKET") {
             console.log("NUEVO OS TICKET")
 
             let OS = JSON.parse(os)
-            OS.OS_Tiempos.length > 0
-              ? (
-                OS.OS_Tiempos[0].IdTiempo = 0,
-                OS.OS_Tiempos[0].OrdenServicioID = 0
-              )
-              : null
-            let tem = OS.OS_Tiempos
-            console.log(tem)
-
-            setFechas({
-              ...fechas,
-              ...tem[0],
-              FechaMostrar: Moment(tem[0].Fecha).format('DD/MM/YYYY'),
-            })
+            if (OS.OS_Tiempos.length > 0) {
+              let tem = OS.OS_Tiempos
+              console.log(tem)
+              setFechas({
+                ...fechas,
+                ...tem[0],
+                FechaMostrar: Moment().format('DD/MM/YYYY'),
+              })
+            }
 
           }
         }
