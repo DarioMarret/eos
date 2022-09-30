@@ -54,6 +54,12 @@ export default function Datos(props) {
         }
     ])
 
+    const checkedCheckList = (check,index) => {
+        const newlistcheck = [...listCheck]
+        newlistcheck[index].Checked = !check
+        setListCheck(newlistcheck)
+    }
+
     const [datos, setDatos] = useState({
         SitioTrabajo: "",
         tipoIncidencia: "",
@@ -314,8 +320,8 @@ export default function Datos(props) {
             activities[index].FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             setActivities(activities)
             console.log("activities", text.length)
-            listCheck[index].Checked = text.length > 1 ? true : false
-            setListCheck(listCheck)
+            // listCheck[index].Checked = text.length > 1 ? true : false
+            // setListCheck(listCheck)
         } else {
             console.log("no existe")
             os_checklist.Observacion = text
@@ -352,8 +358,8 @@ export default function Datos(props) {
                             showsVerticalScrollIndicator={false}
                         >
                             {
-                                listCheck.length > 0 ?
-                                    listCheck.map((item, index) => {
+                                
+                                listCheck.length > 0 &&  listCheck.map((item, index) => {
                                         console.log("item", item)
                                         return (
                                             <View style={styles.boxActivity} key={index}>
@@ -373,9 +379,7 @@ export default function Datos(props) {
                                                 </View>
                                                 <View style={styles.iconActivity}>
                                                     <TouchableOpacity
-                                                        onPress={() => {
-                                                            item.Checked = true
-                                                        }}
+                                                        onPress={() => checkedCheckList(item.Checked, index)}
                                                      >
                                                         <AntDesign
                                                             name='checkcircleo'
@@ -386,7 +390,7 @@ export default function Datos(props) {
                                                 </View>
                                             </View>
                                         )
-                                    }) : null
+                                    }) 
                             }
                         </ScrollView>
                         <View style={{ width: "100%", flexDirection: "row", justifyContent: "flex-end" }}>
@@ -911,5 +915,6 @@ const styles = StyleSheet.create({
         width: '15%',
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 20,
     }
 });
