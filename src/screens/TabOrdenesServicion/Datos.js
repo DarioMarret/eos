@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import BannerOrderServi from "../../components/BannerOrdenServ"
 import { SelectCategoria } from "../../service/catalogos"
 import { useFocusEffect } from "@react-navigation/native"
-import { DATOS_, os_checklist, ticketID } from "../../utils/constantes"
+import { DATOS_, OS_CheckList, os_checklist, ticketID } from "../../utils/constantes"
 import { Picker } from '@react-native-picker/picker'
 import React, { useCallback, useState } from "react"
 import { AntDesign } from "@expo/vector-icons"
@@ -44,21 +44,17 @@ export default function Datos(props) {
 
     const [showCheckList, setShowCheckList] = useState(false)
     const [listCheck, setListCheck] = useState([
-        {
-            "Checked": false,
-            "check_actividad": "",
-            "check_duracion": "",
-            "check_id": 0,
-            "check_observacion": "",
-            "modelo_id": 0,
-        }
+        // {
+        //     "Checked": false,
+        //     "check_actividad": "",
+        //     "check_duracion": "",
+        //     "check_id": 0,
+        //     "check_observacion": "",
+        //     "modelo_id": 0,
+        // }
     ])
 
-    const checkedCheckList = (check,index) => {
-        const newlistcheck = [...listCheck]
-        newlistcheck[index].Checked = !check
-        setListCheck(newlistcheck)
-    }
+
 
     const [datos, setDatos] = useState({
         SitioTrabajo: "",
@@ -96,8 +92,8 @@ export default function Datos(props) {
             setOfCheck(true)
             osItem.equipo_id
             const list = await getHistorialEquiposStorageChecklist(osItem.equipo_id)
-            // console.log("list", JSON.parse(list[0].checklist))
-            if (JSON.parse(list[0].checklist) != null) {
+            console.log("list", list)
+            if (JSON.parse(list[0].checklist) != "null") {
                 var l = JSON.parse(list[0].checklist).map(item => {
                     return {
                         ...item,
@@ -111,6 +107,7 @@ export default function Datos(props) {
             setOfCheck(false)
         }
     }
+
     async function SitioTrabajoValue(items) {
         setDatos({
             ...datos,
@@ -122,6 +119,7 @@ export default function Datos(props) {
         osItem.SitioTrabajo = items
         await AsyncStorage.setItem("OS", JSON.stringify(osItem))
     }
+
     async function TipoIncidencia(items) {
         console.log("TipoIncidencia", items)
         const os = await AsyncStorage.getItem("OS")
@@ -133,6 +131,7 @@ export default function Datos(props) {
             tipoIncidencia: items
         })
     }
+
     const handleConfirmTime = (time) => {
         let fec = new Date()
         setDatos({
@@ -142,9 +141,10 @@ export default function Datos(props) {
         })
         hideTimePicker();
     }
+
     const hideTimePicker = () => {
         setDatePickerVisibility(!isDatePickerVisible);
-    };
+    }
 
 
     const toggleSwitchRecordatorio = () => {
@@ -218,13 +218,13 @@ export default function Datos(props) {
                         const osItem = JSON.parse(os)
                         delete osItem.OS_ASUNTO
                         delete osItem.OS_Anexos
-                        delete osItem.OS_Tiempos
                         delete osItem.OS_FINALIZADA
-                        console.log("osItem", osItem)
                         setDatos({
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
+                        await AsyncStorage.removeItem("OS_CheckList")
+                        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
 
                     } else if (Accion == "NUEVO OS TICKET") {
 
@@ -291,16 +291,24 @@ export default function Datos(props) {
     }
 
     const verChecklist = () => {
-        setActivities([])
-        setShowCheckList(true)
+
+        if(listCheck.length > 0){
+            setActivities([])
+            setShowCheckList(true)
+        }else{
+            Alert.alert("No hay checklist para mostrar")
+        }
+
     }
 
     const GuardarChecklist = async () => {
-        const os = await AsyncStorage.getItem("OS")
-        const osItem = JSON.parse(os)
-        osItem.CheckList = activities
-        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-        setActivities([])
+       
+        const os = await AsyncStorage.getItem("OS_CheckList")
+        const OS_CheckList = JSON.parse(os)
+        OS_CheckList.push(activities)
+        console.log("OS_CheckList", OS_CheckList)
+        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
+        // setActivities([])
         setShowCheckList(false)
 
     }
@@ -315,7 +323,6 @@ export default function Datos(props) {
             activities[index].IdCheckList = item.check_id
             activities[index].UsuarioCreacion = userId
             activities[index].UsuarioModificacion = userId
-            activities[index].Checked = text.length > 1 ? true : false
             activities[index].FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             activities[index].FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             setActivities(activities)
@@ -328,7 +335,6 @@ export default function Datos(props) {
             os_checklist.IdCheckList = item.check_id
             os_checklist.UsuarioCreacion = userId
             os_checklist.UsuarioModificacion = userId
-            os_checklist.Checked = true
             os_checklist.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             os_checklist.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             activ = activities
@@ -337,7 +343,25 @@ export default function Datos(props) {
         }
         console.log("activities", activities.length)
     }
+    const checkedCheckList = (check,index) => {
 
+        // const existe = activities.some((i) => i.IdCheckList == check.check_id)
+        // if (existe) {
+            
+            const newlistcheck = [...listCheck]
+            newlistcheck[index].Checked = !check
+            setListCheck(newlistcheck)
+
+            activities[index].Checked = !check
+            setActivities(activities)
+        // } else {
+        //     Alert.alert("Error", "Debe ingresar una observación")
+            // os_checklist.Checked = true
+            // os_checklist.IdCheckList = check.check_id
+            // activities.push(os_checklist)
+            // setActivities(activities)
+        // }
+    }
 
 
     return (
@@ -360,7 +384,7 @@ export default function Datos(props) {
                             {
                                 
                                 listCheck.length > 0 &&  listCheck.map((item, index) => {
-                                        console.log("item", item)
+                                        // console.log("item", item)
                                         return (
                                             <View style={styles.boxActivity} key={index}>
                                                 <View style={styles.infoActivity}>

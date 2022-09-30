@@ -196,7 +196,6 @@ export default function Equipo(props) {
             osItem.UsuarioCreacion = userId //#
             osItem.UsuarioModificacion = userId //#
             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-            console.log(osItem)
         } catch (error) {
             console.log("GuadadoOS en EQUIPO",error)            
         }
@@ -353,6 +352,7 @@ export default function Equipo(props) {
     }
 
     async function CancelarEvento() {
+        setLoading(true)
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.removeItem("OS_PartesRepuestos")
         await AsyncStorage.removeItem("OS_CheckList")
@@ -370,6 +370,7 @@ export default function Equipo(props) {
         setSerie("")
         setModeloSub([])
         setHistorial([])
+        setLoading(false)
         navigation.navigate("Consultas")
     }
 
@@ -712,4 +713,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#666666'
     }
-});
+})

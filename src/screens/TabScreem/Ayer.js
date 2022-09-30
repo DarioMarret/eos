@@ -97,7 +97,6 @@ export default function Ayer(props) {
         console.log("ticket_id", ticket_id)
         console.log("OrdenServicioID", OrdenServicioID)
         if (equipo.length != 0) {
-            // equipo[0]['isChecked'] = 'true'
             await AsyncStorage.removeItem(ticketID)
             OS.ticket_id = ticket_id
             await AsyncStorage.setItem("OS", JSON.stringify(OS))

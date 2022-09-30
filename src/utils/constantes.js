@@ -1161,7 +1161,7 @@ export const Canton = [
 
 /// EXAMPLE 2
 export const os_checklist = {
-    OS_OrdenServicio: 0,
+    OS_OrdenServicio: null,
     CheckListID: 0,
     OrdenServicioID: 0,
     empresa_id: 1,

@@ -76,37 +76,25 @@ export default function Adjuntos(props) {
 
               console.log("Accion", Accion)
               setFini(false)
-              const os = await AsyncStorage.getItem("OS")
-              const osItem = JSON.parse(os)
-              let adjunto = osItem.OS_Anexos
-              setListAdjuntos(adjunto)
-              console.log("osItem", adjunto[0])
+              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+              setListAdjuntos(OS_Anexos)
 
 
             } else if (Accion == "PENDIENTE") {
 
               console.log("PENDIENTE")
-              const os = await AsyncStorage.getItem("OS")
-              const osItem = JSON.parse(os)
-              let adjunto = osItem.OS_Anexos
-              setListAdjuntos(adjunto)
-              console.log("osItem", typeof adjunto)
+              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+              setListAdjuntos(OS_Anexos)
 
             } else if (Accion == "OrdenSinTicket") {
 
-              const os = await AsyncStorage.getItem("OS")
-              const osItem = JSON.parse(os)
-              let adjunto = osItem.OS_Anexos
-              setListAdjuntos(adjunto)
-              console.log("osItem", adjunto[0])
+              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+              setListAdjuntos(OS_Anexos)
 
             } else if (Accion == "NUEVO OS TICKET") {
 
-              const os = await AsyncStorage.getItem("OS")
-              const osItem = JSON.parse(os)
-              let adjunto = osItem.OS_Anexos
-              setListAdjuntos(adjunto)
-              console.log("osItem", adjunto)
+              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+              setListAdjuntos(OS_Anexos)
 
             }
           }
@@ -125,9 +113,8 @@ export default function Adjuntos(props) {
         const item = JSON.parse(itenSelect)
         const { Accion } = item
 
-        const os_anexos = await AsyncStorage.getItem("OS")
-        var OSanexos = JSON.parse(os_anexos)
-        OSanexos.OS_Anexos
+        const os = await AsyncStorage.getItem("OS_Anexos")
+        var OS_Anexos = JSON.parse(os)
 
         anexos.archivo = adjuntos.archivo
         anexos.Ruta = adjuntos.Ruta
@@ -140,9 +127,9 @@ export default function Adjuntos(props) {
         anexos.OrdenServicioID = 0
         anexos.UsuarioCreacion = userId
         anexos.UsuarioModificacion = userId
-        OSanexos.OS_Anexos.push(anexos)
-        setListAdjuntos(OSanexos.OS_Anexos)
-        await AsyncStorage.setItem("OS", JSON.stringify(OSanexos))
+        OS_Anexos.push(anexos)
+        setListAdjuntos(OS_Anexos)
+        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
       }
     }
   }

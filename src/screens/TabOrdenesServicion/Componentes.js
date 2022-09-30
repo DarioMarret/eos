@@ -98,33 +98,31 @@ export default function Componentes(props) {
                         if (Accion == "FINALIZADO") {
                             setFini(false)
 
-                            const parte = await AsyncStorage.getItem("OS")
-                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
+                            const parte =JSON.parse( await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent(parte)
 
                         } else if (Accion == "PENDIENTE") {
 
                             console.log("PENDIENTE")
-                            const parte = await AsyncStorage.getItem("OS")
-                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
+                            const parte =JSON.parse( await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent(parte)
 
                         } else if (Accion == "OrdenSinTicket") {
 
                             console.log("OrdenSinTicket")
-                            const parte = await AsyncStorage.getItem("OS")
-                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
+                            const parte =JSON.parse( await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent(parte)
 
                         } else if (Accion == "clonar") {
 
-                            const parte = await AsyncStorage.getItem("OS")
-                            console.log("parte-->", JSON.parse(parte).OS_PartesRepuestos)
-                            let pat = JSON.parse(parte).OS_PartesRepuestos
-                            setComponent(JSON.parse(pat))
+                            const parte =JSON.parse( await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent(parte)
 
                         } else if (Accion == "NUEVO OS TICKET") {
 
                             console.log("NUEVO OS TICKET")
-                            const parte = await AsyncStorage.getItem("OS")
-                            setComponent(JSON.parse(parte).OS_PartesRepuestos)
+                            const parte =JSON.parse( await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent(parte)
 
                         }
                     }
@@ -169,10 +167,9 @@ export default function Componentes(props) {
 
             } else if (Accion == "PENDIENTE") {
 
-                console.log("CLONAR")
-                const parte = await AsyncStorage.getItem("OS")
-                console.log("parte-->", JSON.parse(parte))
-                let os = JSON.parse(parte)
+                console.log("PENDIENTE")
+                const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+
                 ParteRespuestos.Tipo = componente.Tipo
                 ParteRespuestos.Codigo = componente.Codigo
                 ParteRespuestos.Descripcion = componente.Descripcion
@@ -183,13 +180,13 @@ export default function Componentes(props) {
                 ParteRespuestos.UsuarioCreacion = userId
                 ParteRespuestos.FechaModificacion = new Date()
                 ParteRespuestos.UsuarioModificacion = userId
-                ParteRespuestos.Estado = "TROC"
+                ParteRespuestos.Estado = "ACTI"
                 ParteRespuestos.Garantia = componente.Garantia
                 ParteRespuestos.componente_id = null
                 ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
-                os.OS_PartesRepuestos.push(ParteRespuestos)
-                await AsyncStorage.setItem("OS", JSON.stringify(os))
-                setComponent(os.OS_PartesRepuestos)
+                parte.push(ParteRespuestos)
+                await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(parte))
+                setComponent(parte)
 
             } else if (Accion == "clonar") {
 

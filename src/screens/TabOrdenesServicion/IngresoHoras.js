@@ -15,7 +15,7 @@ import { useCallback, useState } from "react";
 import Moment from 'moment';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
-import { ticketID, timpo } from "../../utils/constantes";
+import { OS_Tiempos, ticketID, timpo } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
@@ -43,13 +43,23 @@ export default function IngresoHoras(props) {
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
   };
-  const handleConfirm = (date) => {
+  const handleConfirm = async (date) => {
     let fec = new Date()
     setFechas({
       ...fechas,
       Fecha: fec,
       FechaMostrar: Moment(date).format("DD/MM/YYYY"),
     })
+    var os = await AsyncStorage.getItem("OS_Tiempos")
+    let OS_Tiempos = JSON.parse(os)
+    if (OS_Tiempos.length > 0) {
+      OS_Tiempos[0].Fecha = `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+    }else{
+      OS_Tiempos = [timpo]
+      OS_Tiempos[0].Fecha = `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+    }
     hideDatePicker();
   };
   //fin
@@ -63,23 +73,23 @@ export default function IngresoHoras(props) {
   };
 
   const handleConfirmTime = async (time) => {
-    var os = await AsyncStorage.getItem("OS")
-    let OS = JSON.parse(os)
-    OS.OS_Tiempos = [timpo]
-    await AsyncStorage.setItem("OS", JSON.stringify(OS))
-    setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-    console.log(calcularTime({time}))
-    hideTimePicker()
-  }
-
-  const calcularTime = () => {
-    let time = 0;
-    if (fechas.HoraInicioTrabajo && fechas.HoraFinTrabajo) {
-      console.log("entro", fechas)
-      time = Moment(fechas.HoraInicioTrabajo).diff(Moment(fechas.HoraFinTrabajo), "hours")
-      console.log(time)
+    var os = await AsyncStorage.getItem("OS_Tiempos")
+    let OS_Tiempos = JSON.parse(os)
+    if (OS_Tiempos.length > 0) {
+      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
+      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
+      console.log("s",OS_Tiempos)
+      hideTimePicker()
+    }else{
+      OS_Tiempos = [timpo]
+      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
+      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
+      console.log("e",OS_Tiempos)
+      hideTimePicker()
     }
-    return time;
+    console.log("tiempoOS", OS_Tiempos.length)
   }
 
   const [fechas, setFechas] = useState({
@@ -155,16 +165,9 @@ export default function IngresoHoras(props) {
 
             console.log("PENDIENTE")
 
-            let OS = JSON.parse(os)
-            if (OS.OS_Tiempos.length > 0) {
-              let tem = OS.OS_Tiempos
-              console.log(tem)
-              setFechas({
-                ...fechas,
-                ...tem[0],
-                FechaMostrar: Moment().format('DD/MM/YYYY'),
-              })
-            }
+            await AsyncStorage.removeItem("OS_Tiempos")
+            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+
 
           } else if (Accion == "NUEVO OS TICKET") {
             console.log("NUEVO OS TICKET")

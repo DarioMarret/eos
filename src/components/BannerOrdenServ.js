@@ -72,13 +72,39 @@ export default function BannerOrderServi(props) {
         if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
             const { Accion } = item
-            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET" || Accion == "PENDIENTE") {
+            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
 
                 try {
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
 
+                    let P = await PostOS(OS)
+                    if (P == "200") {
+                        await LimpiandoDatos()
+                        setModalVisible(false)
+                    } else {
+                        setModalVisible(false)
+                        Alert.alert("Error", "No se pudo crear la orden de servicio")
+                    }
+
+                } catch (error) {
+                    setModalVisible(false)
+                    console.log("error", error)
+                    Alert.alert("Error", "Error al crear la orden de servicio")
+                }
+            } else if (Accion == "PENDIENTE") {
+
+                try {
+                    console.log(JSON.parse(await AsyncStorage.getItem("OS_CheckList")))
+                    OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                    OS.OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+                    OS.OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+                    OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+                    OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
                     let P = await PostOS(OS)
                     if (P == "200") {
                         await LimpiandoDatos()
@@ -116,7 +142,7 @@ export default function BannerOrderServi(props) {
                 }
 
             }
-   
+
         }
     }
 

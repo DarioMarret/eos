@@ -5,20 +5,28 @@ import { InserOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 export const PostOS = async (data) => {
-    const { token } = await getToken()
-    const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio`;
-    const params = {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(data),
+    try {
+        const { token } = await getToken()
+        const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio`;
+        const params = {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
+        }
+        let response = await fetch(url, params);
+        let result = await response.json()
+        console.log("result", result.Code)
+        if (result.Code == "200") {
+            await InserOSOrdenServicioID(result.Response)
+            await time(1000)
+            return result.Code
+        }
+    } catch (error) {
+        console.log("error en el post",error)        
     }
-    let response = await fetch(url, params);
-    let result = await response.json()
-    await InserOSOrdenServicioID(result.Response)
-    return result.Code
 }
 
 export const PutOS = async (data) => {
