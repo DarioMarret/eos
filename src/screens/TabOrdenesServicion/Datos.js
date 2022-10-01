@@ -1,21 +1,17 @@
-import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config"
-import { getOrdenServicioAnidadasTicket_id } from "../../service/OrdenServicioAnidadas"
-import { StyleSheet, Text, Pressable, TextInput, View, Modal, Switch, TouchableOpacity, ScrollView, Alert } from "react-native"
-import { DatosOSOrdenServicioID } from "../../service/OS_OrdenServicio"
+import { CambieEstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config"
+import { StyleSheet, Text, Pressable, TextInput, View, Modal, Switch, SafeAreaView, TouchableOpacity, ScrollView, Alert, FlatList } from "react-native"
 import DateTimePickerModal from "react-native-modal-datetime-picker"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import BannerOrderServi from "../../components/BannerOrdenServ"
 import { SelectCategoria } from "../../service/catalogos"
 import { useFocusEffect } from "@react-navigation/native"
-import { DATOS_, OS_CheckList, os_checklist, ticketID } from "../../utils/constantes"
+import { DATOS_, ticketID } from "../../utils/constantes"
 import { Picker } from '@react-native-picker/picker'
 import React, { useCallback, useState } from "react"
 import { AntDesign } from "@expo/vector-icons"
-import Firmador from "../../components/Firmador"
 import moment from "moment"
 import LoadingActi from "../../components/LoadingActi"
 import { getHistorialEquiposStorageChecklist } from "../../service/historiaEquipo"
-import { getToken } from "../../service/usuario"
 
 export default function Datos(props) {
     const { navigation } = props
@@ -35,23 +31,13 @@ export default function Datos(props) {
 
     const [ofCheck, setOfCheck] = useState(false)
 
-    const [tipo, setTipo] = useState("");
-
-    const [isEnabled, setIsEnabled] = useState(false);
+    const [isEnabled, setIsEnabled] = useState(true);
     const [isdisabelsub, setDisableSub] = useState(true)
 
     const [loading, setLoading] = useState(false)
 
     const [showCheckList, setShowCheckList] = useState(false)
     const [listCheck, setListCheck] = useState([
-        // {
-        //     "Checked": false,
-        //     "check_actividad": "",
-        //     "check_duracion": "",
-        //     "check_id": 0,
-        //     "check_observacion": "",
-        //     "modelo_id": 0,
-        // }
     ])
 
 
@@ -78,6 +64,50 @@ export default function Datos(props) {
         Seguimento: false,
     })
 
+    async function ActivarChecklist(equipo_id) {
+        var checklist = await JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+        console.log("checklist", checklist)
+        if (checklist.length > 0) {
+            const list = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
+            var listCheck = []
+            for (let index = 0; index < list.length; index++) {
+                var lis = list[index].check_id;
+                for (let i = 0; i < checklist.length; i++) {
+                    if (lis == checklist[i].IdCheckList) {
+                        checklist[i].check_actividad = list[index].check_actividad
+                        listCheck.push(checklist[i])
+                    }
+                }
+            }
+            setListCheck(listCheck)
+            setOfCheck(true)
+        } else {
+            const list = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
+            console.log("list", list)
+            if (list != null) {
+                var l = list.map(item => {
+                    return {
+                        check_actividad: item.check_actividad,
+                        OS_OrdenServicio: null,
+                        CheckListID: 0,
+                        OrdenServicioID: 0,
+                        empresa_id: 1,
+                        IdCheckList: item.check_id,//#CONSULTA
+                        Checked: false,
+                        UsuarioCreacion: userId,
+                        FechaCreacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`,
+                        UsuarioModificacion: userId,
+                        FechaModificacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`,
+                        Estado: "ACTI",
+                        Observacion: item.check_observacion
+                    }
+                })
+                setListCheck(l)
+                setOfCheck(true)
+            }
+        }
+    }
+
     async function TipoVisitadescripcion(items) {
         console.log("TipoVisitadescripcion", items)
         const os = await AsyncStorage.getItem("OS")
@@ -88,39 +118,14 @@ export default function Datos(props) {
             ...datos,
             TipoVisita: items
         })
+
         if (items == "01" || items == "09") {
             setOfCheck(true)
-            osItem.equipo_id
-            const list = await getHistorialEquiposStorageChecklist(osItem.equipo_id)
-            console.log("list", list)
-            if (JSON.parse(list[0].checklist) != "null") {
-                var l = JSON.parse(list[0].checklist).map(item => {
-                    return {
-                        ...item,
-                        Checked: false
-                    }
-                })
-                setListCheck(l)
-                console.log("listCheck", l)
-            }
-        } else {
-            setOfCheck(false)
         }
     }
 
-    async function SitioTrabajoValue(items) {
-        setDatos({
-            ...datos,
-            SitioTrabajo: items
-        })
-        console.log("SitioTrabajo", items)
-        const os = await AsyncStorage.getItem("OS")
-        const osItem = JSON.parse(os)
-        osItem.SitioTrabajo = items
-        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-    }
-
     async function TipoIncidencia(items) {
+
         console.log("TipoIncidencia", items)
         const os = await AsyncStorage.getItem("OS")
         const osItem = JSON.parse(os)
@@ -131,15 +136,27 @@ export default function Datos(props) {
             tipoIncidencia: items
         })
     }
+    const handleOnchange = async (name, value) => {
+        setDatos({
+            ...datos,
+            [name]: value
+        })
+        const os = JSON.parse(await AsyncStorage.getItem("OS"))
+        os[name] = value
+        await AsyncStorage.setItem("OS", JSON.stringify(os))
 
-    const handleConfirmTime = (time) => {
+    }
+    const handleConfirmTime = async (time) => {
         let fec = new Date()
+        const os = JSON.parse(await AsyncStorage.getItem("OS"))
+        os.FechaSeguimiento = fec
+        await AsyncStorage.setItem("OS", JSON.stringify(os))
         setDatos({
             ...datos,
             FechaSeguimiento: fec,
             FechaSeguimientoMostrar: moment(time).format("DD/MM/YYYY")
         })
-        hideTimePicker();
+        hideTimePicker()
     }
 
     const hideTimePicker = () => {
@@ -175,6 +192,7 @@ export default function Datos(props) {
                 setCategoriaTPCK(await SelectCategoria("TPTCK"))
                 setCategoriaTPINC(await SelectCategoria("TPINC"))
                 setCategoriaESTEQ(await SelectCategoria("ESTEQ"))
+                var osItem = JSON.parse(await AsyncStorage.getItem("OS"))
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
@@ -182,8 +200,9 @@ export default function Datos(props) {
 
                     if (Accion == "FINALIZADO") {
                         console.log("Estamos FINALIZADO")
-                        const os = await AsyncStorage.getItem("OS")
-                        const osItem = JSON.parse(os)
+                        TipoVisitadescripcion(osItem.TipoVisita)
+                        TipoIncidencia(osItem.tipoIncidencia)
+
                         setDatos({
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
@@ -193,8 +212,10 @@ export default function Datos(props) {
                     } else if (Accion == "clonar") {
                         console.log("Estamos clonar")
 
-                        const os = await AsyncStorage.getItem("OS")
-                        const osItem = JSON.parse(os)
+                        TipoVisitadescripcion(osItem.TipoVisita)
+                        TipoIncidencia(osItem.tipoIncidencia)
+
+
                         setDatos({
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
@@ -203,19 +224,27 @@ export default function Datos(props) {
                         setDisableSub(true)
 
                     } else if (Accion == "OrdenSinTicket") {
+
                         console.log("Estamos OrdenSinTicket")
-                        const os = await AsyncStorage.getItem("OS")
-                        const osItem = JSON.parse(os)
+
                         console.log("osItem", datos.FechaSeguimientoMostrar)
                         setDatos({
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
+                        setIsEnabled(true)
+                        setDisableSub(true)
+                        setOfCheck(false)
+                        osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
+                            ? ActivarChecklist() : setOfCheck(false)
+                        console.log("Checklist", await AsyncStorage.getItem("OS_CheckList"))
+
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("Estamos PENDIENTE")
-                        const os = await AsyncStorage.getItem("OS")
-                        const osItem = JSON.parse(os)
+                        TipoVisitadescripcion(osItem.TipoVisita)
+                        TipoIncidencia(osItem.tipoIncidencia)
+                        console.log("osItem", osItem)
                         delete osItem.OS_ASUNTO
                         delete osItem.OS_Anexos
                         delete osItem.OS_FINALIZADA
@@ -223,19 +252,32 @@ export default function Datos(props) {
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
-                        await AsyncStorage.removeItem("OS_CheckList")
-                        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
+                        osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
+                            ? ActivarChecklist() : setOfCheck(false)
+                        setIsEnabled(true)
+                        setDisableSub(true)
 
                     } else if (Accion == "NUEVO OS TICKET") {
 
                         console.log("Estamos NUEVO OS TICKET")
-                        const os = await AsyncStorage.getItem("OS")
-                        const osItem = JSON.parse(os)
                         setDatos({
                             ...datos,
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
+                        setIsEnabled(true)
+                        setDisableSub(true)
+                    } else if (Accion == "PROCESO") {
+
+                        console.log("Estamos PROCESO")
+                        setDatos({
+                            ...osItem,
+                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
+                        })
+                        setIsEnabled(true)
+                        setDisableSub(true)
+                        osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
+                            ? ActivarChecklist(osItem.equipo_id) : setOfCheck(false)
                     }
                 }
 
@@ -245,12 +287,12 @@ export default function Datos(props) {
                 const estadoE = await ListaDiagnostico()
                 setEstadoEquipo(estadoE)
 
-                let est = await EstadoSwitch(2)
-                if (est.estado == 1) {
-                    setIsEnabled(!true)
-                } else {
-                    setIsEnabled(!false)
-                }
+                // let est = await EstadoSwitch(2)
+                // if (est.estado == 1) {
+                //     setIsEnabled(!true)
+                // } else {
+                //     setIsEnabled(!false)
+                // }
             })()
         }, [])
     )
@@ -287,82 +329,66 @@ export default function Datos(props) {
             osItem.nuevaVisita = datos.nuevaVisita, //# requiere nueva visita
             osItem.Seguimento = datos.Seguimento, //# sequimiento
             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-        console.log("osItem", osItem)
     }
 
     const verChecklist = () => {
-
-        if(listCheck.length > 0){
-            setActivities([])
+        if (listCheck.length > 0) {
             setShowCheckList(true)
-        }else{
+        } else {
             Alert.alert("No hay checklist para mostrar")
         }
-
     }
 
     const GuardarChecklist = async () => {
-       
-        const os = await AsyncStorage.getItem("OS_CheckList")
-        const OS_CheckList = JSON.parse(os)
-        OS_CheckList.push(activities)
-        console.log("OS_CheckList", OS_CheckList)
-        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
-        // setActivities([])
+        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(listCheck))
         setShowCheckList(false)
-
     }
-    const [activities, setActivities] = useState([])
+
 
     const handleChecklist = async (text, index, item) => {
-        var activ = []
-        const { userId } = await getToken()
-        const existe = activities.some((i) => i.IdCheckList == item.check_id)
-        if (existe) {
-            activities[index].Observacion = text
-            activities[index].IdCheckList = item.check_id
-            activities[index].UsuarioCreacion = userId
-            activities[index].UsuarioModificacion = userId
-            activities[index].FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-            activities[index].FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-            setActivities(activities)
-            console.log("activities", text.length)
-            // listCheck[index].Checked = text.length > 1 ? true : false
-            // setListCheck(listCheck)
-        } else {
-            console.log("no existe")
-            os_checklist.Observacion = text
-            os_checklist.IdCheckList = item.check_id
-            os_checklist.UsuarioCreacion = userId
-            os_checklist.UsuarioModificacion = userId
-            os_checklist.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-            os_checklist.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-            activ = activities
-            activ.push(os_checklist)
-            setActivities(activ)
-        }
-        console.log("activities", activities.length)
+        const newlistcheck = [...listCheck]
+        newlistcheck[index].Observacion = text
+        console.log("newlistcheck", newlistcheck[index])
+        setListCheck(newlistcheck)
     }
-    const checkedCheckList = (check,index) => {
-
-        // const existe = activities.some((i) => i.IdCheckList == check.check_id)
-        // if (existe) {
-            
-            const newlistcheck = [...listCheck]
-            newlistcheck[index].Checked = !check
-            setListCheck(newlistcheck)
-
-            activities[index].Checked = !check
-            setActivities(activities)
-        // } else {
-        //     Alert.alert("Error", "Debe ingresar una observación")
-            // os_checklist.Checked = true
-            // os_checklist.IdCheckList = check.check_id
-            // activities.push(os_checklist)
-            // setActivities(activities)
-        // }
+    const checkedCheckList = (check, index) => {
+        const newlistcheck = [...listCheck]
+        newlistcheck[index].Checked = !check
+        setListCheck(newlistcheck)
     }
 
+    const _renderItem = ({ item, index }) => {
+        return (
+            <View style={styles.boxActivity} key={index}>
+                <View style={styles.infoActivity}>
+                    <Text style={{ color: "#666666" }}>{item.check_actividad}</Text>
+                    <View style={{
+                        ...styles.inputActivity
+                    }}>
+                        <TextInput
+                            editable
+                            value={item.Observacion}
+                            placeholder="Observación actividad"
+                            onChangeText={text => {
+                                handleChecklist(text, index, item)
+                            }}
+                        />
+                    </View>
+                </View>
+                <View style={styles.iconActivity}>
+                    <TouchableOpacity
+                        onPress={() => checkedCheckList(item.Checked, index)}
+                    >
+                        <AntDesign
+                            name='checkcircleo'
+                            size={24}
+                            color={item.Checked ? '#FF6B00' : '#666666'}
+                        />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        )
+    }
 
     return (
         <View style={styles.centeredView}>
@@ -375,69 +401,39 @@ export default function Datos(props) {
                 }}
             >
                 <View style={styles.centeredView}>
-                    <View style={styles.modalView}>
-                        <Text style={styles.modalText}>Checklist</Text>
-                        <ScrollView
-                            showsHorizontalScrollIndicator={false}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {
-                                
-                                listCheck.length > 0 &&  listCheck.map((item, index) => {
-                                        // console.log("item", item)
-                                        return (
-                                            <View style={styles.boxActivity} key={index}>
-                                                <View style={styles.infoActivity}>
-                                                    <Text style={{ color: "#666666" }}>{item.check_actividad}</Text>
-                                                    <View style={{
-                                                        ...styles.inputActivity
-                                                    }}>
-                                                        <TextInput
-                                                            editable
-                                                            placeholder="Observación actividad"
-                                                            onChangeText={text => {
-                                                                handleChecklist(text, index, item)
-                                                            }}
-                                                        />
-                                                    </View>
-                                                </View>
-                                                <View style={styles.iconActivity}>
-                                                    <TouchableOpacity
-                                                        onPress={() => checkedCheckList(item.Checked, index)}
-                                                     >
-                                                        <AntDesign
-                                                            name='checkcircleo'
-                                                            size={24}
-                                                            color={item.Checked ? '#FF6B00' : '#666666'}
-                                                        />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-                                        )
-                                    }) 
-                            }
-                        </ScrollView>
-                        <View style={{ width: "100%", flexDirection: "row", justifyContent: "flex-end" }}>
-                            <Pressable
-                                style={styles.button}
-                                onPress={() => GuardarChecklist()}
-                            >
-                                <Text style={{ ...styles.textStyle, color: "#FF6B00" }}>GRABAR</Text>
-                            </Pressable>
-                            <Pressable
-                                style={styles.button}
-                                onPress={() => {
-                                    setActivities([])
-                                    setShowCheckList(!showCheckList)
-                                }}
-                            >
-                                <Text style={styles.textStyle}>CERRAR</Text>
-                            </Pressable>
+                    <SafeAreaView>
+                        <View style={styles.modalView}>
+                            <Text style={styles.modalText}>Checklist</Text>
+                            <FlatList
+                                data={listCheck}
+                                renderItem={_renderItem}
+                                keyExtractor={(item, index) => index.toString()}
+                            />
+
+                            <View style={{ width: "100%", flexDirection: "row", justifyContent: "flex-end" }}>
+                                <Pressable
+                                    style={styles.button}
+                                    onPress={() => GuardarChecklist()}
+                                >
+                                    <Text style={{ ...styles.textStyle, color: "#FF6B00" }}>GRABAR</Text>
+                                </Pressable>
+                                <Pressable
+                                    style={styles.button}
+                                    onPress={() => {
+                                        setShowCheckList(!showCheckList)
+                                    }}
+                                >
+                                    <Text style={styles.textStyle}>CERRAR</Text>
+                                </Pressable>
+                            </View>
                         </View>
-                    </View>
+                    </SafeAreaView>
                 </View>
 
-            </Modal>
+            </Modal >
+
+
+
             <ScrollView showsVerticalScrollIndicator={false} >
                 <View style={styles.ContenedorCliente}>
                     <Text
@@ -445,11 +441,19 @@ export default function Datos(props) {
                             fontSize: 20,
                             fontWeight: "bold",
                             color: "#FF6B00",
-                            marginTop: "5%",
-                            marginLeft: "3%",
+                            marginTop: 5,
+                            marginLeft: 5,
                         }}>Ingreso de datos</Text>
                     <View style={styles.ContainerInputs}>
                         <LoadingActi loading={loading} />
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >
+                            Tipo</Text>
                         <View style={styles.ContainerTipoModelo}>
                             <View
                                 style={{
@@ -492,8 +496,9 @@ export default function Datos(props) {
                                 placeholder="Sitio de trabajo"
                                 editable={isEnabled}
                                 value={datos.SitioTrabajo}
-                                onChangeText={async (itemValue) => SitioTrabajoValue(itemValue)}
+                                onChangeText={async (itemValue) => handleOnchange('SitioTrabajo', itemValue)}
                             />
+
                         </View>
                         <View style={{
                             flexDirection: "row",
@@ -515,6 +520,14 @@ export default function Datos(props) {
                                     </TouchableOpacity> : null
                             }
                         </View>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >
+                            Tipo de incidencia</Text>
                         <View style={{ paddingHorizontal: 20 }} />
                         <View
                             style={{
@@ -557,6 +570,7 @@ export default function Datos(props) {
                                     : null
                             }
                         </View>
+                        <Text>Problema reportado</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Problema reportado:"
@@ -564,8 +578,9 @@ export default function Datos(props) {
                             numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Causas}
-                            onChangeText={(text) => setDatos({ ...datos, Causas: text })}
+                            onChangeText={(text) => handleOnchange('Causas', text)}
                         />
+                        <Text>Sintomas</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Sintomas:"
@@ -573,17 +588,19 @@ export default function Datos(props) {
                             numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Sintomas}
-                            onChangeText={(text) => setDatos({ ...datos, Sintomas: text })}
+                            onChangeText={(text) => handleOnchange('Sintomas', text)}
                         />
+                        <Text>Diagnóstico/Resultado visita*</Text>
                         <TextInput
-                           style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
+                            style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Diagnóstico/Resultado visita*:"
                             multiline
                             numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Diagnostico}
-                            onChangeText={(text) => setDatos({ ...datos, Diagnostico: text })}
+                            onChangeText={(text) => handleOnchange('Diagnostico', text)}
                         />
+                        <Text>Estado del equipo</Text>
                         <View style={{
                             width: "100%",
                             height: 60,
@@ -605,7 +622,8 @@ export default function Datos(props) {
                                 selectedValue={datos.EstadoEquipo}
                                 enabled={isEnabled}
                                 onValueChange={(itemValue, itemIndex) =>
-                                    setDatos({ ...datos, EstadoEquipo: itemValue })
+                                    handleOnchange('EstadoEquipo', itemValue)
+                                    // setDatos({ ...datos, EstadoEquipo: itemValue })
                                 }>
                                 {
                                     CategoriaESTEQ.length > 0 ?
@@ -625,6 +643,7 @@ export default function Datos(props) {
 
 
                         </View>
+                        <Text>Acción inmediata</Text>
                         <TextInput
                             // style={styles.input}
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
@@ -633,7 +652,7 @@ export default function Datos(props) {
                             numberOfLines={3}
                             editable={isEnabled}
                             value={datos.Acciones}
-                            onChangeText={(text) => setDatos({ ...datos, Acciones: text })}
+                            onChangeText={(text) => handleOnchange('Acciones', text)}
                         />
                         <View style={{
                             ...styles.wFull,
@@ -658,7 +677,8 @@ export default function Datos(props) {
                                     ios_backgroundColor="#FFAF75"
                                     onValueChange={() => {
                                         toggleSwitchRecordatorio()
-                                        setDatos({ ...datos, Seguimento: !isRecordatorio ? true : false })
+                                        handleOnchange('Seguimento', !isRecordatorio)
+                                        // setDatos({ ...datos, Seguimento: !isRecordatorio ? true : false })
                                     }}
                                     value={isRecordatorio}
                                 />
@@ -668,7 +688,7 @@ export default function Datos(props) {
                                 placeholder="Inf. adicional"
                                 editable={isEnabled}
                                 value={datos.ComentarioRestringido}
-                                onChangeText={(text) => setDatos({ ...datos, ComentarioRestringido: text })}
+                                onChangeText={(text) => handleOnchange('ComentarioRestringido', text)}
                             />
                         </View>
                         <View style={{
@@ -694,7 +714,8 @@ export default function Datos(props) {
                                     ios_backgroundColor="#FFAF75"
                                     onValueChange={() => {
                                         toggleSwitchUpgrade()
-                                        setDatos({ ...datos, IncluyoUpgrade: !isUpgrade ? true : false })
+                                        handleOnchange('IncluyoUpgrade', !isUpgrade)
+                                        // setDatos({ ...datos, IncluyoUpgrade: !isUpgrade ? true : false })
                                     }}
                                     value={isUpgrade}
                                 />
@@ -704,9 +725,10 @@ export default function Datos(props) {
                                 placeholder="Inf. adicional"
                                 editable={isEnabled}
                                 value={datos.ComentarioUpgrade}
-                                onChangeText={(text) => setDatos({ ...datos, ComentarioUpgrade: text })}
+                                onChangeText={(text) => handleOnchange('ComentarioUpgrade', text)}
                             />
                         </View>
+                        <Text>Fecha Recordatorio</Text>
                         <View style={{
                             borderWidth: 1,
                             borderColor: "#CECECA",
@@ -757,18 +779,24 @@ export default function Datos(props) {
                                 ios_backgroundColor="#FFAF75"
                                 onValueChange={() => {
                                     toggleSwitchVisita()
-                                    setDatos({ ...datos, nuevaVisita: !isVisita ? true : false })
+                                    // setDatos({ ...datos, nuevaVisita: !isVisita ? true : false })
+                                    handleOnchange('nuevaVisita', !isVisita)
                                 }}
                                 value={isVisita}
                             />
                         </View>
+                        <Text>Release</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%' }}
                             placeholder="Release"
                             editable={isEnabled}
                             value={datos.release}
-                            onChangeText={(text) => setDatos({ ...datos, release: text })}
+                            onChangeText={(text) => {
+                                handleOnchange('release', text)
+                                // setDatos({ ...datos, release: text })
+                            }}
                         />
+                        <Text>Observación Ingeniero</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: "10%", textAlignVertical: 'top' }}
                             placeholder="Observación Ingeniero"
@@ -776,9 +804,9 @@ export default function Datos(props) {
                             numberOfLines={4}
                             editable={isEnabled}
                             value={datos.ObservacionIngeniero}
-                            onChangeText={(text) => setDatos({ ...datos, ObservacionIngeniero: text })}
+                            onChangeText={(text) => handleOnchange('ObservacionIngeniero', text)}
                         />
-                        <View
+                        {/* <View
                             style={{
                                 flexDirection: 'row',
                                 justifyContent: 'flex-end',
@@ -797,7 +825,7 @@ export default function Datos(props) {
                                 onValueChange={() => SwitchGuardar()}
                                 value={isEnabled}
                             />
-                        </View>
+                        </View> */}
                     </View>
                     <View style={{ padding: 50 }} ></View>
                     <DateTimePickerModal
@@ -814,7 +842,7 @@ export default function Datos(props) {
                 navigation={navigation}
                 screen={"3-DATOS"}
             />
-        </View>
+        </View >
     );
 }
 
@@ -825,17 +853,19 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
     },
     ContenedorCliente: {
-        marginTop: 30,
+        marginTop: 25,
         flex: 1,
         width: "100%",
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         backgroundColor: '#FFFFFF',
-        padding: 10,
+        paddingHorizontal: 15,
+        paddingRigth: 20,
+
     },
     ContainerInputs: {
         flexDirection: "column",
-        padding: 10,
+        // padding: 10,
         height: "auto",
         width: "100%",
     },

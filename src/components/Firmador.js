@@ -5,6 +5,7 @@ import { AntDesign } from '@expo/vector-icons';
 import { getToken } from "../service/usuario";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { os_firma } from "../utils/constantes";
 
 
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
@@ -29,15 +30,20 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
             Alert.alert("Error", "Debe llenar todos los campos")
         }else{
             const { userId } = await getToken()
-            const OS = await AsyncStorage.getItem("OS")
-            let OS_OrdenServicioID = JSON.parse(OS)
-            datauser.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-            datauser.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-            datauser.UsuarioCreacion = userId
-            datauser.UsuarioModificacion = userId
-            console.log("datauser", datauser)
-            OS_OrdenServicioID.OS_Firmas.push(datauser)
-            await AsyncStorage.setItem("OS", JSON.stringify(OS_OrdenServicioID))
+            const OS_Firm = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+            os_firma.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            os_firma.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            os_firma.UsuarioCreacion = userId
+            os_firma.UsuarioModificacion = userId
+
+            os_firma.Correo = datauser.Correo
+            os_firma.Cargo = datauser.Cargo
+            os_firma.Nombre = datauser.Nombre
+            os_firma.archivo = datauser.archivo
+            os_firma.Observacion = datauser.Observacion
+            console.log("os_firma", os_firma)
+            OS_Firm.push(os_firma)
+            await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firm))
             handleClear()
             setUserData({
                 ...datauser,
@@ -51,9 +57,9 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 UsuarioCreacion: "",
                 UsuarioModificacion: "",
             })
-            setListF(OS_OrdenServicioID.OS_Firmas)
-            console.log("datauser", OS_OrdenServicioID.OS_Firmas.length)
-            setObs(OS_OrdenServicioID.OS_Firmas.length > 0 ? true : false)
+            setListF(OS_Firm)
+            console.log("datauser", OS_Firm.length)
+            setObs(OS_Firm.length > 0 ? true : false)
         }
     }
     const EliminarFirma = (index) => {

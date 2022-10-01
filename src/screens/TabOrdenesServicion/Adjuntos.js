@@ -49,7 +49,7 @@ export default function Adjuntos(props) {
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({})
     const file = await ImageManipulator.manipulateAsync(result.uri, [
-      // { resize: { width: 1000, height: 800 } },
+      { resize: { width: 800, height: 800 } },
     ], { format: ImageManipulator.SaveFormat.JPEG });
     FileSystem.readAsStringAsync(file.uri, {
       encoding: FileSystem.EncodingType.Base64

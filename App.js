@@ -1,5 +1,6 @@
 import DrawerNavigation from './src/navigation/Navigation'
 import Login from './src/screens/Login'
+import NetInfo from '@react-native-community/netinfo'
 import userContext from "./src/context/userContext"
 import { MD3LightTheme as DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 import { useEffect, useMemo, useState } from 'react'
@@ -28,7 +29,9 @@ const theme = {
 export default function App() {
 
 
-  const [Token, setToken] = useState(undefined);
+  const [Token, setToken] = useState(undefined)
+  const [isOFFLINE, setisOFFLINE] = useState(false)
+  const [reloadInt, setreloadInt] = useState(false)
 
   useEffect(() => {
     (async () => {
@@ -46,6 +49,21 @@ export default function App() {
       }
     })()
   }, [])
+
+  useEffect(() => {
+    const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
+      console.log("Connection type", state.type);
+      console.log("Is connected?", state.isConnected);
+      console.log("Is offline?", state.isInternetReachable);
+      console.log("\n")
+
+      // var offline = state.isConnected && state.isInternetReachable
+      var offline = state.isConnected
+      console.log("offline", offline)
+      setisOFFLINE(offline)
+    })
+    return () => removeNetInfoSubscription()
+  }, [reloadInt])
 
   const login = async (data) => {
     return new Promise((resolve, reject) => {
@@ -71,6 +89,9 @@ export default function App() {
 
   const UserData = useMemo(
     () => ({
+      isOFFLINE,
+      setreloadInt,
+      reloadInt,
       Token,
       login,
       logout

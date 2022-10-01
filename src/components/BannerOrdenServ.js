@@ -6,13 +6,16 @@ import { getHistorialEquiposStorageChecked, HistorialEquipoIngeniero } from "../
 import { PostOS, PutOS } from "../service/OS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
-import { useState } from "react"
+import React, { useState } from "react"
 import NetInfo from '@react-native-community/netinfo';
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos, ticketID } from "../utils/constantes";
 import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { EquipoTicket } from "../service/equipoTicketID";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
+import { NavigationAction } from "@react-navigation/native";
+import { ActualizarOrdenServicio, OSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
+
 
 export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
@@ -53,7 +56,10 @@ export default function BannerOrderServi(props) {
             }
         }
     }
-
+    function resetTab() {
+        TabTitle(tab[0])
+        navigation.navigate(tab[0])
+    }
     async function PasarACliente() {
         const respuesta = await getHistorialEquiposStorageChecked()
         console.log("respuesta", respuesta)
@@ -71,64 +77,28 @@ export default function BannerOrderServi(props) {
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
-            const { Accion } = item
-            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
-
+            const { Accion, OrdenServicioID } = item
+            console.log("OrdenServicioID", OrdenServicioID)
+            if (OrdenServicioID != null || OrdenServicioID != undefined) {
                 try {
-                    OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                    OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                    OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-
-                    let P = await PostOS(OS)
-                    if (P == "200") {
-                        await LimpiandoDatos()
-                        setModalVisible(false)
-                    } else {
-                        setModalVisible(false)
-                        Alert.alert("Error", "No se pudo crear la orden de servicio")
-                    }
-
-                } catch (error) {
-                    setModalVisible(false)
-                    console.log("error", error)
-                    Alert.alert("Error", "Error al crear la orden de servicio")
-                }
-            } else if (Accion == "PENDIENTE") {
-
-                try {
-                    console.log(JSON.parse(await AsyncStorage.getItem("OS_CheckList")))
+                    OS.OrdenServicioID = OrdenServicioID
+                    // let update =  await ActualizarOrdenServicio(OS, OrdenServicioID)
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                    OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+                    OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+                    // OS.OS_CheckList = []
+                    OS.Estado = "PROC"
+                    console.log("OS PUT", OS)
                     OS.OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
                     OS.OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-                    OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
-                    OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
-                    let P = await PostOS(OS)
-                    if (P == "200") {
-                        await LimpiandoDatos()
-                        setModalVisible(false)
-                    } else {
-                        setModalVisible(false)
-                        Alert.alert("Error", "No se pudo crear la orden de servicio")
-                    }
-
-                } catch (error) {
-                    setModalVisible(false)
-                    console.log("error", error)
-                    Alert.alert("Error", "Error al crear la orden de servicio")
-                }
-
-            } else if (Accion == "PROCESO") {
-
-                try {
-
-                    OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                    OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                    OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-                    let P = await PostOS(OS)
+                    let P = await PutOS(OS)
                     if (P == 204) {
+                        console.log("PUT OK")
+                        // console.log("update", update)
+                        await UpdateOSOrdenServicioID(OrdenServicioID)
                         await LimpiandoDatos()
                         setModalVisible(false)
                     } else {
@@ -140,9 +110,34 @@ export default function BannerOrderServi(props) {
                     console.log("error", error)
                     Alert.alert("Error", "Error al actualizar la orden de servicio")
                 }
+            } else {
+                try {
+                    // console.log(JSON.parse(await AsyncStorage.getItem("OS_CheckList"))[0])
+                    OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+                    OS.OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                    OS.Estado = "ACTI"
+                    OS.OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+                    OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+                    OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+                    OS.OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+                    console.log("OS", OS)
+                    let P = await PostOS(OS)
+                    if (P == "200") {
+                        await LimpiandoDatos()
+                        setModalVisible(false)
+                    } else {
+                        setModalVisible(false)
+                        Alert.alert("Error", "No se pudo crear la orden de servicio")
+                    }
 
+                } catch (error) {
+                    setModalVisible(false)
+                    console.log("error", error)
+                    Alert.alert("Error", "Error al crear la orden de servicio")
+                }
             }
-
         }
     }
 
@@ -160,6 +155,7 @@ export default function BannerOrderServi(props) {
         await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
         await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
         await AsyncStorage.setItem("OS", JSON.stringify(OS))
+        resetTab()
         navigation.navigate("Consultas")
     }
 
@@ -180,6 +176,7 @@ export default function BannerOrderServi(props) {
                         ticket_id.map(async (r) => {
                             await EquipoTicket(r.ticket_id)
                             await OrdenServicioAnidadas(r.evento_id)
+                            // await OSOrdenServicioID(r.OrdenServicioID)
                         })
                         resolve(true)
                     })()
@@ -233,7 +230,24 @@ export default function BannerOrderServi(props) {
                                 flexDirection: 'row',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                            }} onPress={GUARDAR_OS}>
+                            }} onPress={() => {
+                                NetInfo.fetch().then(state => {
+                                    if (state.isConnected == false) {
+                                        GUARDAR_OS()
+                                    } else {
+                                        Alert.alert(
+                                            "Info",
+                                            "No hay conexión a internet se guardara en el dispositivo",
+                                            [
+                                                {
+                                                    text: "OK",
+                                                    onPress: () => GUARDAR_OS()
+                                                }
+                                            ]
+                                        )
+                                    }
+                                });
+                            }}>
                                 <Text style={{ color: "#FFF", fontSize: 12, paddingRight: 5 }}>
                                     GUARDAR
                                 </Text>

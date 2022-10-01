@@ -8,7 +8,7 @@ import { EquipoTicket } from "../../service/equipoTicketID";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
-import { ticketID } from "../../utils/constantes";
+import { OS, ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
 import Banner from "../../components/Banner";
 import { time } from "../../service/CargaUtil";
@@ -21,8 +21,8 @@ import calok from '../../../assets/icons/cal-ok.png';
 import { RefresLogin } from "../../service/usuario";
 import { getTPTCKStorage } from "../../service/catalogos";
 import LoadingActi from "../../components/LoadingActi";
-import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
-import { ParseOS } from "../../service/OS";
+
+import useUser from '../../hook/useUser';
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -32,40 +32,34 @@ export default function Hoy(props) {
     const [loading, setLoading] = useState(false)
     const { navigation } = props
 
+    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setreloadInt(!reloadInt)
+                console.log("OFFLINE-->", isOFFLINE)
                 setLoading(true)
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
-                if (updateMinuto) {
-                    NetInfo.fetch().then(state => {
-                        if (state.isConnected === true) {
-                            (async () => {
-                                await RefresLogin()
-                                await HistorialEquipoIngeniero();
-                                await ActualizarFechaUltimaActualizacion()
-                            })()
-                        }
-                    })
-                }
+                // if (updateMinuto && isOFFLINE) {
+                //     await RefresLogin()
+                //     await HistorialEquipoIngeniero();
+                //     await ActualizarFechaUltimaActualizacion()
+                // }
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                await getTPTCKStorage()
-                NetInfo.fetch().then(state => {
-                    if (state.isConnected === true) {
-                        (async () => {
-                            var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                            var hoy = moment().format('YYYY-MM-DD');
-                            var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                            const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                            ticket_id.map(async (r) => {
-                                await EquipoTicket(r.ticket_id)
-                                await OrdenServicioAnidadas(r.evento_id)
-                            })
-                        })()
-                    }
-                })
+                // if (isOFFLINE) {
+                //     await getTPTCKStorage()
+                //     var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                //     var hoy = moment().format('YYYY-MM-DD');
+                //     var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                //     const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                //     ticket_id.map(async (r) => {
+                //         await EquipoTicket(r.ticket_id)
+                //         await OrdenServicioAnidadas(r.evento_id)
+                //     })
+                // }
                 setLoading(false)
             })()
         }, [])
@@ -88,7 +82,14 @@ export default function Hoy(props) {
     }
 
 
-    async function Ordene(ticket_id, estado) {
+    /**
+     * 
+     * @param {*} ticket_id 
+     * @param {*} evento_id 
+     * @param {*} estado 
+     * @param {*} OrdenServicioID 
+     */
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID) {
         setLoading(true)
         console.log("ticket_id", ticket_id)
         console.log("estado", estado)
@@ -103,7 +104,7 @@ export default function Hoy(props) {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
                                 // console.log("equipo selecionado hoy row", rows._array)
                                 console.log("equipo selecionado hoy row", JSON.parse(rows._array[0].historial)[0].OrdenServicioID)
-                                Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
+                                Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado)
                             })
                         })
                     })
@@ -118,20 +119,30 @@ export default function Hoy(props) {
         }
     }
 
-    async function Rutes(equipo, ticket_id, OrdenServicioID, estado) {
+    /**
+     * 
+     * @param {*} equipo 
+     * @param {*} ticket_id 
+     * @param {*} evento_id 
+     * @param {*} OrdenServicioID 
+     * @param {*} estado 
+     */
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado) {
         try {
             console.log("estado", estado)
+            console.log("ticket_id", ticket_id)
+            console.log("evento_id", evento_id)
+            console.log("OrdenServicioID", OrdenServicioID)
             if (equipo.length != 0) {
-                equipo[0]['isChecked'] = 'true'
-                var clon = await SelectOSOrdenServicioID(OrdenServicioID)
-                let parse = ParseOS(clon, estado)
                 await AsyncStorage.removeItem(ticketID)
-                await AsyncStorage.setItem("OS", JSON.stringify(parse))
+                OS.ticket_id = ticket_id
+                OS.evento_id = evento_id
+                await AsyncStorage.setItem("OS", JSON.stringify(OS))
                 await AsyncStorage.setItem(ticketID, JSON.stringify({
                     ticket_id,
                     equipo,
-                    OrdenServicioID,
-                    OSClone: parse,
+                    OrdenServicioID: OrdenServicioID,
+                    OSClone: null,
                     Accion: estado
                 }))
                 await isChecked(equipo[0].equipo_id)
@@ -141,7 +152,7 @@ export default function Hoy(props) {
             }
 
             if (equipo.length == 0) {
-                // await AsyncStorage.removeItem(ticketID)
+                await AsyncStorage.removeItem(ticketID)
                 await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
                 setLoading(false)
                 navigation.navigate("Ticket")
@@ -169,7 +180,7 @@ export default function Hoy(props) {
         return [
             <View key={index}>
                 <TouchableOpacity
-                    onPress={() => Ordene(String(item.ticket_id), item.ev_estado)}>
+                    onPress={() => Ordene(String(item.ticket_id), String(item.evento_id), item.ev_estado, item.OrdenServicioID)}>
 
                     <View style={{
                         flexDirection: 'row',

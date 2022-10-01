@@ -6,7 +6,7 @@ export const GetEventosDelDia = async () => {
 
     try {
         const { token, userId } = await getToken()
-        console.log("----> ", token, "\n", userId)
+        // console.log("----> ", token, "\n", userId)
         const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}`;
         const response = await fetch(url, {
             method: "GET",
@@ -16,7 +16,7 @@ export const GetEventosDelDia = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
-        console.log("GetEventosDelDia-->", Response)
+        // console.log("GetEventosDelDia-->", Response)
         return new Promise((resolve, reject) => {
             Response.map(async (r) => {
                 await InserEventosDiarios(r)

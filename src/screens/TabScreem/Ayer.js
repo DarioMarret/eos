@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Banner from "../../components/Banner";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
@@ -16,12 +16,10 @@ import { EquipoTicket } from "../../service/equipoTicketID";
 import db from "../../service/Database/model";
 import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import LoadingActi from "../../components/LoadingActi";
-import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
-import { ParseOS } from "../../service/OS";
 import { isChecked } from "../../service/historiaEquipo";
 import { time } from "../../service/CargaUtil";
 
-
+import useUser from '../../hook/useUser';
 
 export default function Ayer(props) {
     const { navigation } = props;
@@ -32,19 +30,25 @@ export default function Ayer(props) {
 
     const [loading, setLoading] = useState(false)
 
+    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setreloadInt(!reloadInt)
+                console.log("OFFLINE-->", isOFFLINE)
                 setLoading(true)
-                await GetEventosDelDia()
                 var date = moment().add(-1, "days").format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                const ticket_id = await GetEventosByTicket()
-                ticket_id.map(async (r) => {
-                    await EquipoTicket(r.ticket_id)
-                    await OrdenServicioAnidadas(r.evento_id)
-                })
+                // if(isOFFLINE){
+                //     await GetEventosDelDia()
+                //     const ticket_id = await GetEventosByTicket()
+                //     ticket_id.map(async (r) => {
+                //         await EquipoTicket(r.ticket_id)
+                //         await OrdenServicioAnidadas(r.evento_id)
+                //     })
+                // }
                 setLoading(false)
             })()
         }, [])
@@ -68,6 +72,7 @@ export default function Ayer(props) {
         console.log("ticket_id", ticket_id)
         try {
             const anidada = await getOrdenServicioAnidadas(ticket_id)
+            console.log("anidada",anidada)
             if (anidada == null) {
                 console.log("no hay anidadas")
                 db.transaction(tx => {

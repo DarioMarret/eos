@@ -13,6 +13,7 @@ import { Picker } from '@react-native-picker/picker'
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, ticketID } from "../../utils/constantes"
 import { getToken } from "../../service/usuario"
 import LoadingActi from "../../components/LoadingActi"
+import empty from "is-empty"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -74,12 +75,10 @@ export default function Equipo(props) {
                     console.log("equipo", equipo)
                     // console.log("Accion", item)
                     if (Accion == "clonar") {
-                        const eqi = await DatosEquipo(OrdenServicioID)
-                        isChecked(eqi[0].equipo_id)
+                        GuadadoOS(equipo[0])
                         setDisableSub(false)
                         setDisable(false)
                         equipo.map((item, index) => {
-                            setHistorial([{ ...item, isChecked: "true" }])
                             setTipo(item.tipo)
                             setSerie(item.equ_serie)
                             setModel(item.modelo)
@@ -95,7 +94,7 @@ export default function Equipo(props) {
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("PENDIENTE")
-
+                        GuadadoOS(equipo[0])
                         equipo.map((item, index) => {
                             setTipo(item.tipo)
                             setSerie(item.equ_serie)
@@ -105,6 +104,8 @@ export default function Equipo(props) {
                         setHistorial(equipo)
 
                     } else if (Accion == "FINALIZADO") {
+
+                        GuadadoOS(equipo[0])
                         equipo.map((item, index) => {
                             setTipo(item.tipo)
                             setSerie(item.equ_serie)
@@ -113,10 +114,21 @@ export default function Equipo(props) {
                         setDisableSub(false)
                         setDisable(true)
                         setHistorial(equipo)
+
                     } else if (Accion == "NUEVO OS TICKET") {
 
                         console.log("NUEVO OS TICKET")
+                        GuadadoOS(equipo[0])
+                        setHistorial(equipo)
+                    } else if (Accion == "PROCESO") {
 
+                        console.log("PROCESO")
+                        GuadadoOS(equipo[0])
+                        equipo.map((item, index) => {
+                            setTipo(item.tipo)
+                            setSerie(item.equ_serie)
+                            setModel(item.modelo)
+                        })
                         setHistorial(equipo)
                     }
                 }
@@ -161,7 +173,7 @@ export default function Equipo(props) {
                     setEquipoSelect(equipo[0])
                     setHistorial(equipo)
                     await GuadadoOS(equipo[0])
-                    console.log("equipo-->", equipo[0])
+                    // console.log("equipo-->", equipo[0])
                     equipo.forEach((item) => {
                         setTipo(item.tipo)
                         setModel(item.modelo)
@@ -175,17 +187,17 @@ export default function Equipo(props) {
         setHistorial(temp);
     }
     const GuadadoOS = async (item) => {
-        console.log(item)
+        console.log(item.equipo_id)
         try {
             const { userId } = await getToken()
             const { IdUsuario } = await getIngenierosStorageById(userId)
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
             osItem.equipo_id = item.equipo_id,//#
-            osItem.id_contrato = item.id_contrato,//#
+            osItem.contrato_id = item.id_contrato,//#
             osItem.Serie = item.equ_serie,//#
             osItem.Marca = item.marca //#
-            osItem.ClienteNombre = item.con_ClienteNombre //#
+            osItem.ClienteNombre = empty(osItem.ClienteNombre) ? item.con_ClienteNombre : osItem.ClienteNombre //#
             osItem.ObservacionCliente = "" //#
             osItem.IdEquipoContrato = Number(item.id_equipoContrato) //#
             osItem.EstadoEqPrevio = item.equ_estado //#
@@ -196,6 +208,7 @@ export default function Equipo(props) {
             osItem.UsuarioCreacion = userId //#
             osItem.UsuarioModificacion = userId //#
             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+            console.log("Equipo OS", osItem)
         } catch (error) {
             console.log("GuadadoOS en EQUIPO",error)            
         }

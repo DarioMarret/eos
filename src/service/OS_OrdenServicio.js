@@ -1,6 +1,7 @@
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //Consulta Orden de servicio por ID (CONSULTA SOLO SI EL ID ES MAYOR A 0)
 export const OSOrdenServicioID = async (OrdenServicioID) => {
@@ -27,9 +28,32 @@ export const OSOrdenServicioID = async (OrdenServicioID) => {
         return false
     }
 }
+export const UpdateOSOrdenServicioID = async (OrdenServicioID) => {
+        await DeleteOrdenServicioID(OrdenServicioID)
+        try {
+            const { token, userId } = await getToken()
+            console.log("----> ", token, "\n", userId)
+            const url = `${host}MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`;
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            const resultado = await response.json()
+            const { Response } = resultado
+            // console.log("OSOrdenServicioID-->", Response)
+            const res = await InserOSOrdenServicioID(Response)
+            return true
+        } catch (error) {
+            console.log("errores OSOrdenServicioID--->", error);
+        }
+}
 
 export const InserOSOrdenServicioID = async (r) => {
+    console.log("InserOSOrdenServicioID-->", r.OrdenServicioID)
     const existe = await SelectOSOrdenServicioID(r.OrdenServicioID)
+    console.log("existe", existe)
     if (!existe) {
         return new Promise((resolve, reject) => {
             db.exec([{
@@ -175,6 +199,8 @@ export const InserOSOrdenServicioID = async (r) => {
             })
             resolve(true)
         });
+    }else{
+        return true
     }
 }
 
@@ -184,6 +210,7 @@ export async function SelectOSOrdenServicioID(OrdenServicioID) {
             tx.executeSql(`SELECT * FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
+                        console.log("existe OS_OrdenServicioID-->", _array[0].OrdenServicioID)
                         resolve(_array)
                     } else {
                         resolve(false)
@@ -231,9 +258,10 @@ export async function SacarOSasunto(OrdenServicioID) {
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
                         resolve({
-                            OS_ASUNTO:_array[0].OS_ASUNTO, 
-                            OS_Firmas:_array[0].OS_Firmas, 
-                            ClienteNombre:_array[0].ClienteNombre})
+                            OS_ASUNTO: _array[0].OS_ASUNTO,
+                            OS_Firmas: _array[0].OS_Firmas,
+                            ClienteNombre: _array[0].ClienteNombre
+                        })
                     } else {
                         resolve(false)
                     }
@@ -248,7 +276,7 @@ export async function getRucCliente(OrdenServicioID) {
             tx.executeSql(`SELECT ClienteID, UsuarioCreacion FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
-                        resolve({ClienteID:_array[0].ClienteID, UsuarioCreacion:_array[0].UsuarioCreacion})
+                        resolve({ ClienteID: _array[0].ClienteID, UsuarioCreacion: _array[0].UsuarioCreacion })
                     } else {
                         resolve(false)
                     }
@@ -352,4 +380,149 @@ export async function ComponenteOSOrdenServicioID(OrdenServicioID) {
                 })
         });
     })
+}
+
+
+export async function ActualizarOrdenServicio(r, OrdenServicioID) {
+    console.log("ActualizarOrdenServicio",r, OrdenServicioID)
+    var OS_PartesRepuestos = await AsyncStorage.getItem("OS_PartesRepuestos")
+    var OS_CheckList = await AsyncStorage.getItem("OS_CheckList")
+    var OS_Tiempos = await AsyncStorage.getItem("OS_Tiempos")
+    var OS_Anexos = await AsyncStorage.getItem("OS_Anexos")
+    var OS_Firmas = await AsyncStorage.getItem("OS_Firmas")
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_CheckList = ?,
+            OS_Encuesta = ?,
+            OS_Firmas = ?,
+            OS_PartesRepuestos = ?,
+            OS_Anexos = ?,
+            OS_Tiempos = ?,
+            OS_Colaboradores = ?,
+            provinciaId = ?,
+            cantonId = ?,
+            localidad = ?,
+            tipoIncidencia  = ?,
+            TipoVisita = ?,
+            Fecha = ?,
+            Estado = ?,
+            Finalizado = ?,
+            evento_id = ?,
+            ticket_id = ?,
+            empresa_id = ?,
+            contrato_id = ?,
+            equipo_id = ?,
+            Serie = ?,
+            TipoEquipo = ?,
+            ModeloEquipo = ?,
+            Marca = ?,
+            ObservacionEquipo = ?,
+            CodigoEquipoCliente = ?,
+            ClienteID = ?,
+            ClienteNombre = ?,
+            Sintomas = ?,
+            Causas = ?,
+            Diagnostico = ?,
+            Acciones = ?,
+            SitioTrabajo = ?,
+            EstadoEquipo = ?,
+            ComentarioRestringido = ?,
+            IncluyoUpgrade = ?,
+            ComentarioUpgrade = ?,
+            Seguimento = ?,
+            FechaSeguimiento = ?,
+            ObservacionCliente  = ?,
+            ObservacionIngeniero = ?,
+            IngenieroID = ?,
+            UsuarioCreacion = ?,
+            FechaCreacion = ?,
+            UsuarioModificacion = ?,
+            FechaModificacion = ?,
+            IdEquipoContrato = ?,
+            EstadoEqPrevio = ?,
+            ContactoInforme = ?,
+            CargoContactoInforme = ?,
+            ObservacionCheckList = ?,
+            Direccion = ?,
+            Ciudad = ?,
+            nuevaVisita = ?,
+            incidencia = ?,
+            release = ?,
+            OS_ASUNTO = ?,
+            OS_FINALIZADA = ?,
+            enviado = ?,
+            codOS = ?,
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(OS_CheckList),
+            JSON.stringify([]),
+            JSON.stringify(OS_Firmas),
+            JSON.stringify(OS_PartesRepuestos),
+            JSON.stringify(OS_Anexos),
+            JSON.stringify(OS_Tiempos),
+            JSON.stringify([]),
+            r.provinciaId,
+            r.cantonId,
+            r.localidad,
+            r.tipoIncidencia,
+            r.TipoVisita,
+            r.Fecha,
+            r.Estado,
+            r.Finalizado,
+            r.evento_id,
+            r.ticket_id,
+            r.empresa_id,
+            r.contrato_id,
+            r.equipo_id,
+            r.Serie,
+            r.TipoEquipo,
+            r.ModeloEquipo,
+            r.Marca,
+            r.ObservacionEquipo,
+            r.CodigoEquipoCliente,
+            r.ClienteID,
+            r.ClienteNombre,
+            r.Sintomas,
+            r.Causas,
+            r.Diagnostico,
+            r.Acciones,
+            r.SitioTrabajo,
+            r.EstadoEquipo,
+            r.ComentarioRestringido,
+            r.IncluyoUpgrade,
+            r.ComentarioUpgrade,
+            r.Seguimento,
+            r.FechaSeguimiento,
+            r.ObservacionCliente,
+            r.ObservacionIngeniero,
+            r.IngenieroID,
+            r.UsuarioCreacion,
+            r.FechaCreacion,
+            r.UsuarioModificacion,
+            r.FechaModificacion,
+            r.IdEquipoContrato,
+            r.EstadoEqPrevio,
+            r.ContactoInforme,
+            r.CargoContactoInforme,
+            r.ObservacionCheckList,
+            r.Direccion,
+            r.Ciudad,
+            r.nuevaVisita,
+            r.incidencia,
+            r.release,
+            r.OS_ASUNTO,
+            r.OS_FINALIZADA,
+            r.enviado,
+            r.codOS,
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    });
+
 }

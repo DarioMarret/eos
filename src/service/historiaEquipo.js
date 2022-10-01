@@ -264,7 +264,7 @@ export const getHistorialEquiposStorageChecklist = async (equipo_id) => {
             db.transaction(tx => {
                 tx.executeSql('select checklist from historialEquipo where equipo_id = ?', [equipo_id], (_, { rows }) => {
                     // console.log("rows getHistorialEquiposStorageChecked", rows._array);
-                    resolve(rows._array)
+                    resolve(rows._array[0].checklist)
                 });
             })
         })

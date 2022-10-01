@@ -1,6 +1,6 @@
 import { useFocusEffect } from "@react-navigation/native";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
 import { ActivityIndicator, FlatList, Pressable, SafeAreaView, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -61,11 +61,11 @@ export default function TicketsOS(props) {
         }, [])
     )
 
+
     const functionColor = (type) => {
         if (type == "PENDIENTE") {
             return "#FFFFFF"
-            // return "#FFECDE"rosado
-        } else if (type == "NUEVO") {
+        } else if (type == "PROCESO") {
             return "#FFFFFF"
         } else if (type == "FINALIZADO") {
             return "#E2FAE0"
@@ -97,7 +97,7 @@ export default function TicketsOS(props) {
     async function AgregarFirma(OrdenServicioID) {
         setLoading(true)
         let clon = await SelectOSOrdenServicioID(OrdenServicioID)
-        let parse = ParseOS(clon, "FIRMAR")
+        let parse = await ParseOS(clon, "FIRMAR")
         await AsyncStorage.setItem("OS", JSON.stringify(parse))
         setUserData(parse.OS_Firmas)
         time(1000)
@@ -113,13 +113,14 @@ export default function TicketsOS(props) {
 
     async function ClonarOS(ticket_id, OrdenServicioID) {
         const OSClone = await SelectOSOrdenServicioID(OrdenServicioID)
-        let clon = ParseOS(OSClone, "clonar")
+        let clon = await ParseOS(OSClone, "clonar")
+        console.log("clonacion", clon)
         await AsyncStorage.setItem("OS", JSON.stringify(OSClone[0]))
         db.transaction(tx => {
             tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                        Rutes(rows._array, ticket_id, OrdenServicioID, clon, "clonar")
+                        Rutes(rows._array, ticket_id, null, clon, "clonar")
                     })
                 })
             })
@@ -127,7 +128,10 @@ export default function TicketsOS(props) {
     }
 
     async function EnviarOS(item) {
+        console.log("EnviarOS", item)
         const { ClienteID, UsuarioCreacion } = await getRucCliente(item)
+        console.log("ClienteID", ClienteID)
+
         const { token } = await getToken()
         const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`, {
             headers: {
@@ -139,7 +143,8 @@ export default function TicketsOS(props) {
         console.log("data", data)
         setlistadoEmails(data)
         setIdOrdenServicio(item)
-        setModalVisible(!modalVisible);
+        setModalVisible(!modalVisible)
+
     }
 
     async function VisualizarPdf(item) {
@@ -148,13 +153,26 @@ export default function TicketsOS(props) {
         setPdfview(false)
     }
 
+    /**
+     * 
+     * @param {*} equipo [array]
+     * @param {*} ticket_id string
+     * @param {*} OrdenServicioID string
+     * @param {*} OSClone 
+     * @param {*} accion string
+     */
     async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
         setLoading(true)
+        // console.log("equipo", equipo)
+        console.log("ticket_id", ticket_id)
+        console.log("OrdenServicioID", OrdenServicioID)
+        console.log("accion", accion)
         equipo[0]['isChecked'] = 'true'
         var clon;
-        if (accion == "PENDIENTE" || accion == "FINALIZADO") {
+        if (accion == "PENDIENTE" || accion == "FINALIZADO" || accion == "PROCESO") {
             clon = await SelectOSOrdenServicioID(OrdenServicioID)
-            let parse = ParseOS(clon, accion)
+            let parse = await ParseOS(clon, accion)
+            console.log("Tickest",parse)
             await AsyncStorage.setItem("OS", JSON.stringify(parse))
         }
         await AsyncStorage.removeItem(ticketID)
@@ -183,7 +201,7 @@ export default function TicketsOS(props) {
             })
         })
         var clon = await SelectOSOrdenServicioID(eventosAnidados[0].OrdenServicioID)
-        let parse = ParseOS(clon, "NUEVO OS TICKET")
+        let parse = await ParseOS(clon, "NUEVO OS TICKET")
         await AsyncStorage.setItem("OS", JSON.stringify(parse))
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
@@ -197,24 +215,17 @@ export default function TicketsOS(props) {
         navigation.navigate("Ordenes")
 
     }
-    async function ColorCheckt(itemIndex) {
-        seteventosAnidados(eventosAnidados.map((item, index) => {
-            if (itemIndex.OrdenServicioID == item.OrdenServicioID) {
-                return {
-                    ...item,
-                    check: !item.check
-                }
-            } else {
-                return {
-                    ...item,
-                    check: false
-                }
-            }
-        }))
+    async function ColorCheckt(itemIndex, index) {
+        var check = [...eventosAnidados]
+        check[index].check = !check[index].check
+        seteventosAnidados(check)
         CeckFini()
     }
     function CeckFini() {
-        eventosAnidados.filter((item) => item.check == true).length > 0 ? setFini(false) : setFini(true)
+        let even = eventosAnidados.filter((item) => {
+            return item.check == true
+        })
+        even.length > 0 ? setFini(true) : setFini(false)
     }
 
     async function Finalizar() {
@@ -234,6 +245,9 @@ export default function TicketsOS(props) {
                 navigation.navigate("Consultas")
             }
         }
+        // const ticket_id = JSON.parse(await AsyncStorage.getItem(ticketID)).ticket_id
+        // const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
+        // seteventosAnidados(response.map((item) => { return { ...item, check: false } }))
     }
 
     async function Sincronizar() {
@@ -296,7 +310,6 @@ export default function TicketsOS(props) {
                                 <ScrollView showsVerticalScrollIndicator={false} >
                                     {
                                         eventosAnidados.map((item, index) => {
-                                            console.log("item", item)
                                             return (
                                                 <View key={index}
                                                     style={{ width: '100%', alignSelf: 'center', marginBottom: 10, }}
@@ -314,9 +327,9 @@ export default function TicketsOS(props) {
                                                             borderColor: '#858583'
                                                         }}>
                                                         {
-                                                            item.ev_estado == "PENDIENTE" ?
+                                                            item.ev_estado == "PENDIENTE" || item.ev_estado == "PROCESO" ?
                                                                 <TouchableOpacity
-                                                                    onPress={() => ColorCheckt(item)}
+                                                                    onPress={() => ColorCheckt(item, index)}
                                                                     style={{
                                                                         flexDirection: 'column',
                                                                         justifyContent: 'center',
@@ -433,7 +446,6 @@ export default function TicketsOS(props) {
                                                                             fontWeight: 'bold',
                                                                         },
                                                                     }} />
-                                                                {/* <MenuOption disabled={true} text='Disabled' /> */}
                                                             </MenuOptions>
                                                         </Menu>
                                                     </View>

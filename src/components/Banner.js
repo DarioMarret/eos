@@ -12,25 +12,37 @@ import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OS, ticketID } from "../utils/constantes";
 
+import useUser from '../hook/useUser';
+
+
 export default function Banner(props) {
     const { navigation, setTime, times } = props
 
     const [update, setupdate] = useState(false)
     const [message, setMessage] = useState("Actualizando...")
 
+    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
+    console.log("Banner-->", isOFFLINE)
+    console.log("\n")
     async function ActualizarEventos() {
-        Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexción estable", [
-            {
-                text: "OK",
-                onPress: () => UP(),
-                style: { color: "#FF6B00" },
-            },
-            {
-                text: "Cancelar",
-                onPress: () => console.log("hola Mundo"),
-                style: { color: "#FF6B00" },
-            }
-        ])
+        setreloadInt(!reloadInt)
+        // console.log("OFFLINE-->", isOFFLINE)
+        // if(isOFFLINE){
+            Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexción estable", [
+                {
+                    text: "OK",
+                    onPress: () => UP(),
+                    style: { color: "#FF6B00" },
+                },
+                {
+                    text: "Cancelar",
+                    onPress: () => console.log("hola Mundo"),
+                    style: { color: "#FF6B00" },
+                }
+            ])
+        // }else{
+        //     Alert.alert("Sin Conexion", "Actualmente se encuantra sin conexion")
+        // }
     }
     async function UP() {
         setupdate(true)
@@ -118,6 +130,11 @@ export default function Banner(props) {
                     }
 
                 </TouchableOpacity>
+                {
+                    isOFFLINE ? 
+                    <Text style={{ color: "#FFF", fontSize: 10, marginLeft: 10 }}>Modo Online</Text> 
+                    :<Text style={{ color: "#FFF", fontSize: 10, marginLeft: 10 }}>Modo Offline</Text> 
+                }
             </View>
         </>
     );

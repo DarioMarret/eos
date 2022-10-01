@@ -15,7 +15,7 @@ import { useCallback, useState } from "react";
 import Moment from 'moment';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
-import { OS_Tiempos, ticketID, timpo } from "../../utils/constantes";
+import { ticketID, timpo } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
@@ -55,7 +55,7 @@ export default function IngresoHoras(props) {
     if (OS_Tiempos.length > 0) {
       OS_Tiempos[0].Fecha = `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-    }else{
+    } else {
       OS_Tiempos = [timpo]
       OS_Tiempos[0].Fecha = `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
@@ -79,17 +79,36 @@ export default function IngresoHoras(props) {
       OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      console.log("s",OS_Tiempos)
+      console.log("s", OS_Tiempos)
       hideTimePicker()
-    }else{
+    } else {
       OS_Tiempos = [timpo]
       OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      console.log("e",OS_Tiempos)
+      console.log("e", OS_Tiempos)
       hideTimePicker()
     }
     console.log("tiempoOS", OS_Tiempos.length)
+    console.log("tiempoOS", JSON.parse(await AsyncStorage.getItem("OS")))
+  }
+
+  const handeldeffTime = async () => {
+    var os = await AsyncStorage.getItem("OS_Tiempos")
+    let OS_Tiempos = JSON.parse(os)
+    if (OS_Tiempos.length > 0) {
+      OS_Tiempos[0][tiempoOS] = ""
+      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      setFechas({ ...fechas, [tiempoOS]: "" })
+      hideTimePicker()
+    } else {
+      OS_Tiempos = [timpo]
+      OS_Tiempos[0][tiempoOS] = ""
+      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      setFechas({ ...fechas, [tiempoOS]: "" })
+      hideTimePicker()
+      onsole.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
+    }
   }
 
   const [fechas, setFechas] = useState({
@@ -116,72 +135,67 @@ export default function IngresoHoras(props) {
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
           const item = JSON.parse(itenSelect)
-          const { equipo, OrdenServicioID, ticket_id, OSClone, Accion } = item
-          const OS_Tiempo = await AsyncStorage.getItem("OS_Tiempos")
-          var os = await AsyncStorage.getItem("OS")
+          const { Accion } = item
+          const OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+          if (OS_Tiempos.length == 0) OS_Tiempos.push(timpo)
+          console.log("OS_Tiempo", OS_Tiempos)
           if (Accion == "OrdenSinTicket") {
 
             console.log("OrdenSinTicket")
-            let OS = JSON.parse(os)
-            if (OS.OS_Tiempos.length > 0) {
-              let tem = OS.OS_Tiempos
-              console.log(tem)
-              setFechas({
-                ...fechas,
-                ...tem[0],
-                FechaMostrar: Moment().format('DD/MM/YYYY'),
-              })
-            }
-
+            console.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
 
           } else if (Accion == "clonar") {
 
-            console.log("CLONAR")
-            let OS = JSON.parse(os)
-            if (OS.OS_Tiempos.length > 0) {
-              let tem = OS.OS_Tiempos
-              console.log(tem)
-              setFechas({
-                ...fechas,
-                ...tem[0],
-                FechaMostrar: Moment().format('DD/MM/YYYY'),
-              })
-            }
+            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
+            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+            setFechas({
+              ...fechas,
+              ...OS_Tiempos[0],
+              FechaMostrar: Moment().format('DD/MM/YYYY'),
+            })
 
           } else if (Accion == "FINALIZADO") {
 
             console.log("FINALIZADO")
             setFini(false)
-            let OS = JSON.parse(os)
-            let tem = OS.OS_Tiempos
-            console.log(tem)
             setFechas({
               ...fechas,
-              ...tem[0],
-              FechaMostrar: Moment(JSON.parse(OSClone[0].OS_Tiempos).Fecha).format('DD/MM/YYYY'),
+              ...OS_Tiempos[0],
+              FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
 
           } else if (Accion == "PENDIENTE") {
 
             console.log("PENDIENTE")
 
-            await AsyncStorage.removeItem("OS_Tiempos")
+            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+            setFechas({
+              ...fechas,
+              ...OS_Tiempos[0],
+              FechaMostrar: Moment().format('DD/MM/YYYY'),
+            })
 
 
           } else if (Accion == "NUEVO OS TICKET") {
             console.log("NUEVO OS TICKET")
+            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
+            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+            setFechas({
+              ...fechas,
+              ...OS_Tiempos[0],
+              FechaMostrar: Moment().format('DD/MM/YYYY'),
+            })
 
-            let OS = JSON.parse(os)
-            if (OS.OS_Tiempos.length > 0) {
-              let tem = OS.OS_Tiempos
-              console.log(tem)
-              setFechas({
-                ...fechas,
-                ...tem[0],
-                FechaMostrar: Moment().format('DD/MM/YYYY'),
-              })
-            }
+          }else if (Accion == "PROCESO") {
+            console.log("PROCESO")
+            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
+            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+            setFechas({
+              ...fechas,
+              ...OS_Tiempos[0],
+              FechaMostrar: Moment().format('DD/MM/YYYY'),
+            })
 
           }
         }
@@ -189,28 +203,6 @@ export default function IngresoHoras(props) {
       })()
     }, [])
   )
-  const SwitchGuardar = async () => {
-
-    timpo.HoraSalidaOrigen = fechas.HoraSalidaOrigen
-    timpo.HoraLlegadaCliente = fechas.HoraLlegadaCliente
-    timpo.HoraInicioTrabajo = fechas.HoraInicioTrabajo
-    timpo.HoraFinTrabajo = fechas.HoraFinTrabajo
-    timpo.HoraSalidaCliente = fechas.HoraSalidaCliente
-    timpo.TiempoEspera = fechas.TiempoEspera
-    timpo.TiempoTrabajo = fechas.TiempoTrabajo
-    timpo.TiempoViaje = fechas.TiempoViaje
-    timpo.Fecha = fechas.Fecha
-    timpo.HoraLlegadaSgteDestino = fechas.HoraLlegadaSgteDestino
-    timpo.TiempoViajeSalida = fechas.TiempoViajeSalida
-
-    await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(timpo))
-    setFechas({
-      ...fechas,
-      switch: !fechas.switch
-    })
-    await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([timpo]))
-    console.log("fechas", timpo)
-  }
 
   return (
     <View style={styles.container}>
@@ -229,104 +221,118 @@ export default function IngresoHoras(props) {
         <ScrollView showsVerticalScrollIndicator={false} >
           <View style={styles.ContainerInputs}>
             <LoadingActi loading={loading} />
-            <View style={styles.input}>
+            <Text>Fecha</Text>
+            <TouchableOpacity
+              onPress={() => showDatePicker('dateInit')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Fecha de Ingreso'
                 value={fechas.FechaMostrar}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showDatePicker('dateInit')}
                 name='calendar'
                 size={24}
                 color='#000000'
               />
-            </View>
-            <View style={styles.input}>
+            </TouchableOpacity>
+            <Text>Salida Origen</Text>
+            <TouchableOpacity
+              onPress={() => showTimePicker('HoraSalidaOrigen')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Salida origen'
                 value={fechas.HoraSalidaOrigen}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showTimePicker('HoraSalidaOrigen')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
               />
-            </View>
-            <View style={styles.input}>
+            </TouchableOpacity>
+            <Text>Arribo Cliente</Text>
+            <TouchableOpacity
+              onPress={() => showTimePicker('HoraLlegadaCliente')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Arribo cliente'
                 value={fechas.HoraLlegadaCliente}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showTimePicker('HoraLlegadaCliente')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
               />
-            </View>
-            <View style={styles.input}>
+            </TouchableOpacity>
+            <Text>Inicio trabajo</Text>
+            <TouchableOpacity
+              onPress={() => showTimePicker('HoraInicioTrabajo')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Inicio trabajo'
                 value={fechas.HoraInicioTrabajo}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showTimePicker('HoraInicioTrabajo')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
               />
-            </View>
-            <View style={styles.input}>
+            </TouchableOpacity>
+            <Text>Fin trabajo</Text>
+            <TouchableOpacity
+              onPress={() => showTimePicker('HoraFinTrabajo')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Fin trabajo'
                 value={fechas.HoraFinTrabajo}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showTimePicker('HoraFinTrabajo')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
               />
-            </View>
-            <View style={styles.input}>
+            </TouchableOpacity>
+            <Text>Salida cliente</Text>
+            <TouchableOpacity
+              onPress={() => showTimePicker('HoraSalidaCliente')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Salida cliente'
                 value={fechas.HoraSalidaCliente}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showTimePicker('HoraSalidaCliente')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
               />
-            </View>
-            <View style={styles.input}>
+            </TouchableOpacity>
+            <Text>Hora llegada siguiente destino</Text>
+            <TouchableOpacity
+              onPress={() => showTimePicker('HoraLlegadaSgteDestino')}
+              style={styles.input}>
               <TextInput
-                style={{ width: "90%", height: "100%" }}
+                style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Hora llegada siguiente destino'
                 value={fechas.HoraLlegadaSgteDestino}
-                enable={true}
+                editable={false}
               />
               <AntDesign
-                onPress={() => showTimePicker('HoraLlegadaSgteDestino')}
                 name='clockcircleo'
                 size={24}
                 color='#000000'
               />
-            </View>
+            </TouchableOpacity>
             <DateTimePickerModal
               isVisible={isDatePickerVisible}
               mode='date'
@@ -389,5 +395,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 20,
+    color: "#000000",
   },
 });
