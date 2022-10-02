@@ -168,7 +168,8 @@ function InitDB() {
                 OS_ASUNTO TEXT NULL,
                 OS_FINALIZADA TEXT NULL,
                 enviado TEXT NULL,
-                codOS TEXT NULL
+                codOS TEXT NULL,
+                OS_LOCAL TEXT NULL
                 );`,
                 args: []
             }], false, (tx, results) => {
@@ -386,6 +387,9 @@ function InitDB() {
                 Estado TEXT NULL
             );`)
         })
+
+
+        //
 }
 
 InitDB()

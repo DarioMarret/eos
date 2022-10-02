@@ -12,6 +12,7 @@ import { AntDesign } from "@expo/vector-icons"
 import moment from "moment"
 import LoadingActi from "../../components/LoadingActi"
 import { getHistorialEquiposStorageChecklist } from "../../service/historiaEquipo"
+import { getToken } from "../../service/usuario"
 
 export default function Datos(props) {
     const { navigation } = props
@@ -27,6 +28,8 @@ export default function Datos(props) {
     const [CategoriaTPCK, setCategoriaTPCK] = useState([])
     const [CategoriaTPINC, setCategoriaTPINC] = useState([])
     const [CategoriaESTEQ, setCategoriaESTEQ] = useState([])
+
+    const [select, setSelect] = useState(false)
 
 
     const [ofCheck, setOfCheck] = useState(false)
@@ -66,8 +69,8 @@ export default function Datos(props) {
 
     async function ActivarChecklist(equipo_id) {
         var checklist = await JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
-        console.log("checklist", checklist)
         if (checklist.length > 0) {
+            console.log("ActivarChecklist", checklist)
             const list = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
             var listCheck = []
             for (let index = 0; index < list.length; index++) {
@@ -85,6 +88,7 @@ export default function Datos(props) {
             const list = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
             console.log("list", list)
             if (list != null) {
+                const { userId } = await getToken()
                 var l = list.map(item => {
                     return {
                         check_actividad: item.check_actividad,
@@ -120,6 +124,7 @@ export default function Datos(props) {
         })
 
         if (items == "01" || items == "09") {
+            ActivarChecklist(osItem.equipo_id)
             setOfCheck(true)
         }
     }
@@ -242,9 +247,9 @@ export default function Datos(props) {
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("Estamos PENDIENTE")
-                        TipoVisitadescripcion(osItem.TipoVisita)
-                        TipoIncidencia(osItem.tipoIncidencia)
-                        console.log("osItem", osItem)
+                        // TipoVisitadescripcion(osItem.TipoVisita)
+                        // TipoIncidencia(osItem.tipoIncidencia)
+                        // console.log("osItem", osItem)
                         delete osItem.OS_ASUNTO
                         delete osItem.OS_Anexos
                         delete osItem.OS_FINALIZADA
@@ -274,10 +279,12 @@ export default function Datos(props) {
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
+                        setSelect(false)//desabilidar select en este estado
                         setIsEnabled(true)
                         setDisableSub(true)
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist(osItem.equipo_id) : setOfCheck(false)
+
                     }
                 }
 
@@ -341,6 +348,7 @@ export default function Datos(props) {
 
     const GuardarChecklist = async () => {
         await AsyncStorage.setItem("OS_CheckList", JSON.stringify(listCheck))
+        console.log("Checklist", listCheck)
         setShowCheckList(false)
     }
 
@@ -468,7 +476,7 @@ export default function Datos(props) {
                                     CategoriaTPCK.length > 0 ?
                                         <Picker
                                             style={styles.wFull}
-                                            enabled={isEnabled}
+                                            enabled={select}
                                             selectedValue={datos.TipoVisita != "" ? datos.TipoVisita : datos.TipoVisita}
                                             onValueChange={(itemValue) => TipoVisitadescripcion(itemValue)}
                                         >
@@ -552,7 +560,7 @@ export default function Datos(props) {
 
                                         }}
                                         selectedValue={datos.tipoIncidencia}
-                                        enabled={isEnabled}
+                                        enabled={select}
                                         onValueChange={(itemValue, itemIndex) => TipoIncidencia(itemValue)}>
                                         {
                                             CategoriaTPINC.map((item, index) => (
@@ -570,7 +578,13 @@ export default function Datos(props) {
                                     : null
                             }
                         </View>
-                        <Text>Problema reportado</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Problema reportado</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Problema reportado:"
@@ -580,7 +594,13 @@ export default function Datos(props) {
                             value={datos.Causas}
                             onChangeText={(text) => handleOnchange('Causas', text)}
                         />
-                        <Text>Sintomas</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Sintomas</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Sintomas:"
@@ -590,7 +610,13 @@ export default function Datos(props) {
                             value={datos.Sintomas}
                             onChangeText={(text) => handleOnchange('Sintomas', text)}
                         />
-                        <Text>Diagnóstico/Resultado visita*</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Diagnóstico/Resultado visita*</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
                             placeholder="Diagnóstico/Resultado visita*:"
@@ -600,7 +626,13 @@ export default function Datos(props) {
                             value={datos.Diagnostico}
                             onChangeText={(text) => handleOnchange('Diagnostico', text)}
                         />
-                        <Text>Estado del equipo</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Estado del equipo</Text>
                         <View style={{
                             width: "100%",
                             height: 60,
@@ -628,7 +660,7 @@ export default function Datos(props) {
                                 {
                                     CategoriaESTEQ.length > 0 ?
                                         CategoriaESTEQ.map((item, index) => (
-                                            item.IdCatalogoDetalle == datos.Descripcion ?
+                                            item.IdCatalogoDetalle == datos.EstadoEquipo ?
                                                 <Picker.Item
                                                     key={index}
                                                     label={item.Descripcion}
@@ -643,7 +675,13 @@ export default function Datos(props) {
 
 
                         </View>
-                        <Text>Acción inmediata</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Acción inmediata</Text>
                         <TextInput
                             // style={styles.input}
                             style={{ ...styles.input, width: '100%', height: 80, textAlignVertical: 'top' }}
@@ -670,7 +708,9 @@ export default function Datos(props) {
                                 flexDirection: 'row',
                                 alignItems: 'center',
                             }}>
-                                <Text style={{ fontSize: 16, marginRight: 4 }}>Recordatorio</Text>
+                                <Text style={{ 
+                                    fontWeight: 'bold',
+                                    fontSize: 16, marginRight: 4 }}>Recordatorio</Text>
                                 <Switch
                                     trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                     thumbColor={isRecordatorio ? "#FF6B00" : "#ffffff"}
@@ -707,7 +747,10 @@ export default function Datos(props) {
                                 flexDirection: 'row',
                                 alignItems: 'center',
                             }}>
-                                <Text style={{ fontSize: 16, marginRight: 4 }}>Incluye Upgrade:</Text>
+                                <Text style={{ 
+                                    fontWeight: "bold",
+                                    fontFamily: "Roboto",
+                                    fontSize: 16, marginRight: 4 }}>Incluye Upgrade:</Text>
                                 <Switch
                                     trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                     thumbColor={isUpgrade ? "#FF6B00" : "#ffffff"}
@@ -728,7 +771,13 @@ export default function Datos(props) {
                                 onChangeText={(text) => handleOnchange('ComentarioUpgrade', text)}
                             />
                         </View>
-                        <Text>Fecha Recordatorio</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Fecha Recordatorio</Text>
                         <View style={{
                             borderWidth: 1,
                             borderColor: "#CECECA",
@@ -772,7 +821,12 @@ export default function Datos(props) {
                             alignItems: 'center',
                             marginBottom: '4%'
                         }}>
-                            <Text style={{ fontSize: 16, marginRight: '5%' }}>Requiere nueva visita</Text>
+                            <Text style={{
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                                fontSize: 16, 
+                                marginRight: '5%'
+                            }}>Requiere nueva visita</Text>
                             <Switch
                                 trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                 thumbColor={isVisita ? "#FF6B00" : "#ffffff"}
@@ -785,7 +839,13 @@ export default function Datos(props) {
                                 value={isVisita}
                             />
                         </View>
-                        <Text>Release</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Release</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%' }}
                             placeholder="Release"
@@ -796,7 +856,13 @@ export default function Datos(props) {
                                 // setDatos({ ...datos, release: text })
                             }}
                         />
-                        <Text>Observación Ingeniero</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Observación Ingeniero</Text>
                         <TextInput
                             style={{ ...styles.input, width: '100%', height: "10%", textAlignVertical: 'top' }}
                             placeholder="Observación Ingeniero"

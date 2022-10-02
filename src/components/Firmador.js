@@ -30,20 +30,23 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
             Alert.alert("Error", "Debe llenar todos los campos")
         }else{
             const { userId } = await getToken()
-            const OS_Firm = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+            let os = JSON.parse(await AsyncStorage.getItem("OS"))
+
+            const OS_Firm = JSON.parse(await AsyncStorage.getItem("FIRMADOR"))
             os_firma.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             os_firma.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             os_firma.UsuarioCreacion = userId
             os_firma.UsuarioModificacion = userId
+            os_firma.OrdenServicioID = os.OrdenServicioID
 
             os_firma.Correo = datauser.Correo
             os_firma.Cargo = datauser.Cargo
             os_firma.Nombre = datauser.Nombre
             os_firma.archivo = datauser.archivo
             os_firma.Observacion = datauser.Observacion
-            console.log("os_firma", os_firma)
             OS_Firm.push(os_firma)
-            await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firm))
+            console.log("FIRMADOR", OS_Firm)
+            await AsyncStorage.setItem("FIRMADOR", JSON.stringify(OS_Firm))
             handleClear()
             setUserData({
                 ...datauser,
@@ -70,12 +73,11 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 style: "cancel"
             },
             { text: "OK", onPress: async () => {
-                const OS = await AsyncStorage.getItem("OS")
-                let OS_OrdenServicioID = JSON.parse(OS)
-                OS_OrdenServicioID.OS_Firmas.splice(index, 1)
-                await AsyncStorage.setItem("OS", JSON.stringify(OS_OrdenServicioID))
-                setListF(OS_OrdenServicioID.OS_Firmas)
-                setObs(OS_OrdenServicioID.OS_Firmas.length > 0 ? true : false)
+                const OS_F = JSON.parse(await AsyncStorage.setItem("FIRMADOR"))
+                var OS_f = OS_F.splice(0, index)
+                await AsyncStorage.setItem("FIRMADOR", JSON.stringify(OS_f))
+                setListF(OS_f)
+                setObs(OS_f.length > 0 ? true : false)
             } }
         ]);
     }

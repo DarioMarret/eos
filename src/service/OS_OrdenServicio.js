@@ -223,9 +223,10 @@ export async function SelectOSOrdenServicioID(OrdenServicioID) {
 export async function DeleteOrdenServicioID(OrdenServicioID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
-            tx.executeSql(`SELECT * FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+            tx.executeSql(`DELETE FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
+                        console.log("existe OS_OrdenServicioID-->", _array)
                         resolve(_array)
                     } else {
                         resolve(false)

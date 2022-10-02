@@ -180,7 +180,7 @@ export default function Componentes(props) {
             setComponent(parte)
         }
     }
-    const EliminadrComponenteAgregado = (item) => {
+    const EliminadrComponenteAgregado = (item, index) => {
         Alert.alert(
             "Eliminar",
             "¿Está seguro de eliminar el componente?",
@@ -190,16 +190,16 @@ export default function Componentes(props) {
                     onPress: () => console.log("Cancel Pressed"),
                     style: "cancel"
                 },
-                { text: "OK", onPress: () => EliminarComponente(item) }
+                { text: "OK", onPress: () => EliminarComponente(item, index) }
             ],
             { cancelable: false }
         )
     }
 
-    const EliminarComponente = async (idLocal) => {
+    const EliminarComponente = async (idLocal,index) => {
         console.log("item", idLocal)
         var os_partesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-        var p = os_partesRepuestos.filter(x => x.idLocal != idLocal)
+        var p = os_partesRepuestos.split(0, index)
         console.log("index", p)
         await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(p))
         setComponent(p)

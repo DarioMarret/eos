@@ -169,13 +169,20 @@ export const ParseOS = async (data, accion) => {
 
     } else if (accion == "FIRMAR") {
 
-        data[0].OS_PartesRepuestos = JSON.parse(data[0].OS_PartesRepuestos)
-        data[0].OS_CheckList = JSON.parse(data[0].OS_CheckList)
-        data[0].OS_Tiempos = JSON.parse(data[0].OS_Tiempos)
-        data[0].OS_Firmas = JSON.parse(data[0].OS_Firmas)
+        await AsyncStorage.setItem("FIRMADOR", JSON.stringify([]))
+        await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
+        await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)
+        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
+        await AsyncStorage.setItem("OS_Anexos", data[0].OS_Anexos)
+        await AsyncStorage.setItem("OS_Firmas", data[0].OS_Firmas)
+
+        data[0].OS_PartesRepuestos = []
         data[0].OS_Colaboradores = []
+        data[0].OS_CheckList = []
         data[0].OS_Encuesta = []
-        data[0].OS_Anexos = JSON.parse(data[0].OS_Anexos)
+        data[0].OS_Tiempos = []
+        data[0].OS_Firmas = []
+        data[0].OS_Anexos = []
         return data[0]
 
     } else if (accion == "PROCESO") {

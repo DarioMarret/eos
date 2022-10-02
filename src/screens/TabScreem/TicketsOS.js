@@ -163,22 +163,20 @@ export default function TicketsOS(props) {
      */
     async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
         setLoading(true)
-        // console.log("equipo", equipo)
-        console.log("ticket_id", ticket_id)
-        console.log("OrdenServicioID", OrdenServicioID)
-        console.log("accion", accion)
         equipo[0]['isChecked'] = 'true'
         var clon;
+        var equipo_id = []
         if (accion == "PENDIENTE" || accion == "FINALIZADO" || accion == "PROCESO") {
             clon = await SelectOSOrdenServicioID(OrdenServicioID)
             let parse = await ParseOS(clon, accion)
-            console.log("Tickest",parse)
             await AsyncStorage.setItem("OS", JSON.stringify(parse))
+            equipo_id = await isChecked(parse.equipo_id)
+            equipo_id[0]['isChecked'] = 'true'
         }
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id,
-            equipo,
+            equipo: equipo_id,
             OrdenServicioID: OrdenServicioID == null || OrdenServicioID == "" ? null : OrdenServicioID,
             OSClone: OSClone == null ? clon : OSClone,
             Accion: accion

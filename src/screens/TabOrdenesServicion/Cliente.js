@@ -121,6 +121,7 @@ export default function Cliente(props) {
                     setIngeniero(ingeniero)
 
 
+                    var osItem = JSON.parse(await AsyncStorage.getItem("OS"))
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect !== null) {
                         const item = JSON.parse(itenSelect)
@@ -139,9 +140,7 @@ export default function Cliente(props) {
 
                         } else if (Accion == "OrdenSinTicket") {
 
-                            const os = await AsyncStorage.getItem("OS")
                             // console.log("os", os)
-                            const osItem = JSON.parse(os)
                             osItem.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
                             await getCliente()
@@ -150,9 +149,8 @@ export default function Cliente(props) {
 
                         } else if (Accion == "PENDIENTE") {
 
-                            const os = await AsyncStorage.getItem("OS")
-                            const osItem = JSON.parse(os)
                             let clie = await GetClienteClienteName(osItem.ClienteNombre)
+                            console.log("clie", osItem.ClienteNombre)
                             const pro = await getCantonesStorageBy(clie[0].CantonID)
                             console.log("pro", JSON.parse(clie[0].Sucursal)[0].Direccion)
                             osItem.Ciudad = pro[0].descripcion
@@ -188,7 +186,7 @@ export default function Cliente(props) {
                             setDisableSub(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {
-                           
+
                             await getCliente()
                             setIsEnabled(true)
                             setDisableSub(true)
@@ -198,8 +196,6 @@ export default function Cliente(props) {
                             setIsEnabled(true)
                             setDisableSub(true)
                             // await getCliente()
-                            const os = await AsyncStorage.getItem("OS")
-                            const osItem = JSON.parse(os)
                             let clie = await GetClienteClienteName(osItem.ClienteNombre)
                             console.log("clie", osItem.ClienteNombre)
                             const pro = await getCantonesStorageBy(clie[0].CantonID)
@@ -313,7 +309,13 @@ export default function Cliente(props) {
                     }}>Datos del Cliente</Text>
 
                     <View style={styles.ContainerInputs}>
-                        <Text>Cliente</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Cliente</Text>
                         <View style={{
                             borderWidth: 1,
                             borderColor: "#CECECA",
@@ -344,7 +346,13 @@ export default function Cliente(props) {
                                 color='#000000'
                             />
                         </View>
-                        <Text>Codigo equipo cliente</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Codigo equipo cliente</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="Código equipo cliente"
@@ -352,7 +360,13 @@ export default function Cliente(props) {
                             onChangeText={(text) => GuardarCodigoEquipoCliente(text)}
                             editable={true}
                         />
-                        <Text>Direccion</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Direccion</Text>
                         <View
                             style={{
                                 ...styles.input,
@@ -382,7 +396,13 @@ export default function Cliente(props) {
                                 }
                             </Picker>
                         </View>
-                        <Text>Ciudad</Text>
+                        <Text
+                            style={{
+                                fontSize: 16,
+                                fontWeight: "bold",
+                                fontFamily: "Roboto",
+                            }}
+                        >Ciudad</Text>
                         <TextInput
                             style={{
                                 ...styles.input,

@@ -197,6 +197,7 @@ export default function IngresoHoras(props) {
               FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
 
+            // console.log("FIRMADOR--->",await AsyncStorage.getItem("FIRMADOR"))
           }
         }
         setLoading(false)

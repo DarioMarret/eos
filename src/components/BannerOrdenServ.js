@@ -88,6 +88,7 @@ export default function BannerOrderServi(props) {
                     OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                     OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+                    // JSON.parse(await AsyncStorage.getItem("FIRMADOR")) 
                     OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
                     // OS.OS_CheckList = []
                     OS.Estado = "PROC"

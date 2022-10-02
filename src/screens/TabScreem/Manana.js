@@ -14,6 +14,8 @@ import calok from '../../../assets/icons/cal-ok.png'
 import { ticketID } from "../../utils/constantes"
 import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas"
 import LoadingActi from "../../components/LoadingActi"
+import useUser from "../../hook/useUser"
+import { ConsultarFechaUltimaActualizacion } from "../../service/config"
 
 
 
@@ -27,19 +29,34 @@ export default function Manana(props) {
     const [loading, setLoading] = useState(false)
 
 
+    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setreloadInt(!reloadInt)
+                console.log("OFFLINE-->", isOFFLINE)
                 setLoading(true)
-                var date = moment().add(1, "days").format('YYYY-MM-DD');
+                let updateMinuto = await ConsultarFechaUltimaActualizacion()
+                // if (updateMinuto && isOFFLINE) {
+                //     await RefresLogin()
+                //     await HistorialEquipoIngeniero();
+                //     await ActualizarFechaUltimaActualizacion()
+                // }
+                var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket`, [], (_, { rows }) => {
-                        console.log("rows", rows._array)
-                    })
-                })
-
+                // if (isOFFLINE) {
+                //     await getTPTCKStorage()
+                //     var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                //     var hoy = moment().format('YYYY-MM-DD');
+                //     var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                //     const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                //     ticket_id.map(async (r) => {
+                //         await EquipoTicket(r.ticket_id)
+                //         await OrdenServicioAnidadas(r.evento_id)
+                //     })
+                // }
                 setLoading(false)
             })()
         }, [])
@@ -61,19 +78,18 @@ export default function Manana(props) {
         }
     }
 
-    functionColor = (type) => {
-        if (type === "PENDIENTE") {
-            return "#FFECDE"
-        } else if (type === "PROCESO") {
-            return "#FFFFFF"
-        } else if (type === "FINALIZADO") {
-            return "#E2FAE0"
-        } else {
-            return "#FFFFFF"
-        }
-    }
-    async function Ordene(ticket_id) {
+
+    /**
+     * 
+     * @param {*} ticket_id 
+     * @param {*} evento_id 
+     * @param {*} estado 
+     * @param {*} OrdenServicioID 
+     */
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID) {
+        setLoading(true)
         console.log("ticket_id", ticket_id)
+        console.log("estado", estado)
         try {
             const anidada = await getOrdenServicioAnidadas(ticket_id)
             if (anidada == null) {
@@ -83,8 +99,9 @@ export default function Manana(props) {
                         console.log("id_equipo-->", rows._array[0].id_equipo)
                         db.transaction(tx => {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                                console.log("equipo selecionado hoy row", rows._array)
-                                Rutes(rows._array, ticket_id)
+                                // console.log("equipo selecionado hoy row", rows._array)
+                                console.log("equipo selecionado hoy row", JSON.parse(rows._array[0].historial)[0].OrdenServicioID)
+                                Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado)
                             })
                         })
                     })
@@ -99,19 +116,50 @@ export default function Manana(props) {
         }
     }
 
-    async function Rutes(equipo, ticket_id) {
-        if (equipo.length != 0) {
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id, equipo }))
-            navigation.navigate("Ordenes")
+    /**
+     * 
+     * @param {*} equipo 
+     * @param {*} ticket_id 
+     * @param {*} evento_id 
+     * @param {*} OrdenServicioID 
+     * @param {*} estado 
+     */
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado) {
+        try {
+            console.log("estado", estado)
+            console.log("ticket_id", ticket_id)
+            console.log("evento_id", evento_id)
+            console.log("OrdenServicioID", OrdenServicioID)
+            if (equipo.length != 0) {
+                await AsyncStorage.removeItem(ticketID)
+                OS.ticket_id = ticket_id
+                OS.evento_id = evento_id
+                await AsyncStorage.setItem("OS", JSON.stringify(OS))
+                await AsyncStorage.setItem(ticketID, JSON.stringify({
+                    ticket_id,
+                    equipo,
+                    OrdenServicioID: OrdenServicioID,
+                    OSClone: null,
+                    Accion: estado
+                }))
+                await isChecked(equipo[0].equipo_id)
+                time(800)
+                setLoading(false)
+                navigation.navigate("Ordenes")
+            }
+
+            if (equipo.length == 0) {
+                await AsyncStorage.removeItem(ticketID)
+                await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
+                setLoading(false)
+                navigation.navigate("Ticket")
+            }
+        } catch (error) {
+            console.log("error", error)
         }
 
-        if (equipo.length == 0) {
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
-            navigation.navigate("Ticket")
-        }
     }
+
 
     functionColor = (type) => {
         if (type === "PENDIENTE") {
@@ -128,7 +176,9 @@ export default function Manana(props) {
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity onPress={() => Ordene(String(item.ticket_id))}>
+                <TouchableOpacity
+                    onPress={() => Ordene(String(item.ticket_id), String(item.evento_id), item.ev_estado, item.OrdenServicioID)}>
+
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
@@ -162,12 +212,16 @@ export default function Manana(props) {
                         </View>
 
                         <View style={styles.calendar}>
-                            <Text>{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)}</Text>
                             <Image source={typeImage()} style={{ width: 30, height: 30 }} />
+                            <Text
+                                style={{
+                                    fontSize: 10
+                                }}
+                            >{moment().format(item.ev_horaAsignadaDesde).substring(0, 5)} - {moment().format(item.ev_horaAsignadaHasta).substring(0, 5)}</Text>
                         </View>
                     </View>
                 </TouchableOpacity>
-            </View>,
+            </View>
         ]
     }
 

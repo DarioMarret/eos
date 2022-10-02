@@ -273,3 +273,19 @@ export const getHistorialEquiposStorageChecklist = async (equipo_id) => {
         return null;
     }
 }
+
+export const getHistorialEquiposStoragId = async (equipo_id) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select * from historialEquipo where equipo_id = ?', [equipo_id], (_, { rows }) => {
+                    // console.log("rows getHistorialEquiposStorageChecked", rows._array);
+                    resolve(rows._array)
+                });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}
