@@ -128,7 +128,7 @@ export const ListaDiagnostico = async () => {
     return new Promise((resolve, reject) => {
         db.transaction(tx => {
             tx.executeSql('SELECT * FROM estadoEquipo', [], (_, { rows }) => {
-                console.log("ListaDiagnostico", rows._array);
+                // console.log("ListaDiagnostico", rows._array);
                 resolve(rows._array)
             });
         })

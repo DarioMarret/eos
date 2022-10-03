@@ -13,11 +13,15 @@ import moment from "moment"
 import LoadingActi from "../../components/LoadingActi"
 import { getHistorialEquiposStorageChecklist } from "../../service/historiaEquipo"
 import { getToken } from "../../service/usuario"
+import isEmpty from "is-empty"
+import { time } from "../../service/CargaUtil"
 
 export default function Datos(props) {
     const { navigation } = props
 
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false)
+
+    const [ OrdenServicioID, setOrdenServicioID ] = useState(0)
 
     const [isRecordatorio, setIsRecordatorio] = useState(false);
     const [isUpgrade, setIsUpgrade] = useState(false);
@@ -29,7 +33,7 @@ export default function Datos(props) {
     const [CategoriaTPINC, setCategoriaTPINC] = useState([])
     const [CategoriaESTEQ, setCategoriaESTEQ] = useState([])
 
-    const [select, setSelect] = useState(false)
+    const [select, setSelect] = useState(true)
 
 
     const [ofCheck, setOfCheck] = useState(false)
@@ -52,6 +56,7 @@ export default function Datos(props) {
         Sintomas: "",
         Diagnostico: "",
         EstadoEquipo: "",
+        EstadoEqPrevio: "",
         Acciones: "",
         IncluyoUpgrade: false,
         ComentarioRestringido: "",
@@ -94,7 +99,7 @@ export default function Datos(props) {
                         check_actividad: item.check_actividad,
                         OS_OrdenServicio: null,
                         CheckListID: 0,
-                        OrdenServicioID: 0,
+                        OrdenServicioID: OrdenServicioID == 0 ? null : OrdenServicioID,
                         empresa_id: 1,
                         IdCheckList: item.check_id,//#CONSULTA
                         Checked: false,
@@ -194,6 +199,7 @@ export default function Datos(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setLoading(true)
                 setCategoriaTPCK(await SelectCategoria("TPTCK"))
                 setCategoriaTPINC(await SelectCategoria("TPINC"))
                 setCategoriaESTEQ(await SelectCategoria("ESTEQ"))
@@ -201,19 +207,18 @@ export default function Datos(props) {
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
-                    const { Accion } = item
-
+                    const { Accion, OrdenServicioID } = item
+                    setOrdenServicioID(OrdenServicioID)
                     if (Accion == "FINALIZADO") {
                         console.log("Estamos FINALIZADO")
-                        TipoVisitadescripcion(osItem.TipoVisita)
-                        TipoIncidencia(osItem.tipoIncidencia)
-
                         setDatos({
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
                         setIsEnabled(false)
                         setDisableSub(false)
+                        setSelect(false)
+
                     } else if (Accion == "clonar") {
                         console.log("Estamos clonar")
 
@@ -233,13 +238,10 @@ export default function Datos(props) {
                         console.log("Estamos OrdenSinTicket")
 
                         console.log("osItem", datos.FechaSeguimientoMostrar)
-                        setDatos({
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
+                        setDatos(osItem)
+                        setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
-                        setOfCheck(false)
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist() : setOfCheck(false)
                         console.log("Checklist", await AsyncStorage.getItem("OS_CheckList"))
@@ -272,6 +274,7 @@ export default function Datos(props) {
                         })
                         setIsEnabled(true)
                         setDisableSub(true)
+
                     } else if (Accion == "PROCESO") {
 
                         console.log("Estamos PROCESO")
@@ -279,20 +282,22 @@ export default function Datos(props) {
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
-                        setSelect(false)//desabilidar select en este estado
+
+                        setSelect(true)//desabilidar select en este estado
                         setIsEnabled(true)
                         setDisableSub(true)
+
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist(osItem.equipo_id) : setOfCheck(false)
 
                     }
                 }
 
-                const inci = await ListaComponentes()
-                setIncidente(inci)
+                // const inci = await ListaComponentes()
+                // setIncidente(inci)
 
-                const estadoE = await ListaDiagnostico()
-                setEstadoEquipo(estadoE)
+                // const estadoE = await ListaDiagnostico()
+                // setEstadoEquipo(estadoE)
 
                 // let est = await EstadoSwitch(2)
                 // if (est.estado == 1) {
@@ -300,43 +305,11 @@ export default function Datos(props) {
                 // } else {
                 //     setIsEnabled(!false)
                 // }
+                time(1000)
+                setLoading(false)
             })()
         }, [])
     )
-
-    const SwitchGuardar = async () => {
-        setIsEnabled(!isEnabled)
-        if (isEnabled) {
-            await GuadadoOS()
-            let estado = await CambieEstadoSwitch(2, 1)
-            console.log("estado datos", estado.estado)
-            await AsyncStorage.setItem(DATOS_, JSON.stringify({
-                ...datos
-            }))
-        } else {
-            let estado = await CambieEstadoSwitch(2, 0)
-
-            console.log("estado datos", estado.estado)
-        }
-    }
-
-    const GuadadoOS = async () => {
-        const os = await AsyncStorage.getItem("OS")
-        const osItem = JSON.parse(os)
-        osItem.Acciones = datos.Acciones,//# accion inmediata
-            osItem.Causas = datos.Causas, //# Problema reportado
-            osItem.Sintomas = datos.Sintomas, //# sintomas
-            osItem.Diagnostico = datos.Diagnostico, //# diagnostico
-            osItem.EstadoEquipo = datos.EstadoEquipo, //# estado del equipo
-            osItem.ComentarioRestringido = datos.ComentarioRestringido, //# inf. adicional 1
-            osItem.ComentarioUpgrade = datos.ComentarioUpgrade, //# inf. adicional 2
-            osItem.IncluyoUpgrade = datos.IncluyoUpgrade, //# IncluyoUpgrade estado true false
-            osItem.release = datos.release, //# release
-            osItem.ObservacionIngeniero = datos.ObservacionIngeniero, //# ObservacionIngeniero
-            osItem.nuevaVisita = datos.nuevaVisita, //# requiere nueva visita
-            osItem.Seguimento = datos.Seguimento, //# sequimiento
-            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-    }
 
     const verChecklist = () => {
         if (listCheck.length > 0) {
@@ -478,7 +451,10 @@ export default function Datos(props) {
                                             style={styles.wFull}
                                             enabled={select}
                                             selectedValue={datos.TipoVisita != "" ? datos.TipoVisita : datos.TipoVisita}
-                                            onValueChange={(itemValue) => TipoVisitadescripcion(itemValue)}
+                                            onValueChange={(itemValue) => {
+                                                TipoVisitadescripcion(itemValue)
+                                                console.log("select", select)
+                                            }}
                                         >
                                             {
                                                 CategoriaTPCK.map((item, index) => (
@@ -546,8 +522,6 @@ export default function Datos(props) {
                                 borderColor: '#CECECA',
                                 borderRadius: 10,
                             }}>
-
-
                             {
                                 CategoriaTPINC.length > 0 ?
                                     <Picker
@@ -561,7 +535,7 @@ export default function Datos(props) {
                                         }}
                                         selectedValue={datos.tipoIncidencia}
                                         enabled={select}
-                                        onValueChange={(itemValue, itemIndex) => TipoIncidencia(itemValue)}>
+                                        onValueChange={(itemValue, itemIndex) => handleOnchange('tipoIncidencia', itemValue)}>
                                         {
                                             CategoriaTPINC.map((item, index) => (
                                                 item.IdCatalogoDetalle == datos.tipoIncidencia ?
@@ -655,14 +629,14 @@ export default function Datos(props) {
                                 enabled={isEnabled}
                                 onValueChange={(itemValue, itemIndex) =>
                                     handleOnchange('EstadoEquipo', itemValue)
-                                    // setDatos({ ...datos, EstadoEquipo: itemValue })
                                 }>
                                 {
-                                    CategoriaESTEQ.length > 0 ?
+                                    CategoriaESTEQ ?
                                         CategoriaESTEQ.map((item, index) => (
-                                            item.IdCatalogoDetalle == datos.EstadoEquipo ?
+                                            // console.log('entro', datos.EstadoEquipo) ,
+                                            datos.EstadoEquipo == item.IdCatalogoDetalle ?
                                                 <Picker.Item
-                                                    key={index}
+                                                    key={index + 1}
                                                     label={item.Descripcion}
                                                     value={item.IdCatalogoDetalle}
                                                     selected={true}
@@ -708,9 +682,10 @@ export default function Datos(props) {
                                 flexDirection: 'row',
                                 alignItems: 'center',
                             }}>
-                                <Text style={{ 
+                                <Text style={{
                                     fontWeight: 'bold',
-                                    fontSize: 16, marginRight: 4 }}>Recordatorio</Text>
+                                    fontSize: 16, marginRight: 4
+                                }}>Recordatorio</Text>
                                 <Switch
                                     trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                     thumbColor={isRecordatorio ? "#FF6B00" : "#ffffff"}
@@ -747,10 +722,11 @@ export default function Datos(props) {
                                 flexDirection: 'row',
                                 alignItems: 'center',
                             }}>
-                                <Text style={{ 
+                                <Text style={{
                                     fontWeight: "bold",
                                     fontFamily: "Roboto",
-                                    fontSize: 16, marginRight: 4 }}>Incluye Upgrade:</Text>
+                                    fontSize: 16, marginRight: 4
+                                }}>Incluye Upgrade:</Text>
                                 <Switch
                                     trackColor={{ false: "#FFAF75", true: "#FFAF75" }}
                                     thumbColor={isUpgrade ? "#FF6B00" : "#ffffff"}
@@ -824,7 +800,7 @@ export default function Datos(props) {
                             <Text style={{
                                 fontWeight: "bold",
                                 fontFamily: "Roboto",
-                                fontSize: 16, 
+                                fontSize: 16,
                                 marginRight: '5%'
                             }}>Requiere nueva visita</Text>
                             <Switch

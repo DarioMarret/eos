@@ -21,7 +21,7 @@ import axios from "axios";
 import { getToken } from "../../service/usuario";
 import { AntDesign } from "@expo/vector-icons";
 import { HistorialEquipoIngeniero, isChecked, isCheckedCancelaReturn } from "../../service/historiaEquipo";
-import { FinalizarOS, ParseOS } from "../../service/OS";
+import { FinalizarOS, FinalizarOS_, ParseOS } from "../../service/OS";
 import moment from "moment";
 import { GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
 import { EquipoTicket } from "../../service/equipoTicketID";
@@ -97,6 +97,7 @@ export default function TicketsOS(props) {
     async function AgregarFirma(OrdenServicioID) {
         setLoading(true)
         let clon = await SelectOSOrdenServicioID(OrdenServicioID)
+        clon.OrdenServicioID = OrdenServicioID
         let parse = await ParseOS(clon, "FIRMAR")
         await AsyncStorage.setItem("OS", JSON.stringify(parse))
         setUserData(parse.OS_Firmas)
@@ -228,13 +229,20 @@ export default function TicketsOS(props) {
 
     async function Finalizar() {
         setLoading(true)
-        var OrdenServicioID = []
+        var OrdenServicioI = []
         eventosAnidados.map((item, index) => {
             if (item.check == true) {
-                OrdenServicioID.push(item.OrdenServicioID)
+                OrdenServicioI.push(item.OrdenServicioID)
             }
         })
-        const respuesta = await FinalizarOS(OrdenServicioID)
+        var os = JSON.parse(await AsyncStorage.getItem("OS"))
+        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
+        const { OrdenServicioID } = itenSelect
+        if (OrdenServicioID != null) {
+            let respuesta = await FinalizarOS_(OrdenServicioID, os)
+            console.log("FinalizarOS", respuesta)
+        }
+        const respuesta = await FinalizarOS(OrdenServicioI)
         if (respuesta == 200) {
             const re = await Sincronizar()
             if (re) {

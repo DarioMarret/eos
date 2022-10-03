@@ -1,16 +1,19 @@
-import { useRef, useState } from "react";
-import { Button, StyleSheet, SafeAreaView, Text, TextInput, TouchableOpacity, ScrollView, View, Alert } from "react-native";
+import { StyleSheet, Text, TextInput, TouchableOpacity, ScrollView, View, Alert } from "react-native";
 import Signature from 'react-native-signature-canvas';
 import { AntDesign } from '@expo/vector-icons';
 import { getToken } from "../service/usuario";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { os_firma } from "../utils/constantes";
+import { useFocusEffect } from "@react-navigation/native";
+import React, { useCallback, useEffect, useRef, useState } from "react"
+import { ActualizarOrdenServicioFirmas, ListarFirmas } from "../service/OS_OrdenServicio";
 
 
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
     const ref = useRef()
     const [listF, setListF] = useState([])
+    const [OrdenServicioID, setOrdenServicioID] = useState(0)
     const [obs, setObs] = useState(false)
 
     const handleOK = async (signature) => {
@@ -21,32 +24,44 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
         })
     };
 
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                let os = JSON.parse(await AsyncStorage.getItem("OS"))
+                setOrdenServicioID(os.OrdenServicioID)
+                let firmas = JSON.parse(await ListarFirmas(os.OrdenServicioID))
+                await AsyncStorage.setItem("OS_Firmas", JSON.stringify(firmas))
+                let firm = firmas.filter((item) => item.Estado == "ACTI")
+                console.log("f", firm)
+                setListF(firm)
+                console.log("firmas-->", firm)
+            })()
+        }, [])
+    )
 
     const Grabar = async () => {
-        if(datauser.Nombre == "" || datauser.Cargo == "" || datauser.Correo == "" || datauser.archivo == ""){
+        if (datauser.Nombre == "" || datauser.Cargo == "" || datauser.Correo == "" || datauser.archivo == "") {
             console.log("Falta datos", datauser.Nombre)
             console.log("Falta datos", datauser.Cargo)
             console.log("Falta datos", datauser.Correo)
             Alert.alert("Error", "Debe llenar todos los campos")
-        }else{
+        } else {
             const { userId } = await getToken()
-            let os = JSON.parse(await AsyncStorage.getItem("OS"))
-
-            const OS_Firm = JSON.parse(await AsyncStorage.getItem("FIRMADOR"))
+            const OS_Firm = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
             os_firma.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             os_firma.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
             os_firma.UsuarioCreacion = userId
             os_firma.UsuarioModificacion = userId
-            os_firma.OrdenServicioID = os.OrdenServicioID
-
+            os_firma.OrdenServicioID = OrdenServicioID
             os_firma.Correo = datauser.Correo
             os_firma.Cargo = datauser.Cargo
             os_firma.Nombre = datauser.Nombre
-            os_firma.archivo = datauser.archivo
+            os_firma.archivo = datauser.archivo.split("data:image/png;base64,")[1]
             os_firma.Observacion = datauser.Observacion
             OS_Firm.push(os_firma)
-            console.log("FIRMADOR", OS_Firm)
-            await AsyncStorage.setItem("FIRMADOR", JSON.stringify(OS_Firm))
+            console.log("OS_Firmas", OS_Firm)
+            await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firm))
+            await ActualizarOrdenServicioFirmas(OS_Firm, os.OrdenServicioID)
             handleClear()
             setUserData({
                 ...datauser,
@@ -61,24 +76,36 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 UsuarioModificacion: "",
             })
             setListF(OS_Firm)
-            console.log("datauser", OS_Firm.length)
             setObs(OS_Firm.length > 0 ? true : false)
         }
     }
-    const EliminarFirma = (index) => {
+    const EliminarFirma = (item) => {
         Alert.alert("Eliminar Firma", "¿Desea eliminar la firma?", [
             {
                 text: "Cancelar",
                 onPress: () => console.log("Cancel Pressed"),
                 style: "cancel"
             },
-            { text: "OK", onPress: async () => {
-                const OS_F = JSON.parse(await AsyncStorage.setItem("FIRMADOR"))
-                var OS_f = OS_F.splice(0, index)
-                await AsyncStorage.setItem("FIRMADOR", JSON.stringify(OS_f))
-                setListF(OS_f)
-                setObs(OS_f.length > 0 ? true : false)
-            } }
+            {
+                text: "OK", onPress: async () => {
+                    var f = listF.map((firmas) => {
+                        if (firmas.FechaCreacion == item.FechaCreacion) {
+                            return {
+                                ...firmas,
+                                Estado: "INAC"
+                            }
+                        } else {
+                            return firmas
+                        }
+                    })
+                    await AsyncStorage.setItem("OS_Firmas", JSON.stringify(f))
+                    let firm = f.filter((item) => item.Estado == "ACTI")
+                    console.log("f", f)
+                    setListF(firm)
+                    setObs(firm.length > 0 ? true : false)
+                    await ActualizarOrdenServicioFirmas(f, OrdenServicioID)
+                }
+            }
         ]);
     }
 
@@ -178,7 +205,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                                             <View key={index} style={styles.headerTitle}>
                                                 <Text>{item.Nombre}</Text>
                                                 <Text>{item.Cargo}</Text>
-                                                <TouchableOpacity onPress={() => { EliminarFirma(index)}}>
+                                                <TouchableOpacity onPress={() => { EliminarFirma(item) }}>
                                                     <AntDesign name="delete" size={24} color="red" />
                                                 </TouchableOpacity>
                                             </View>

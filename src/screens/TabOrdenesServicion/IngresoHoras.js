@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import LoadingActi from "../../components/LoadingActi";
+import { time } from "../../service/CargaUtil";
 
 
 
@@ -30,7 +31,7 @@ export default function IngresoHoras(props) {
 
   const [loading, setLoading] = useState(false)
 
-  const [fini, setFini] = useState(true);
+  const [fini, setFini] = useState(false);
 
   const [tiempoOS, setTiempoOS] = useState("")
 
@@ -127,6 +128,25 @@ export default function IngresoHoras(props) {
     switch: false,
   })
 
+  function LimpiarImput(){
+    setFechas({
+      ...fechas,
+      Fecha: "",
+      HoraSalidaOrigen: "",
+      HoraLlegadaCliente: "",
+      HoraInicioTrabajo: "",
+      HoraFinTrabajo: "",
+      HoraSalidaCliente: "",
+      TiempoEspera: 0,
+      TiempoTrabajo: 0,
+      TiempoViaje: 0,
+      FechaMostrar: "",
+      HoraLlegadaSgteDestino: "",
+      TiempoViajeSalida: 0,
+      switch: false,
+    })
+  }
+
 
   useFocusEffect(
     useCallback(() => {
@@ -142,10 +162,14 @@ export default function IngresoHoras(props) {
           if (Accion == "OrdenSinTicket") {
 
             console.log("OrdenSinTicket")
-            console.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
+            // console.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
+            // await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([]))
+            LimpiarImput()
+            setFini(false)
 
           } else if (Accion == "clonar") {
 
+            LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
             setFechas({
@@ -153,11 +177,13 @@ export default function IngresoHoras(props) {
               ...OS_Tiempos[0],
               FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
+            setFini(false)
 
           } else if (Accion == "FINALIZADO") {
 
             console.log("FINALIZADO")
-            setFini(false)
+            LimpiarImput()
+            setFini(true)
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
@@ -167,7 +193,7 @@ export default function IngresoHoras(props) {
           } else if (Accion == "PENDIENTE") {
 
             console.log("PENDIENTE")
-
+            LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
             setFechas({
@@ -175,10 +201,11 @@ export default function IngresoHoras(props) {
               ...OS_Tiempos[0],
               FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
-
+            setFini(false)
 
           } else if (Accion == "NUEVO OS TICKET") {
             console.log("NUEVO OS TICKET")
+            LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
             setFechas({
@@ -186,9 +213,11 @@ export default function IngresoHoras(props) {
               ...OS_Tiempos[0],
               FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
+            setFini(false)
 
-          }else if (Accion == "PROCESO") {
+          } else if (Accion == "PROCESO") {
             console.log("PROCESO")
+            LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
             setFechas({
@@ -196,10 +225,10 @@ export default function IngresoHoras(props) {
               ...OS_Tiempos[0],
               FechaMostrar: Moment().format('DD/MM/YYYY'),
             })
-
-            // console.log("FIRMADOR--->",await AsyncStorage.getItem("FIRMADOR"))
+            setFini(false)
           }
         }
+        await time(300)
         setLoading(false)
       })()
     }, [])
@@ -224,6 +253,7 @@ export default function IngresoHoras(props) {
             <LoadingActi loading={loading} />
             <Text>Fecha</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showDatePicker('dateInit')}
               style={styles.input}>
               <TextInput
@@ -240,6 +270,7 @@ export default function IngresoHoras(props) {
             </TouchableOpacity>
             <Text>Salida Origen</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showTimePicker('HoraSalidaOrigen')}
               style={styles.input}>
               <TextInput
@@ -256,6 +287,7 @@ export default function IngresoHoras(props) {
             </TouchableOpacity>
             <Text>Arribo Cliente</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showTimePicker('HoraLlegadaCliente')}
               style={styles.input}>
               <TextInput
@@ -272,6 +304,7 @@ export default function IngresoHoras(props) {
             </TouchableOpacity>
             <Text>Inicio trabajo</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showTimePicker('HoraInicioTrabajo')}
               style={styles.input}>
               <TextInput
@@ -288,6 +321,7 @@ export default function IngresoHoras(props) {
             </TouchableOpacity>
             <Text>Fin trabajo</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showTimePicker('HoraFinTrabajo')}
               style={styles.input}>
               <TextInput
@@ -304,6 +338,7 @@ export default function IngresoHoras(props) {
             </TouchableOpacity>
             <Text>Salida cliente</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showTimePicker('HoraSalidaCliente')}
               style={styles.input}>
               <TextInput
@@ -320,6 +355,7 @@ export default function IngresoHoras(props) {
             </TouchableOpacity>
             <Text>Hora llegada siguiente destino</Text>
             <TouchableOpacity
+              disabled={fini}
               onPress={() => showTimePicker('HoraLlegadaSgteDestino')}
               style={styles.input}>
               <TextInput
@@ -361,7 +397,8 @@ export default function IngresoHoras(props) {
         screen={"6-INGRESO HORAS"}
       />
     </View >
-  );
+  )
+
 }
 
 const styles = StyleSheet.create({

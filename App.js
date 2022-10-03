@@ -52,11 +52,7 @@ export default function App() {
 
   useEffect(() => {
     const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
-      console.log("Connection type", state.type);
-      console.log("Is connected?", state.isConnected);
-      console.log("Is offline?", state.isInternetReachable);
       console.log("\n")
-
       // var offline = state.isConnected && state.isInternetReachable
       var offline = state.isConnected
       console.log("offline", offline)

@@ -42,7 +42,7 @@ export default function OdernServicio(props) {
     )
 
 
-    function TabTitle(name){
+    function TabTitle(name) {
         let name_ = name.split("-")
         console.log(name_[1])
         setTitleName(name_[1])
@@ -56,76 +56,79 @@ export default function OdernServicio(props) {
 
     return (
         <tabContext.Provider value={TabData}>
-        <Tab.Navigator
-            initialRouteName="1-EQUIPO"
-            style={styles.container}
-            screenOptions={{
-                tabBarStyle: {
-                    top: -1,
-                    position: 'absolute',
-                    backgroundColor: '#EA0029',
-                },
-                tabBarActiveTintColor: "#FFF",
-                tabBarInactiveTintColor: '#FB6F6F',
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: 'normal',
-                    paddingVertical: 5,
-                    paddingHorizontal: 5,
-                    textTransform: 'uppercase',
+            <Tab.Navigator
+                initialRouteName="1-EQUIPO"
+                style={styles.container}
+                screenOptions={{
+                    tabBarStyle: {
+                        top: -1,
+                        position: 'absolute',
+                        backgroundColor: '#EA0029',
+                    },
+                    tabBarActiveTintColor: "#FFF",
+                    tabBarInactiveTintColor: '#FB6F6F',
+                    tabBarLabelStyle: {
+                        fontSize: 15,
+                        fontWeight: 'bold',
+                        paddingVertical: 5,
+                        paddingHorizontal: 5,
+                        textTransform: 'uppercase',
 
-                },
-                tabBarIcon: ({ color, size, focused }) => {
-                    let iconName;
-                    if (focused) {
-                        iconName = 'calendar-check';
-                    } else {
-                        iconName = 'calendar-blank';
+                    },
+                    tabBarIcon: ({ color, size, focused }) => {
+                        let iconName;
+                        if (focused) {
+                            iconName = 'calendar-check';
+                        } else {
+                            iconName = 'calendar-blank';
+                        }
+                        return (
+                            <MaterialCommunityIcons name={iconName} size={0} color={color} />
+                            
+                        );
                     }
-                    return <MaterialCommunityIcons name={iconName} size={0} color={color} />;
-                }
-            }}
-        >
+                }}
+            >
 
-            <Tab.Screen
-                name="1-EQUIPO"
-                component={Equipo}
-                options={{
-                    title: Title_name == "EQUIPO" ? Title_name : "1" ,
-                    headerShown: false
-                }}
-            />
-            <Tab.Screen name="2-CLIENTE" component={Cliente}
-                options={{
-                    title: Title_name == "CLIENTE" ? Title_name : "2",
-                    headerShown: false
-                }}
-            />
-            <Tab.Screen name="3-DATOS" component={Datos}
-                options={{
-                    title: Title_name == "DATOS" ? Title_name : "3",
-                    headerShown: false
-                }}
-            />
-            <Tab.Screen name="4-COMPONENTES" component={Componentes}
-                options={{
-                    title: Title_name == "COMPONENTES" ? Title_name : "4",
-                    headerShown: false,
-                }}
-            />
-            <Tab.Screen name="5-ADJUNTOS" component={Adjuntos}
-                options={{
-                    title: Title_name == "ADJUNTOS" ? Title_name : "5",
-                    headerShown: false
-                }}
-            />
-            <Tab.Screen name="6-INGRESO HORAS" component={IngresoHoras}
-                options={{
-                    title: Title_name == "INGRESO HORAS" ? Title_name : "6",
-                    headerShown: false
-                }}
-            />
-        </Tab.Navigator>
+                <Tab.Screen
+                    name="1-EQUIPO"
+                    component={Equipo}
+                    options={{
+                        title: Title_name == "EQUIPO" ? Title_name : "1",
+                        headerShown: false
+                    }}
+                />
+                <Tab.Screen name="2-CLIENTE" component={Cliente}
+                    options={{
+                        title: Title_name == "CLIENTE" ? Title_name : "2",
+                        headerShown: false
+                    }}
+                />
+                <Tab.Screen name="3-DATOS" component={Datos}
+                    options={{
+                        title: Title_name == "DATOS" ? Title_name : "3",
+                        headerShown: false
+                    }}
+                />
+                <Tab.Screen name="4-COMPONENTES" component={Componentes}
+                    options={{
+                        title: Title_name == "COMPONENTES" ? Title_name : "4",
+                        headerShown: false,
+                    }}
+                />
+                <Tab.Screen name="5-ADJUNTOS" component={Adjuntos}
+                    options={{
+                        title: Title_name == "ADJUNTOS" ? Title_name : "5",
+                        headerShown: false
+                    }}
+                />
+                <Tab.Screen name="6-INGRESO HORAS" component={IngresoHoras}
+                    options={{
+                        title: Title_name == "INGRESO HORAS" ? Title_name : "6",
+                        headerShown: false
+                    }}
+                />
+            </Tab.Navigator>
         </tabContext.Provider>
     );
 }

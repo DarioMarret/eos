@@ -29,25 +29,24 @@ export const OSOrdenServicioID = async (OrdenServicioID) => {
     }
 }
 export const UpdateOSOrdenServicioID = async (OrdenServicioID) => {
-        await DeleteOrdenServicioID(OrdenServicioID)
-        try {
-            const { token, userId } = await getToken()
-            console.log("----> ", token, "\n", userId)
-            const url = `${host}MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`;
-            const response = await fetch(url, {
-                method: "GET",
-                headers: {
-                    'Authorization': 'Bearer ' + token
-                }
-            })
-            const resultado = await response.json()
-            const { Response } = resultado
-            // console.log("OSOrdenServicioID-->", Response)
-            const res = await InserOSOrdenServicioID(Response)
-            return true
-        } catch (error) {
-            console.log("errores OSOrdenServicioID--->", error);
-        }
+    await DeleteOrdenServicioID(OrdenServicioID)
+    try {
+        const { token, userId } = await getToken()
+        console.log("----> ", token, "\n", userId)
+        const url = `${host}MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`;
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        const resultado = await response.json()
+        const { Response } = resultado
+        await InserOSOrdenServicioID(Response)
+        return true
+    } catch (error) {
+        console.log("errores OSOrdenServicioID--->", error);
+    }
 }
 
 export const InserOSOrdenServicioID = async (r) => {
@@ -199,7 +198,7 @@ export const InserOSOrdenServicioID = async (r) => {
             })
             resolve(true)
         });
-    }else{
+    } else {
         return true
     }
 }
@@ -385,7 +384,7 @@ export async function ComponenteOSOrdenServicioID(OrdenServicioID) {
 
 
 export async function ActualizarOrdenServicio(r, OrdenServicioID) {
-    console.log("ActualizarOrdenServicio",r, OrdenServicioID)
+    console.log("ActualizarOrdenServicio", r, OrdenServicioID)
     var OS_PartesRepuestos = await AsyncStorage.getItem("OS_PartesRepuestos")
     var OS_CheckList = await AsyncStorage.getItem("OS_CheckList")
     var OS_Tiempos = await AsyncStorage.getItem("OS_Tiempos")
@@ -524,6 +523,144 @@ export async function ActualizarOrdenServicio(r, OrdenServicioID) {
                     return false
                 }
             })
-    });
+    })
+}
 
+export const ListarFirmas = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_Firmas FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(_array[0].OS_Firmas)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
+    })
+}
+//para actualizarla firma
+export async function ActualizarOrdenServicioFirmas(Firmas, OrdenServicioID) {
+    console.log("ActualizarOrdenServicioFirmas", OrdenServicioID)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_Firmas = ?,
+            OS_LOCAL = ?
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(Firmas), 'UPDATE',
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    });
+}
+export async function ActualizarOrdenServicioTiempo(Tiempos, OrdenServicioID) {
+    console.log("ActualizarOrdenServicioTiempo", Tiempos, OrdenServicioID)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_Tiempos = ?,
+            OS_LOCAL = ?
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(Tiempos), 'UPDATE',
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    })
+}
+export async function ActualizarOrdenServicioPartesRepuestos(PartesRepuestos, OrdenServicioID) {
+    console.log("ActualizarOrdenServicioPartesRepuestos", PartesRepuestos, OrdenServicioID)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_PartesRepuestos = ?,
+            OS_LOCAL = ?
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(PartesRepuestos), 'UPDATE',
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    })
+}
+
+export async function ActualizarOrdenServicioAnexos(Anexos, OrdenServicioID) {
+    console.log("ActualizarOrdenServicioAnexos", Anexos, OrdenServicioID)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_Anexos = ?,
+            OS_LOCAL = ?
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(Anexos), 'UPDATE',
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    })
+}
+
+export async function ActualizarOrdenServicioCheckList(CheckList, OrdenServicioID) {
+    console.log("ActualizarOrdenServicioCheckList", CheckList, OrdenServicioID)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_CheckList = ?,
+            OS_LOCAL = ?
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(CheckList), 'UPDATE',
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    })
+}
+
+export async function ActualizarOrdenServicioOS(OS, OrdenServicioID) {
+    console.log("ActualizarOrdenServicioOS", OS, OrdenServicioID)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET
+            OS_OS = ?,
+            OS_LOCAL = ?
+            WHERE OrdenServicioID = ?`,
+            [JSON.stringify(OS), 'UPDATE',
+                OrdenServicioID,
+            ], (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    })
 }

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { time } from "./CargaUtil";
-import { InserOSOrdenServicioID } from "./OS_OrdenServicio";
+import { InserOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 export const PostOS = async (data) => {
@@ -71,11 +71,93 @@ export const FinalizarOS = async (OrdenServicioID) => {
                 }
             })
             console.log("status", status)
+           
         })
         resolve(200)
     })
 }
 
+export const FinalizarOS_ = async (OrdenServicioID, datos) => {
+    const OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+    const OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+    const OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+    const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+    const OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+    datos.OS_PartesRepuestos = OS_PartesRepuestos
+    datos.OS_CheckList = OS_CheckList
+    datos.OS_Tiempos = OS_Tiempos
+    datos.OS_Firmas = OS_Firmas
+    datos.OS_Colaboradores = []
+    datos.OrdenServicioID = OrdenServicioID
+    datos.OS_Encuesta = []
+    datos.Estado = "FINA"
+    console.log("FinalizarOS_", datos)
+    datos.OS_Anexos = OS_Anexos
+    const { token } = await getToken()
+    try {
+        const { data, status } = await axios.put(
+            `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
+            datos, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        console.log("PutOS", data)
+        console.log("PutOS Status", status)
+        if (status == 204) {
+            await FinalizarOS([OrdenServicioID])
+            await UpdateOSOrdenServicioID(OrdenServicioID)
+            return status
+        }else{
+            return false
+        }
+    } catch (error) {
+        console.log("PutOS ERROR", error)
+        return false
+    }
+}
+
+export const FinalizarOSmasivo = async (OrdenServicioID, datos) => {
+    const OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+    const OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+    const OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+    const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+    const OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+    datos.OS_PartesRepuestos = OS_PartesRepuestos
+    datos.OS_CheckList = OS_CheckList
+    datos.OS_Tiempos = OS_Tiempos
+    datos.OS_Firmas = OS_Firmas
+    datos.OS_Colaboradores = []
+    datos.OrdenServicioID = OrdenServicioID
+    datos.OS_Encuesta = []
+    datos.Estado = "FINA"
+    console.log("FinalizarOS_", datos)
+    datos.OS_Anexos = OS_Anexos
+    const { token } = await getToken()
+    try {
+        const { data, status } = await axios.put(
+            `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
+            datos, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        console.log("PutOS", data)
+        console.log("PutOS Status", status)
+        if (status == 204) {
+            await FinalizarOS([OrdenServicioID])
+            await UpdateOSOrdenServicioID(OrdenServicioID)
+            return status
+        }else{
+            return false
+        }
+    } catch (error) {
+        console.log("PutOS ERROR", error)
+        return false
+    }
+}
 
 // Language: javascript
 
@@ -127,9 +209,6 @@ export const ParseOS = async (data, accion) => {
         delete data[0].OS_FINALIZADA
         delete data[0].OS_ASUNTO
         delete data[0].codOS
-
-
-
 
         return data[0]
 

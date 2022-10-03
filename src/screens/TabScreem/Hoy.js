@@ -1,13 +1,11 @@
-import { ActivityIndicator, Button, FlatList, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
-import { OrdenServicioAnidadas, getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
-import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
-import { HistorialEquipoIngeniero, isChecked } from "../../service/historiaEquipo";
+import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ConsultarFechaUltimaActualizacion } from "../../service/config";
+import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
+import { GetEventos } from "../../service/OSevento";
+import { isChecked } from "../../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { EquipoTicket } from "../../service/equipoTicketID";
 import { useFocusEffect } from "@react-navigation/native";
 import { useCallback, useState } from "react";
-import NetInfo from '@react-native-community/netinfo';
 import { OS, ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
 import Banner from "../../components/Banner";
@@ -18,8 +16,6 @@ import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
 import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
-import { RefresLogin } from "../../service/usuario";
-import { getTPTCKStorage } from "../../service/catalogos";
 import LoadingActi from "../../components/LoadingActi";
 
 import useUser from '../../hook/useUser';
@@ -38,7 +34,7 @@ export default function Hoy(props) {
         useCallback(() => {
             (async () => {
                 setreloadInt(!reloadInt)
-                console.log("OFFLINE-->", isOFFLINE)
+                console.log("OFFLINE--> hola", isOFFLINE)
                 setLoading(true)
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
                 // if (updateMinuto && isOFFLINE) {
@@ -48,6 +44,7 @@ export default function Hoy(props) {
                 // }
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
+                console.log("respuesta-->", respuesta)
                 setEventos(respuesta)
                 // if (isOFFLINE) {
                 //     await getTPTCKStorage()

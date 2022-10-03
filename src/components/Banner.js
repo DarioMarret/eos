@@ -8,11 +8,10 @@ import React, { useState } from "react";
 import moment from "moment";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
-// import { OSOrdenServicioID } from "../service/OS_OrdenServicio";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OS, ticketID } from "../utils/constantes";
 
-import useUser from '../hook/useUser';
+import { Network } from "../service/Network";
 
 
 export default function Banner(props) {
@@ -21,13 +20,9 @@ export default function Banner(props) {
     const [update, setupdate] = useState(false)
     const [message, setMessage] = useState("Actualizando...")
 
-    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
-    console.log("Banner-->", isOFFLINE)
-    console.log("\n")
     async function ActualizarEventos() {
-        setreloadInt(!reloadInt)
-        // console.log("OFFLINE-->", isOFFLINE)
-        // if(isOFFLINE){
+        (console.log(await Network()))
+        if(Network()){
             Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexción estable", [
                 {
                     text: "OK",
@@ -40,9 +35,15 @@ export default function Banner(props) {
                     style: { color: "#FF6B00" },
                 }
             ])
-        // }else{
-        //     Alert.alert("Sin Conexion", "Actualmente se encuantra sin conexion")
-        // }
+        }else{
+            Alert.alert("Error", "No tienes conexión a internet", [
+                {
+                    text: "OK",
+                    onPress: () => console.log("hola Mundo"),
+                    style: { color: "#FF6B00" },
+                },
+            ])
+        }
     }
     async function UP() {
         setupdate(true)
@@ -130,11 +131,11 @@ export default function Banner(props) {
                     }
 
                 </TouchableOpacity>
-                {
+                {/* {
                     isOFFLINE ? 
                     <Text style={{ color: "#FFF", fontSize: 10, marginLeft: 10 }}>Modo Online</Text> 
                     :<Text style={{ color: "#FFF", fontSize: 10, marginLeft: 10 }}>Modo Offline</Text> 
-                }
+                } */}
             </View>
         </>
     );

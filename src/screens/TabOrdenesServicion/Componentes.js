@@ -84,31 +84,29 @@ export default function Componentes(props) {
             (async () => {
                 try {
                     const inci = await ListaComponentes()
-                    console.log("ListaComponentes-->", inci)
+                    // console.log("ListaComponentes-->", inci)
                     setIncidente(inci)
-                    let est = await EstadoSwitch(3)
-                    if (est.estado == 1) {
-                        setIsEnabled(!true)
-                    } else {
-                        setIsEnabled(!false)
-                    }
-
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect != null) {
                         const item = JSON.parse(itenSelect)
-                        const { Accion } = item
+                        const { Accion, OrdenServicioID } = item
+                        console.log("Accion-->",OrdenServicioID)
                         if (Accion == "FINALIZADO") {
                             setFini(false)
 
                             const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            setComponent(parte)
+                            let filter = parte.filter((item) => item.Estado == "ACTI")
+                            setComponent(filter)
+                            // setOrdenServicioID(parte[0].OrdenServicioID)
 
                         } else if (Accion == "PENDIENTE") {
 
                             console.log("PENDIENTE")
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            console.log("PENDIENTE-->", parte)
-                            setComponent(parte)
+                            let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            let filter = parte.filter((item) => item.Estado == "ACTI")
+                            setComponent(filter)
+                            setOrdenServicioID(parte[0].OrdenServicioID)
+                            setFini(true)
 
                         } else if (Accion == "OrdenSinTicket") {
 
@@ -116,23 +114,30 @@ export default function Componentes(props) {
                             
                             const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                             console.log("OrdenSinTicket-->", parte)
-                            setComponent(parte)
+                            setFini(true)
 
                         } else if (Accion == "clonar") {
 
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            setComponent(parte)
+                            let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            let filter = parte.filter((item) => item.Estado == "ACTI")
+                            setComponent(filter)
+                            setOrdenServicioID(parte[0].OrdenServicioID)
+                            setFini(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {
 
                             console.log("NUEVO OS TICKET")
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            setComponent(parte)
-
+                            let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            let filter = parte.filter((item) => item.Estado == "ACTI")
+                            setComponent(filter)
+                            setOrdenServicioID(parte[0].OrdenServicioID)
+                            setFini(true)
+                            
                         }else if (Accion == "PROCESO") {
-
+                            
                             console.log("PROCESO")
                             const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            console.log("NUEVO OS TICKET-->", parte)
                             var p = parte.map((item, index) => {
                                 return {
                                     idLocal: index+1,
@@ -140,10 +145,11 @@ export default function Componentes(props) {
                                     ...item,
                                 }
                             })
-                            console.log("PROCESO-->", p)
-                            setComponent(p)
+                            let filter = p.filter((item) => item.Estado == "ACTI")
+                            setComponent(filter)
                             setOrdenServicioID(p[0].OrdenServicioID)
                             await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(p))
+                            setFini(true)
 
                         }
                     }
@@ -177,7 +183,8 @@ export default function Componentes(props) {
             ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
             parte.push(ParteRespuestos)
             await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(parte))
-            setComponent(parte)
+            let p = parte.filter((item) => item.Estado == "ACTI")
+            setComponent(p)
         }
     }
     const EliminadrComponenteAgregado = (item, index) => {
@@ -196,15 +203,25 @@ export default function Componentes(props) {
         )
     }
 
-    const EliminarComponente = async (idLocal,index) => {
-        console.log("item", idLocal)
+    const EliminarComponente = async (item,index) => {
         var os_partesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-        var p = os_partesRepuestos.split(0, index)
-        console.log("index", p)
+        var p = os_partesRepuestos.map((part) => {
+            if (part.FechaCreacion == item.FechaCreacion) {
+                return {
+                    ...part,
+                    Estado: "INAC"
+                }
+            }else{
+                return part
+            }
+        })
+        console.log("p", p)
         await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(p))
-        setComponent(p)
+        let filter = p.filter((item) => item.Estado == "ACTI")
+        console.log("filter",filter)
+        setComponent(filter)
     }
-    //20220910016
+
     return (
         <View style={styles.container}>
             <ScrollView
@@ -239,6 +256,7 @@ export default function Componentes(props) {
                                 padding: 10,
                             }}
                             selectedValue={componente.Tipo}
+                            enabled={fini}
                             onValueChange={(itemValue, itemIndex) =>
                                 setComponente({
                                     ...componente,
@@ -263,7 +281,7 @@ export default function Componentes(props) {
                         style={styles.input}
                         placeholder="Descripción:"
                         value={componente.Descripcion}
-                        editable={isEnabled}
+                        editable={fini}
                         onChangeText={(text) => setComponente({ ...componente, Descripcion: text })} />
                     <View style={{
                         ...styles.wFull,
@@ -280,7 +298,7 @@ export default function Componentes(props) {
                             value={componente.Cantidad}
                             keyboardType="numeric"
                             onChangeText={(text) => setComponente({ ...componente, Cantidad: text })}
-                            editable={isEnabled}
+                            editable={fini}
                         />
                         <View style={{
                             ...styles.wFull,
@@ -358,7 +376,7 @@ export default function Componentes(props) {
                         style={styles.input}
                         placeholder="Numero de parte:"
                         value={componente.Codigo}
-                        editable={isEnabled}
+                        editable={fini}
                         onChangeText={(text) => setComponente({ ...componente, Codigo: text })} />
 
                     <View style={{
@@ -425,7 +443,7 @@ export default function Componentes(props) {
                                                 <Text style={styles.text}>DOA:{item.doa == false ? "OFF" : "ON"}/GARANTIA:{item.garantia == false ? "OFF" : "ON"}/EXCHANGE:{item.exchange == false ? "OFF" : "ON"}</Text>
                                             </View>
                                             <TouchableOpacity
-                                                onPress={() => EliminadrComponenteAgregado(item.idLocal, index)}
+                                                onPress={() => EliminadrComponenteAgregado(item, index)}
                                             >
                                                 <AntDesign name="delete" size={20} color="red" />
                                             </TouchableOpacity>

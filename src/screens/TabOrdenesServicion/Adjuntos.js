@@ -289,7 +289,7 @@ export default function Adjuntos(props) {
       <BannerOrderServi
         {...props}
         navigation={navigation}
-        screen={"|"}
+        screen={"5-ADJUNTOS"}
       />
     </View>
   );

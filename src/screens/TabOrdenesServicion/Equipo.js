@@ -15,6 +15,7 @@ import { getToken } from "../../service/usuario"
 import LoadingActi from "../../components/LoadingActi"
 import empty from "is-empty"
 import isEmpty from "is-empty"
+import { time } from "../../service/CargaUtil"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -74,8 +75,7 @@ export default function Equipo(props) {
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
                     const { equipo, OrdenServicioID, Accion } = item
-                    console.log("equipo", equipo)
-                    // console.log("Accion", item)
+                    // console.log("equipo", equipo)
                     if (Accion == "clonar") {
 
                         let equiId = await getHistorialEquiposStoragId(os.equipo_id)
@@ -88,20 +88,21 @@ export default function Equipo(props) {
                         })
                         equiId[0]['isChecked'] = 'true'
                         setHistorial(equiId)
-                        setDisableSub(false)
-                        setDisable(false)
+                        setDisableSub(true)
+                        setDisable(true)
 
                     } else if (Accion == "OrdenSinTicket") {
 
-                        const os = await AsyncStorage.getItem("OS")
-                        const osItem = JSON.parse(os)
-                        console.log("osItem", osItem)
+                        console.log("OrdenSinTicket")
+                        console.log("OS", os)
+                        setHistorial(await isCheckedCancelaReturn(2916))
+                        setDisableSub(true)
+                        setDisable(true)
 
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("PENDIENTE")
                         let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        console.log("equipo", equiId[0])
                         GuadadoOS(equiId[0])
                         equiId.map((item, index) => {
                             setTipo(item.tipo)
@@ -110,11 +111,12 @@ export default function Equipo(props) {
                         })
                         equiId[0]['isChecked'] = 'true'
                         setHistorial(equiId)
+                        setDisableSub(true)
+                        setDisable(true)
 
                     } else if (Accion == "FINALIZADO") {
 
                         let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        console.log("equipo", equiId[0])
                         GuadadoOS(equiId[0])
                         equiId.map((item, index) => {
                             setTipo(item.tipo)
@@ -133,12 +135,13 @@ export default function Equipo(props) {
                         console.log("equipo", equiId[0])
                         GuadadoOS(equiId[0])
                         setHistorial(equiId)
+                        setDisableSub(true)
+                        setDisable(true)
 
                     } else if (Accion == "PROCESO") {
 
                         console.log("PROCESO")
                         let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        console.log("equipo", equiId[0])
                         GuadadoOS(equiId[0])
                         equiId.map((item, index) => {
                             setTipo(item.tipo)
@@ -149,6 +152,7 @@ export default function Equipo(props) {
                         setHistorial(equiId)
                     }
                 }
+                time(1000)
                 setLoading(false)
             })()
         }, [])
@@ -219,6 +223,7 @@ export default function Equipo(props) {
             osItem.ObservacionCliente = "" //#
             osItem.IdEquipoContrato = Number(item.id_equipoContrato) //#
             osItem.EstadoEqPrevio = item.equ_estado //#
+            osItem.EstadoEquipo = item.equ_estado //#
             osItem.TipoEquipo = item.equ_tipoEquipo //#
             osItem.ModeloEquipo = item.equ_modeloEquipo //#
             osItem.IngenieroID = IdUsuario//#

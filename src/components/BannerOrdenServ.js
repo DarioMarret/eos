@@ -6,14 +6,14 @@ import { getHistorialEquiposStorageChecked, HistorialEquipoIngeniero } from "../
 import { PostOS, PutOS } from "../service/OS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
-import React, { useState } from "react"
+import React, { useCallback, useState } from "react"
 import NetInfo from '@react-native-community/netinfo';
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos, ticketID } from "../utils/constantes";
 import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { EquipoTicket } from "../service/equipoTicketID";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
-import { NavigationAction } from "@react-navigation/native";
+import { NavigationAction, useFocusEffect } from "@react-navigation/native";
 import { ActualizarOrdenServicio, OSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
 
 
@@ -21,21 +21,30 @@ export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
     const { name, params } = route
 
-    const [modalVisible, setModalVisible] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false)
+
+
 
     const { TabTitle } = tabNavigation()
+    const [editar, seteditar] = useState(false)
 
-
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                if (name == "6-INGRESO HORAS") {
+                    seteditar(true)
+                } else {
+                    seteditar(false)
+                }
+            })()
+        }, [])
+    );
     const tab = ["1-EQUIPO", "2-CLIENTE", "3-DATOS", "4-COMPONENTES", "5-ADJUNTOS", "6-INGRESO HORAS",]
 
 
     async function changeScreenSiguiente() {
-        console.log("screen", name)
-        console.log("existe tab", tab.indexOf(name))
-        console.log("tabs", tab.length)
         let index = tab.indexOf(name)
         const check = await PasarACliente()
-        console.log("check", check)
         if (check) {
             if (index <= tab.length) {
                 console.log("indexOf-->", index)
@@ -62,7 +71,7 @@ export default function BannerOrderServi(props) {
     }
     async function PasarACliente() {
         const respuesta = await getHistorialEquiposStorageChecked()
-        console.log("respuesta", respuesta)
+        // console.log("respuesta", respuesta)
         if (respuesta.length > 0) {
             return true
         } else {
@@ -95,17 +104,17 @@ export default function BannerOrderServi(props) {
                     console.log("OS PUT", OS)
                     OS.OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
                     OS.OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-                    let P = await PutOS(OS)
-                    if (P == 204) {
-                        console.log("PUT OK")
-                        // console.log("update", update)
-                        await UpdateOSOrdenServicioID(OrdenServicioID)
-                        await LimpiandoDatos()
-                        setModalVisible(false)
-                    } else {
-                        setModalVisible(false)
-                        Alert.alert("Error", "No se pudo actualizar la orden de servicio")
-                    }
+                    // let P = await PutOS(OS)
+                    // if (P == 204) {
+                    //     console.log("PUT OK")
+                    //     // console.log("update", update)
+                    //     await UpdateOSOrdenServicioID(OrdenServicioID)
+                    //     await LimpiandoDatos()
+                    //     setModalVisible(false)
+                    // } else {
+                    //     setModalVisible(false)
+                    //     Alert.alert("Error", "No se pudo actualizar la orden de servicio")
+                    // }
                 } catch (error) {
                     setModalVisible(false)
                     console.log("error", error)
@@ -249,9 +258,16 @@ export default function BannerOrderServi(props) {
                                     }
                                 });
                             }}>
-                                <Text style={{ color: "#FFF", fontSize: 12, paddingRight: 5 }}>
-                                    GUARDAR
-                                </Text>
+                                {
+                                    editar ?
+                                    <Text style={{ color: "#FFF", fontSize: 12, paddingRight: 5 }}>
+                                            EDITAR
+                                        </Text>
+                                        :
+                                        <Text style={{ color: "#FFF", fontSize: 12, paddingRight: 5 }}>
+                                            GUARDAR
+                                        </Text>
+                                }
                                 <AntDesign name="save" size={20} color="#FFFFFF" />
                             </TouchableOpacity>
                     }
