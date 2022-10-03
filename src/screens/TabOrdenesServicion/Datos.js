@@ -222,26 +222,27 @@ export default function Datos(props) {
                     } else if (Accion == "clonar") {
                         console.log("Estamos clonar")
 
-                        TipoVisitadescripcion(osItem.TipoVisita)
-                        TipoIncidencia(osItem.tipoIncidencia)
+                        // TipoVisitadescripcion(osItem.TipoVisita)
+                        // TipoIncidencia(osItem.tipoIncidencia)
 
 
                         setDatos({
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
+                        await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
                         setIsEnabled(true)
                         setDisableSub(true)
 
                     } else if (Accion == "OrdenSinTicket") {
 
                         console.log("Estamos OrdenSinTicket")
-
                         console.log("osItem", datos.FechaSeguimientoMostrar)
                         setDatos(osItem)
                         setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
+                        await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist() : setOfCheck(false)
                         console.log("Checklist", await AsyncStorage.getItem("OS_CheckList"))
@@ -272,6 +273,10 @@ export default function Datos(props) {
                             ...osItem,
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
+                        console.log("osItem", osItem.TipoVisita)
+                        await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
+                        osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
+                        ? ActivarChecklist() : setOfCheck(false)
                         setIsEnabled(true)
                         setDisableSub(true)
 

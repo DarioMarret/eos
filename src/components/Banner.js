@@ -1,4 +1,4 @@
-import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
+import { GetEventosByTicket, GetEventosDelDia, InsertEventosLocales } from "../service/OSevento";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EquipoTicket } from "../service/equipoTicketID";
@@ -9,9 +9,12 @@ import moment from "moment";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { OS, ticketID } from "../utils/constantes";
+import { evento, OS, ticketID } from "../utils/constantes";
 
 import { Network } from "../service/Network";
+import { PostOS } from "../service/OS";
+import { ListarOrdenServicioLocal } from "../service/OS_OrdenServicio";
+import { SelectCategoriaDetalle } from "../service/catalogos";
 
 
 export default function Banner(props) {
@@ -22,7 +25,7 @@ export default function Banner(props) {
 
     async function ActualizarEventos() {
         (console.log(await Network()))
-        if(Network()){
+        if (Network()) {
             Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexción estable", [
                 {
                     text: "OK",
@@ -35,7 +38,7 @@ export default function Banner(props) {
                     style: { color: "#FF6B00" },
                 }
             ])
-        }else{
+        } else {
             Alert.alert("Error", "No tienes conexión a internet", [
                 {
                     text: "OK",
@@ -64,8 +67,10 @@ export default function Banner(props) {
     async function Sincronizar() {
         return new Promise((resolve, reject) => {
             NetInfo.fetch().then(state => {
+                console.log("state", state)
                 if (state.isConnected === true) {
                     (async () => {
+                        // await UpdateLocal()
                         await TrucateUpdate()
                         time(1500)
                         await HistorialEquipoIngeniero()
@@ -87,6 +92,7 @@ export default function Banner(props) {
             })
         })
     }
+    
     const CrearNuevoOrdenServicioSinTiket = async () => {
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
@@ -99,6 +105,36 @@ export default function Banner(props) {
         await AsyncStorage.setItem("OS", JSON.stringify(OS))
         navigation.navigate("Ordenes")
     }
+    const UpdateLocal = async () => {
+        const res = await ListarOrdenServicioLocal()
+        console.log("res", res)
+        if (res){
+            res.map(async (r) => {
+                r.OS_PartesRepuestos = JSON.parse(r.OS_PartesRepuestos)
+                r.Estado = "ACTI"
+                r.OS_Tiempos = JSON.parse(r.OS_Tiempos)
+                r.OS_Firmas = JSON.parse(r.OS_Firmas)
+                r.OS_CheckList = JSON.parse(r.OS_CheckList)
+                r.ticket_id = 0
+                delete r.OS_Anexos
+                delete r.OS_Colaboradores
+                delete r.OS_Encuesta
+                console.log("OS", r)
+                // InsertEventosLocalesUpadte(r)
+                let P = await PostOS(r)
+                console.log("P", P)
+                if (P == "200") {
+                    // setModalVisible(false)
+                } else {
+                    // setModalVisible(false)
+                    Alert.alert("Error", "No se pudo crear la orden de servicio")
+                }
+            })
+        }else{
+            return true
+        }
+    }
+
 
     return (
         <>

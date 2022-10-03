@@ -18,7 +18,6 @@ import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import LoadingActi from "../../components/LoadingActi";
 
-import useUser from '../../hook/useUser';
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -28,13 +27,9 @@ export default function Hoy(props) {
     const [loading, setLoading] = useState(false)
     const { navigation } = props
 
-    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
-
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                setreloadInt(!reloadInt)
-                console.log("OFFLINE--> hola", isOFFLINE)
                 setLoading(true)
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
                 // if (updateMinuto && isOFFLINE) {
@@ -45,6 +40,7 @@ export default function Hoy(props) {
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 console.log("respuesta-->", respuesta)
+
                 setEventos(respuesta)
                 // if (isOFFLINE) {
                 //     await getTPTCKStorage()
@@ -57,6 +53,15 @@ export default function Hoy(props) {
                 //         await OrdenServicioAnidadas(r.evento_id)
                 //     })
                 // }
+                db.transaction(tx => {
+                    tx.executeSql(
+                        `SELECT * FROM OrdenesServicio`,
+                        [],
+                        (tx, results) => {
+                            console.log("results.rows.length", results.rows.length)
+                        }
+                    );
+                });
                 setLoading(false)
             })()
         }, [])

@@ -71,7 +71,7 @@ export const FinalizarOS = async (OrdenServicioID) => {
                 }
             })
             console.log("status", status)
-           
+
         })
         resolve(200)
     })
@@ -109,7 +109,7 @@ export const FinalizarOS_ = async (OrdenServicioID, datos) => {
             await FinalizarOS([OrdenServicioID])
             await UpdateOSOrdenServicioID(OrdenServicioID)
             return status
-        }else{
+        } else {
             return false
         }
     } catch (error) {
@@ -150,7 +150,7 @@ export const FinalizarOSmasivo = async (OrdenServicioID, datos) => {
             await FinalizarOS([OrdenServicioID])
             await UpdateOSOrdenServicioID(OrdenServicioID)
             return status
-        }else{
+        } else {
             return false
         }
     } catch (error) {
@@ -183,10 +183,10 @@ export const ParseOS = async (data, accion) => {
         data[0].OrdenServicioID = 0
         data[0].OS_Encuesta = []
         data[0].OS_Anexos = []
-        delete data[0].OS_FINALIZADA
-        delete data[0].OS_ASUNTO
+        data[0].OS_FINALIZADA = ""
+        data[0].OS_ASUNTO = ""
         data[0].Estado = "ACTI"
-        delete data[0].codOS
+        data[0].codOS = ""
         return data[0]
 
     } else if (accion == "PENDIENTE") {

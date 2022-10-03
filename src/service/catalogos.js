@@ -129,4 +129,21 @@ export async function SelectCategoria(IdCatalogo) {
                 })
         })
     })
-}  
+}
+
+export async function SelectCategoriaDetalle(IdCatalogoDetalle) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM EstadoDatos WHERE IdCatalogoDetalle = ?`,
+                [IdCatalogoDetalle],
+                (tx, results) => {
+                    if (results.rows._array.length > 0) {
+                        resolve(results.rows._array[0].Descripcion)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
+    })
+}

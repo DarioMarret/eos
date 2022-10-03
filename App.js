@@ -53,9 +53,7 @@ export default function App() {
   useEffect(() => {
     const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
       console.log("\n")
-      // var offline = state.isConnected && state.isInternetReachable
       var offline = state.isConnected
-      console.log("offline", offline)
       setisOFFLINE(offline)
     })
     return () => removeNetInfoSubscription()

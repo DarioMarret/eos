@@ -8,13 +8,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
 import React, { useCallback, useState } from "react"
 import NetInfo from '@react-native-community/netinfo';
-import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos, ticketID } from "../utils/constantes";
+import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos, ticketID, evento } from "../utils/constantes";
 import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { EquipoTicket } from "../service/equipoTicketID";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
-import { NavigationAction, useFocusEffect } from "@react-navigation/native";
-import { ActualizarOrdenServicio, OSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
+import { useFocusEffect } from "@react-navigation/native";
+import { InsertEventosLocales } from "../service/OSevento";
+import { SelectCategoriaDetalle } from "../service/catalogos";
+import { InserOSOrdenServicioIDLocal, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
 
 
 export default function BannerOrderServi(props) {
@@ -31,10 +33,18 @@ export default function BannerOrderServi(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                if (name == "6-INGRESO HORAS") {
-                    seteditar(true)
-                } else {
-                    seteditar(false)
+                const itenSelect = await AsyncStorage.getItem(ticketID)
+                if (itenSelect != null) {
+                    const item = JSON.parse(itenSelect)
+                    const { Accion } = item
+                    console.log("BANNER ", Accion)
+                    if (Accion != "clonar" && Accion != "OrdenSinTicket" && Accion != "NUEVO OS TICKET") {
+                        if (name == "6-INGRESO HORAS" && Accion != null) {
+                            seteditar(true)
+                        } else {
+                            seteditar(false)
+                        }
+                    }
                 }
             })()
         }, [])
@@ -71,7 +81,6 @@ export default function BannerOrderServi(props) {
     }
     async function PasarACliente() {
         const respuesta = await getHistorialEquiposStorageChecked()
-        // console.log("respuesta", respuesta)
         if (respuesta.length > 0) {
             return true
         } else {
@@ -83,38 +92,34 @@ export default function BannerOrderServi(props) {
         setModalVisible(true)
         const os = await AsyncStorage.getItem("OS")
         var OS = JSON.parse(os)
+
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
             const { Accion, OrdenServicioID } = item
-            console.log("OrdenServicioID", OrdenServicioID)
-            if (OrdenServicioID != null || OrdenServicioID != undefined) {
+            if (Accion != "clonar" && Accion != "OrdenSinTicket" && Accion != "NUEVO OS TICKET") {
                 try {
                     OS.OrdenServicioID = OrdenServicioID
-                    // let update =  await ActualizarOrdenServicio(OS, OrdenServicioID)
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                     OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
-                    // JSON.parse(await AsyncStorage.getItem("FIRMADOR")) 
                     OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
-                    // OS.OS_CheckList = []
                     OS.Estado = "PROC"
                     console.log("OS PUT", OS)
                     OS.OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
                     OS.OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-                    // let P = await PutOS(OS)
-                    // if (P == 204) {
-                    //     console.log("PUT OK")
-                    //     // console.log("update", update)
-                    //     await UpdateOSOrdenServicioID(OrdenServicioID)
-                    //     await LimpiandoDatos()
-                    //     setModalVisible(false)
-                    // } else {
-                    //     setModalVisible(false)
-                    //     Alert.alert("Error", "No se pudo actualizar la orden de servicio")
-                    // }
+                    let P = await PutOS(OS)
+                    if (P == 204) {
+                        console.log("PUT OK")
+                        await UpdateOSOrdenServicioID(OrdenServicioID)
+                        await LimpiandoDatos()
+                        setModalVisible(false)
+                    } else {
+                        setModalVisible(false)
+                        Alert.alert("Error", "No se pudo actualizar la orden de servicio")
+                    }
                 } catch (error) {
                     setModalVisible(false)
                     console.log("error", error)
@@ -122,17 +127,16 @@ export default function BannerOrderServi(props) {
                 }
             } else {
                 try {
-                    // console.log(JSON.parse(await AsyncStorage.getItem("OS_CheckList"))[0])
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
                     OS.OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                     OS.Estado = "ACTI"
                     OS.OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+                    console.log("OS", OS)
                     OS.OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
                     OS.OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
                     OS.OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
-                    console.log("OS", OS)
                     let P = await PostOS(OS)
                     if (P == "200") {
                         await LimpiandoDatos()
@@ -150,6 +154,77 @@ export default function BannerOrderServi(props) {
             }
         }
     }
+    function getRandomInt(max) {
+        return Math.floor(Math.random() * max)
+    }
+    const GuadarLocalmente = async () => {
+        const os = await AsyncStorage.getItem("OS")
+        var OS = JSON.parse(os)
+        var rando = getRandomInt(1000)
+        let OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+        let OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+        let OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+        let OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+        let OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+        OS.OS_PartesRepuestos = OS_PartesRepuestos
+        OS.OS_CheckList = OS_CheckList
+        OS.OS_Tiempos = OS_Tiempos
+        OS.OS_Firmas = OS_Firmas
+        OS.OS_Anexos = OS_Anexos
+        OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+        OS.OS_Colaboradores = []
+        OS.OS_Encuesta = []
+        OS.ticket_id = rando
+        OS.Estado = "ACTI"
+        OS.OS_LOCAL = "UPDATE"
+        console.log("OS", OS)
+        console.log("OS Object keys", Object.keys(OS).length)
+
+        // let ordenLocal = await InserOSOrdenServicioIDLocal(OS)
+        await InsertEventosLocalesUpadte(OS, rando)
+
+        // console.log("ordenLocal", ordenLocal)
+        await AsyncStorage.removeItem("OS_PartesRepuestos")
+        await AsyncStorage.removeItem("OS_CheckList")
+        await AsyncStorage.removeItem("OS_Tiempos")
+        await AsyncStorage.removeItem("OS_Firmas")
+        await AsyncStorage.removeItem("OS_Anexos")
+        await AsyncStorage.removeItem("OS")
+        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
+        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
+        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
+        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
+        await AsyncStorage.setItem("OS", JSON.stringify(OS))
+
+    }
+
+    const InsertEventosLocalesUpadte = async (r, tikeck) => {
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        if (itenSelect != null) {
+            const item = JSON.parse(itenSelect)
+            const { Accion, OrdenServicioID } = item
+            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
+                evento.tck_cliente = r.ClienteNombre
+                evento.ev_estado = "PENDIENTE"
+                evento.tck_direccion = r.Direccion
+                evento.ticket_id = tikeck
+                evento.ev_fechaAsignadaDesde = `${moment().format("YYYY-MM-DDT00:00:00")}`
+                evento.ev_fechaAsignadaHasta = `${moment().format("YYYY-MM-DDT00:00:00")}`
+                evento.ev_horaAsignadaDesde = `${moment().format("HH:mm:ss")}`
+                evento.ev_horaAsignadaHasta = `${moment().format("HH:mm:ss")}`
+                evento.tck_tipoTicket = await SelectCategoriaDetalle(r.TipoVisita)
+                console.log("evento", evento)
+                const res = await InsertEventosLocales(evento)
+                console.log("evento registrado", res)
+                resetTab()
+                navigation.navigate("Consultas")
+            }
+        }
+    }
+
 
     async function LimpiandoDatos() {
         await Sincronizar()
@@ -242,7 +317,7 @@ export default function BannerOrderServi(props) {
                                 alignItems: 'center',
                             }} onPress={() => {
                                 NetInfo.fetch().then(state => {
-                                    if (state.isConnected == false) {
+                                    if (state.isConnected == true) {
                                         GUARDAR_OS()
                                     } else {
                                         Alert.alert(
@@ -251,7 +326,7 @@ export default function BannerOrderServi(props) {
                                             [
                                                 {
                                                     text: "OK",
-                                                    onPress: () => GUARDAR_OS()
+                                                    onPress: () => GuadarLocalmente()
                                                 }
                                             ]
                                         )
@@ -260,7 +335,7 @@ export default function BannerOrderServi(props) {
                             }}>
                                 {
                                     editar ?
-                                    <Text style={{ color: "#FFF", fontSize: 12, paddingRight: 5 }}>
+                                        <Text style={{ color: "#FFF", fontSize: 12, paddingRight: 5 }}>
                                             EDITAR
                                         </Text>
                                         :

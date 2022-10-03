@@ -7,6 +7,7 @@ export const Network = async () => {
         console.log("Connection type", state.type);
         console.log("Is connected?", state.isConnected);
         console.log("Is offline?", state.isInternetReachable);
+        console.log("\n");
         if(state.isConnected === true && state.isInternetReachable === true){
             estado = true
         }else{

@@ -128,7 +128,7 @@ export default function IngresoHoras(props) {
     switch: false,
   })
 
-  function LimpiarImput(){
+  function LimpiarImput() {
     setFechas({
       ...fechas,
       Fecha: "",
@@ -158,7 +158,6 @@ export default function IngresoHoras(props) {
           const { Accion } = item
           const OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
           if (OS_Tiempos.length == 0) OS_Tiempos.push(timpo)
-          console.log("OS_Tiempo", OS_Tiempos)
           if (Accion == "OrdenSinTicket") {
 
             console.log("OrdenSinTicket")
@@ -171,6 +170,9 @@ export default function IngresoHoras(props) {
 
             LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
+            OS_Tiempos[0].OrdenServicioID = 0
+            OS_Tiempos[0].IdTiempo = 0
+            console.log("OS_Tiempo", OS_Tiempos)
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
             setFechas({
               ...fechas,
@@ -207,7 +209,10 @@ export default function IngresoHoras(props) {
             console.log("NUEVO OS TICKET")
             LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
+            OS_Tiempos[0].OrdenServicioID = 0
+            OS_Tiempos[0].IdTiempo = 0
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+            console.log("OS_Tiempo", OS_Tiempos)
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
@@ -217,6 +222,7 @@ export default function IngresoHoras(props) {
 
           } else if (Accion == "PROCESO") {
             console.log("PROCESO")
+            console.log("p", await AsyncStorage.getItem("OS_Anexos"))
             LimpiarImput()
             OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))

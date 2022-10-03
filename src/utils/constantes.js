@@ -143,6 +143,7 @@ export const OS = {
     OS_Firmas: [],
     OS_PartesRepuestos: [],
     OS_Tiempos: [],
+    OS_LOCAL: 'ENVIADO'
 }
 console.log("constantes.js", Object.keys(OS).length);
 export const OS_CheckList = []
@@ -1174,7 +1175,7 @@ export const os_checklist = {
     Estado: "ACTI",
     Observacion: null
 }
-export const os_firma ={
+export const os_firma = {
     OS_OrdenServicio: null,
     IdFirma: 0,
     OrdenServicioID: 0,
@@ -1253,4 +1254,33 @@ export const timpo = {
     Fecha: null,
     HoraLlegadaSgteDestino: null,
     TiempoViajeSalida: 0
+}
+
+export const evento = {
+    "evento_id": 0,
+    "ticket_id": 0,
+    "codOS": "",
+    "codTicket": "",
+    "tck_cliente": "",
+    "tck_tipoTicket": "",
+    "tck_tipoTicketDesc": null,
+    "tck_descripcionProblema": "",
+    "ev_fechaAsignadaDesde": "",
+    "ev_fechaAsignadaHasta": "",
+    "ev_horaAsignadaDesde": "",
+    "ev_horaAsignadaHasta": "",
+    "ev_estado": "",
+    "tck_direccion": "",
+    "tck_canton": " ",
+    "tck_provincia": "",
+    "tck_reporta": "",
+    "tck_telefonoReporta": null,
+    "tck_usuario_creacion": 0,
+    "tck_estadoTicket": "",
+    "ev_descripcion": "",
+    "id_contrato": null,
+    "ingenieroId": 0,
+    "ingeniero": null,
+    "tipoIncidencia": null,
+    "OrdenServicioID": 0
 }

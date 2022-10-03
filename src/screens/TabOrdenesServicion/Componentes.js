@@ -90,6 +90,7 @@ export default function Componentes(props) {
                     if (itenSelect != null) {
                         const item = JSON.parse(itenSelect)
                         const { Accion, OrdenServicioID } = item
+                        setOrdenServicioID(OrdenServicioID)
                         console.log("Accion-->",OrdenServicioID)
                         if (Accion == "FINALIZADO") {
                             setFini(false)
@@ -103,15 +104,15 @@ export default function Componentes(props) {
 
                             console.log("PENDIENTE")
                             let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            console.log("parte-->", await AsyncStorage.getItem("OS_PartesRepuestos"))
                             let filter = parte.filter((item) => item.Estado == "ACTI")
                             setComponent(filter)
-                            setOrdenServicioID(parte[0].OrdenServicioID)
+                            // setOrdenServicioID(parte[0].OrdenServicioID)
                             setFini(true)
 
                         } else if (Accion == "OrdenSinTicket") {
 
                             console.log("OrdenSinTicket")
-                            
                             const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                             console.log("OrdenSinTicket-->", parte)
                             setFini(true)
@@ -119,18 +120,30 @@ export default function Componentes(props) {
                         } else if (Accion == "clonar") {
 
                             let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            let filter = parte.filter((item) => item.Estado == "ACTI")
+                            var part = parte.map((item) => {
+                                return {
+                                    ...item,
+                                    OrdenServicioID: 0
+                                }
+                            })
+                            let filter = part.filter((item) => item.Estado == "ACTI")
                             setComponent(filter)
-                            setOrdenServicioID(parte[0].OrdenServicioID)
+                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(filter))
                             setFini(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {
 
                             console.log("NUEVO OS TICKET")
                             let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            let filter = parte.filter((item) => item.Estado == "ACTI")
+                            var part = parte.map((item) => {
+                                return {
+                                    ...item,
+                                    OrdenServicioID: 0
+                                }
+                            })
+                            let filter = part.filter((item) => item.Estado == "ACTI")
+                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(filter))
                             setComponent(filter)
-                            setOrdenServicioID(parte[0].OrdenServicioID)
                             setFini(true)
                             
                         }else if (Accion == "PROCESO") {
@@ -141,7 +154,6 @@ export default function Componentes(props) {
                             var p = parte.map((item, index) => {
                                 return {
                                     idLocal: index+1,
-                                    Estado: "ACTI",
                                     ...item,
                                 }
                             })

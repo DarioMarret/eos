@@ -77,24 +77,41 @@ export default function Adjuntos(props) {
               console.log("Accion", Accion)
               setFini(false)
               const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              setListAdjuntos(OS_Anexos)
+              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
+              setListAdjuntos(filter)
 
 
             } else if (Accion == "PENDIENTE") {
 
               console.log("PENDIENTE")
               const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              setListAdjuntos(OS_Anexos)
+              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
+              await AsyncStorage.setItem("OS_Anexos", JSON.stringify(filter))
+              setListAdjuntos(filter)
 
             } else if (Accion == "OrdenSinTicket") {
 
-              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              setListAdjuntos(OS_Anexos)
+              await AsyncStorage.setItem("OS_Anexos", JSON.stringify([]))
 
             } else if (Accion == "NUEVO OS TICKET") {
 
               const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              setListAdjuntos(OS_Anexos)
+              let adjunto = OS_Anexos.map((item, index) => {
+                return {
+                  ...item,
+                  idLocal: index + 1,
+                  OrdenServicioID: 0
+                }
+              })
+              let filter = adjunto.filter((item) => item.Estado == "ACTI")
+              await AsyncStorage.setItem("OS_Anexos", JSON.stringify(filter))
+              setListAdjuntos(filter)
+
+            } else if (Accion == "PROCESO") {
+
+              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
+              setListAdjuntos(filter)
 
             }
           }
@@ -119,7 +136,7 @@ export default function Adjuntos(props) {
         anexos.archivo = adjuntos.archivo
         anexos.Ruta = adjuntos.Ruta
         anexos.Descripcion = adjuntos.Descripcion
-        anexos.Estado = ESTADO(Accion)
+        anexos.Estado = "ACTI"
         anexos.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
         anexos.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
         anexos.IdAnexo = 0
@@ -151,13 +168,25 @@ export default function Adjuntos(props) {
   }
 
   const EliminAdjunto = async (item) => {
-    const os_anexos = await AsyncStorage.getItem("OS_Anexos")
-    const anexosArray = JSON.parse(os_anexos)
-    const index = anexosArray.indexOf(item)
-    anexosArray.splice(index, 1)
-    setListAdjuntos(anexosArray)
-    await AsyncStorage.setItem("OS_Anexos", JSON.stringify(anexosArray))
+    const os_anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+
+    var p = os_anexos.map((part) => {
+      if (part.FechaCreacion == item.FechaCreacion) {
+        return {
+          ...part,
+          Estado: "INAC"
+        }
+      } else {
+        return part
+      }
+    })
+    await AsyncStorage.setItem("OS_Anexos", JSON.stringify(p))
+    console.log("p", await AsyncStorage.getItem("OS_Anexos"))
+    let filter = p.filter((item) => item.Estado == "ACTI")
+    console.log("filter", filter)
+    setListAdjuntos(filter)
   }
+
   function AlertFini() {
     Alert.alert(
       "Error",
