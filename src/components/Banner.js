@@ -23,7 +23,7 @@ export default function Banner(props) {
     async function ActualizarEventos() {
         (console.log(await Network()))
         if(Network()){
-            Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexción estable", [
+            Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexión estable.", [
                 {
                     text: "OK",
                     onPress: () => UP(),

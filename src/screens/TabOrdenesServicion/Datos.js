@@ -884,7 +884,7 @@ export default function Datos(props) {
                 navigation={navigation}
                 screen={"3-DATOS"}
             />
-        </View >
+        </View>
     );
 }
 
