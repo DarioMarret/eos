@@ -382,8 +382,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: '#FF6B00',
-        padding: 10,
         paddingHorizontal: 20,
+        paddingVertical: 10,
         marginHorizontal: 10,
     },
     centeredView: {

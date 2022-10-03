@@ -4,7 +4,7 @@ import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AntDesign, FontAwesome5, Ionicons } from '@expo/vector-icons';
-
+import Firmador from "../components/Firmador"
 
 import {
     Menu,
@@ -21,8 +21,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons/build/Icons";
 import useUser from "../hook/useUser";
 import TicketsOS from "../screens/TabScreem/TicketsOS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { ticketID } from "../utils/constantes";
+import { ticketID, os_firma } from "../utils/constantes";
 import { FinalizarOS_ } from "../service/OS";
+
 
 const Drawer = createDrawerNavigator();
 
@@ -59,7 +60,7 @@ function MenuLateral(prop) {
     )
 }
 
-function MenuFinal() {
+function MenuFinal({modalSignature, setModalSignature}) {
 
     const [estado, setEstado] = useState(null)
     const FinalizarOS = async () => {
@@ -119,7 +120,7 @@ function MenuFinal() {
                 {
                     estado == "FINALIZADO" ? <>
                         <MenuOption
-                            onSelect={() => console.log('Save')}
+                            onSelect={() => setModalSignature(true)}
                             text='Agresar firma'
                             customStyles={{
                                 optionText: {
@@ -194,12 +195,34 @@ function NavigatioGotBack() {
 
 function NavigatioGotBack2() {
     const [modalVisible, setModalVisible] = React.useState(false);
+    const [modalSignature, setModalSignature] = useState(false);
+    const [OrdenServicioID, setOrdenServicioID] = useState(null)
+    const [userData, setUserData] = useState(os_firma)
+    const enviarFirma = () => {
+        setModalSignature(false)
+    }
     return (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 15, width: "60%" }}>
             <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
                 <Ionicons name="md-information-circle" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <MenuFinal />
+            <MenuFinal modalSignature={modalSignature} setModalSignature={setModalSignature}/>
+            <Modal
+                    transparent={true}
+                    visible={modalSignature}
+                    onRequestClose={() => {
+                        setModalSignature(!modalSignature);
+                    }}
+                    propagateSwipe={true}
+                >
+                <Firmador
+                    enviarFirma={enviarFirma}
+                    setModalSignature={setModalSignature}
+                    datauser={userData}
+                    setUserData={setUserData}
+                    OrdenServicioID={OrdenServicioID}
+                />
+            </Modal>
             <Modal
                 animationType="slide"
                 transparent={true}
