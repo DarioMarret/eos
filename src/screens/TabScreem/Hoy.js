@@ -17,6 +17,8 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import LoadingActi from "../../components/LoadingActi";
+import { RefresLogin } from "../../service/usuario";
+import { Network } from "../../service/Network";
 
 
 export default function Hoy(props) {
@@ -30,38 +32,13 @@ export default function Hoy(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                console.log("hola mundo", await Network())
                 setLoading(true)
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
-                // if (updateMinuto && isOFFLINE) {
-                //     await RefresLogin()
-                //     await HistorialEquipoIngeniero();
-                //     await ActualizarFechaUltimaActualizacion()
-                // }
+                await RefresLogin()
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
-                console.log("respuesta-->", respuesta)
-
                 setEventos(respuesta)
-                // if (isOFFLINE) {
-                //     await getTPTCKStorage()
-                //     var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                //     var hoy = moment().format('YYYY-MM-DD');
-                //     var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                //     const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                //     ticket_id.map(async (r) => {
-                //         await EquipoTicket(r.ticket_id)
-                //         await OrdenServicioAnidadas(r.evento_id)
-                //     })
-                // }
-                db.transaction(tx => {
-                    tx.executeSql(
-                        `SELECT * FROM OrdenesServicio`,
-                        [],
-                        (tx, results) => {
-                            console.log("results.rows.length", results.rows.length)
-                        }
-                    );
-                });
                 setLoading(false)
             })()
         }, [])
@@ -104,8 +81,6 @@ export default function Hoy(props) {
                         console.log("id_equipo-->", rows._array[0].id_equipo)
                         db.transaction(tx => {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                                // console.log("equipo selecionado hoy row", rows._array)
-                                console.log("equipo selecionado hoy row", JSON.parse(rows._array[0].historial)[0].OrdenServicioID)
                                 Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado)
                             })
                         })

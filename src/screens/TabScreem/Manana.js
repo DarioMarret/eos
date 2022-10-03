@@ -38,25 +38,9 @@ export default function Manana(props) {
                 console.log("OFFLINE-->", isOFFLINE)
                 setLoading(true)
                 let updateMinuto = await ConsultarFechaUltimaActualizacion()
-                // if (updateMinuto && isOFFLINE) {
-                //     await RefresLogin()
-                //     await HistorialEquipoIngeniero();
-                //     await ActualizarFechaUltimaActualizacion()
-                // }
-                var date = moment().format('YYYY-MM-DD');
+                var date = moment().add(1,'days').format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
                 setEventos(respuesta)
-                // if (isOFFLINE) {
-                //     await getTPTCKStorage()
-                //     var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                //     var hoy = moment().format('YYYY-MM-DD');
-                //     var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                //     const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                //     ticket_id.map(async (r) => {
-                //         await EquipoTicket(r.ticket_id)
-                //         await OrdenServicioAnidadas(r.evento_id)
-                //     })
-                // }
                 setLoading(false)
             })()
         }, [])
@@ -77,7 +61,6 @@ export default function Manana(props) {
             return calwait
         }
     }
-
 
     /**
      * 
