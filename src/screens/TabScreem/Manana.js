@@ -131,7 +131,7 @@ export default function Manana(props) {
                     Accion: estado
                 }))
                 await isChecked(equipo[0].equipo_id)
-                time(800)
+                await time(800)
                 setLoading(false)
                 navigation.navigate("Ordenes")
             }
