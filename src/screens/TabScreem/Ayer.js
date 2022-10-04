@@ -20,6 +20,8 @@ import { isChecked } from "../../service/historiaEquipo";
 import { time } from "../../service/CargaUtil";
 
 import useUser from '../../hook/useUser';
+import { ParseOS } from "../../service/OS";
+import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 
 export default function Ayer(props) {
     const { navigation } = props;
@@ -103,7 +105,11 @@ export default function Ayer(props) {
         console.log("OrdenServicioID", OrdenServicioID)
         if (equipo.length != 0) {
             await AsyncStorage.removeItem(ticketID)
-            OS.ticket_id = ticket_id
+            const OS = await SelectOSOrdenServicioID(OrdenServicioID)
+            let parse = await ParseOS(OS, estado)
+            console.log("OS", parse)
+            parse.ticket_id = ticket_id
+            parse.evento_id = evento_id
             await AsyncStorage.setItem("OS", JSON.stringify(OS))
             await AsyncStorage.setItem(ticketID, JSON.stringify({
                 ticket_id,

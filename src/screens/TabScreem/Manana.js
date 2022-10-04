@@ -16,6 +16,8 @@ import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas"
 import LoadingActi from "../../components/LoadingActi"
 import useUser from "../../hook/useUser"
 import { ConsultarFechaUltimaActualizacion } from "../../service/config"
+import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio"
+import { ParseOS } from "../../service/OS"
 
 
 
@@ -115,8 +117,11 @@ export default function Manana(props) {
             console.log("OrdenServicioID", OrdenServicioID)
             if (equipo.length != 0) {
                 await AsyncStorage.removeItem(ticketID)
-                OS.ticket_id = ticket_id
-                OS.evento_id = evento_id
+                const OS = await SelectOSOrdenServicioID(OrdenServicioID)
+                let parse = await ParseOS(OS, estado)
+                console.log("OS", parse)
+                parse.ticket_id = ticket_id
+                parse.evento_id = evento_id
                 await AsyncStorage.setItem("OS", JSON.stringify(OS))
                 await AsyncStorage.setItem(ticketID, JSON.stringify({
                     ticket_id,
