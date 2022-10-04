@@ -319,7 +319,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                     </View>
                     <View style={{ width: "100%", flexDirection: "row", justifyContent: 'flex-end', padding: 15 }}>
                         <TouchableOpacity onPress={() => Grabar()}>
-                            <Text style={{ color: "#FF6B00" }}>AGREDAR FIRMA</Text>
+                            <Text style={{ color: "#FF6B00" }}>AGREGAR FIRMA</Text>
                         </TouchableOpacity>
                         <View style={{ paddingHorizontal: 20 }} />
                         <TouchableOpacity onPress={() => CerrarAndActualizar()}>

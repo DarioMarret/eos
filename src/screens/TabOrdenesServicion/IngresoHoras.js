@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import Banner from "../../components/Banner";
 import { AntDesign } from "@expo/vector-icons";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import Moment from 'moment';
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
@@ -62,6 +62,7 @@ export default function IngresoHoras(props) {
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
     }
     hideDatePicker();
+
   };
   //fin
 
@@ -72,27 +73,62 @@ export default function IngresoHoras(props) {
   const hideTimePicker = () => {
     setTimePickerVisibility(false);
   };
-
+  const alert = (message, name, time) => {
+    Alert.alert("Alerta", message, [
+      {
+          text: "OK",
+          onPress: () => {
+            setFechas({ ...fechas, [name]: "" })
+          },
+          style: { color: "#FF6B00" },
+      }
+  ])
+  }
+  const compareHours = (time, name) => {
+    console.log("compareHours", {time,name})
+    const hour = new Date(fechas.HoraSalidaOrigen).getTime()
+    const compare = new Date(time).getTime()
+    console.log("GAAAAAAAAAA",{hour,compare})
+    if(name === "HoraLlegadaCliente"){
+      if(Moment(fechas.HoraSalidaOrigen).format("HH:mm") > Moment(fechas.HoraLlegadaCliente).format("HH:mm")){
+        alert("La hora de llegada no puede ser menor a la salida de origen.", name, time)
+      }
+    }else if(name === "HoraFinTrabajo"){
+      if(Moment(fechas.HoraInicioTrabajo).format("HH:mm") > Moment(time).format("HH:mm")){
+        alert("La hora final no puede ser menor a la hora inicial de trabajo.", name, time)
+      }
+    }else if(name === "HoraLlegadaSgteDestino"){
+      if(Moment(fechas.HoraSalidaCliente).format("HH:mm") > Moment(time).format("HH:mm")){
+        alert("La hora de llegada no puede ser menor a la salida.", name, time)
+      }
+    }
+  }
   const handleConfirmTime = async (time) => {
     var os = await AsyncStorage.getItem("OS_Tiempos")
     let OS_Tiempos = JSON.parse(os)
+    
     if (OS_Tiempos.length > 0) {
       OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      console.log("s", OS_Tiempos)
+      compareHours(time, tiempoOS)
+      
+      console.log("TRUE", OS_Tiempos)
       hideTimePicker()
     } else {
       OS_Tiempos = [timpo]
       OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      console.log("e", OS_Tiempos)
+      console.log("FALSE", OS_Tiempos)
       hideTimePicker()
     }
+    
     console.log("tiempoOS", OS_Tiempos.length)
     console.log("tiempoOS", JSON.parse(await AsyncStorage.getItem("OS")))
   }
+
+  
 
   const handeldeffTime = async () => {
     var os = await AsyncStorage.getItem("OS_Tiempos")

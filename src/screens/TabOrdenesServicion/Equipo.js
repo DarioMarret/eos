@@ -1,5 +1,5 @@
 import { getHistorialEquiposStorage, getHistorialEquiposStoragId, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
-import { FlatList, ActivityIndicador, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
+import { FlatList, ActivityIndicador, Pressable, ScrollView, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getIngenierosStorageById } from "../../service/ingenieros"
@@ -27,6 +27,8 @@ export default function Equipo(props) {
     const [loading, setLoading] = useState(false)
 
     const [isLoading, setIsLoading] = useState(false)
+
+    const [modalCreateEquip, setModalCreateEquip] = useState(false)
 
     const [isdisabel, setDisable] = useState(true)
     const [isdisabelsub, setDisableSub] = useState(true)
@@ -414,6 +416,160 @@ export default function Equipo(props) {
     return (
         <View style={styles.container}>
             {/* <ActivityIndicador size={100} color="#FF6B00" /> */}
+            <Modal
+                transparent={true}
+                visible={modalCreateEquip}
+                onRequestClose={() => {
+                    setModalCreateEquip(!modalCreateEquip);
+                }}
+                propagateSwipe={true}
+            >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalContainer}>
+                        <ScrollView
+                        showsHorizontalScrollIndicator={false}
+                        showsVerticalScrollIndicator={false}
+                        style={{ width: "100%", height: 'auto', marginLeft: 20}}>
+                        <Text style={{
+                            fontSize: 20,
+                            color: '#000',
+                            fontFamily: 'Roboto',
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            marginTop: 10
+                        }}>Crear Equipo</Text>
+                        <View style={{...styles.ContainetEquipo, top: 0}}>
+                            <View style={styles.ContainetBuscador}>
+                                <View style={styles.ContainetTipoModelo}>
+
+                                    <Picker
+                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                        selectedValue={tipo}
+                                        onValueChange={(itemValue) => onChangeTipo(itemValue)}
+                                        enabled={isdisabelsub}
+                                    >
+                                        <Picker.Item label={tipo} value={""} />
+                                        {
+                                            equipo ?
+                                                equipo.map((item, index) => (
+                                                    <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
+                                                ))
+                                                : null
+                                        }
+                                    </Picker>
+                                </View>
+                                <View style={{ paddingHorizontal: 10 }} />
+                                <View style={styles.ContainetTipoModelo}>
+                                    <Picker
+                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                        selectedValue={model}
+                                        enabled={isdisabelsub}
+                                        onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+
+                                        <Picker.Item label={model} value={""} />
+                                        {
+                                            modelosub ?
+                                                modelosub.map((item, index) => (
+                                                    <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                                ))
+                                                : null
+                                        }
+                                    </Picker>
+                                </View>
+                            </View>
+                            <View style={{
+                                flexDirection: "row",
+                                marginTop: "10%",
+                                width: "100%",
+                            }}>
+                                <TextInput
+                                    style={{
+                                        borderWidth: 1,
+                                        borderColor: '#CECECA',
+                                        width: "95%",
+                                        height: 60,
+                                        borderRadius: 10,
+                                        padding: 10
+                                    }}
+                                    value={serie}
+                                    onChangeText={text => onChangeSerie(text)}
+                                    placeholder="Serie"
+                                    editable={isdisabelsub}
+                                />
+                            </View>
+
+                            <View style={styles.ContainetBuscador}>
+                                <View style={styles.ContainetTipoModelo}>
+
+                                    <Picker
+                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                        selectedValue={tipo}
+                                        onValueChange={(itemValue) => onChangeTipo(itemValue)}
+                                        enabled={isdisabelsub}
+                                    >
+                                        <Picker.Item label={"Marca"} value={""} />
+                                        {
+                                            equipo ?
+                                                equipo.map((item, index) => (
+                                                    <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
+                                                ))
+                                                : null
+                                        }
+                                    </Picker>
+                                </View>
+                                <View style={{ paddingHorizontal: 10 }} />
+                                <View style={styles.ContainetTipoModelo}>
+                                    <Picker
+                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                        selectedValue={model}
+                                        enabled={isdisabelsub}
+                                        onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+
+                                        <Picker.Item label={"Estado"} value={""} />
+                                        {
+                                            modelosub ?
+                                                modelosub.map((item, index) => (
+                                                    <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                                ))
+                                                : null
+                                        }
+                                    </Picker>
+                                </View>
+                            </View>
+                            <View style={{
+                                flexDirection: "row",
+                                marginTop: "10%",
+                                width: "100%",
+                            }}>
+                                <TextInput
+                                    style={{
+                                        borderWidth: 1,
+                                        borderColor: '#CECECA',
+                                        width: "95%",
+                                        height: 60,
+                                        borderRadius: 10,
+                                        padding: 10
+                                    }}
+                                    value={serie}
+                                    onChangeText={text => onChangeSerie(text)}
+                                    placeholder="Observación"
+                                    editable={isdisabelsub}
+                                />
+                            </View>
+                        </View>
+                        <View style={{ width: "100%", flexDirection: "row", justifyContent: 'center', padding: 15, marginTop: 20 }}>
+                            <TouchableOpacity >
+                                <Text style={{ backgroundColor:"#FF6B00", borderRadius:50, color: "#FFFFFF",paddingHorizontal: 30, paddingVertical: 10 }}>CREAR</Text>
+                            </TouchableOpacity>
+                            <View style={{ paddingHorizontal: 20 }} />
+                            <TouchableOpacity onPress={() => setModalCreateEquip(false)}>
+                                <Text style={{ backgroundColor:"#FFFFFF",borderColor:"#FF6B00", borderWidth: 1,borderRadius:50, color: "#FF6B00",paddingHorizontal: 30, paddingVertical: 10 }}>CERRAR</Text>
+                            </TouchableOpacity>
+                        </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
             <View style={styles.contenedor}>
                 <LoadingActi loading={loading} />
                 <View style={styles.ContainetEquipo}>
@@ -542,7 +698,7 @@ export default function Equipo(props) {
                     width: "100%",
                     backgroundColor: "#FFFFFF"
                 }}>
-                    <TouchableOpacity style={styles.btn} onPress={() => console.log("Crear Equipo")}>
+                    <TouchableOpacity style={styles.btn} onPress={() => setModalCreateEquip(true)}>
                         <AntDesign name="plus" size={24} color="#FFF" />
                         <Text style={{
                             fontSize: 16,
@@ -749,5 +905,30 @@ const styles = StyleSheet.create({
     textModalInfo: {
         fontSize: 16,
         color: '#666666'
-    }
+    },
+    centeredView: {
+        flex: 1,
+        height: "auto",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22,
+    },
+    modalContainer: {
+        width: "90%",
+        height: "auto",
+        borderRadius: 5,
+        backgroundColor: "#FFFFFF",
+        shadowColor: "#000000",
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.17,
+        shadowRadius: 3.05,
+        elevation: 4,
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 5,
+    },
 })
