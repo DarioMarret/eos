@@ -113,7 +113,9 @@ export default function Componentes(props) {
                         } else if (Accion == "OrdenSinTicket") {
 
                             console.log("OrdenSinTicket")
+                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
                             const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent(parte)
                             console.log("OrdenSinTicket-->", parte)
                             setFini(true)
 
@@ -150,7 +152,7 @@ export default function Componentes(props) {
                             
                             console.log("PROCESO")
                             const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            console.log("NUEVO OS TICKET-->", parte)
+                            console.log("PROCESO-->", parte)
                             var p = parte.map((item, index) => {
                                 return {
                                     idLocal: index+1,
@@ -159,7 +161,6 @@ export default function Componentes(props) {
                             })
                             let filter = p.filter((item) => item.Estado == "ACTI")
                             setComponent(filter)
-                            setOrdenServicioID(p[0].OrdenServicioID)
                             await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(p))
                             setFini(true)
 

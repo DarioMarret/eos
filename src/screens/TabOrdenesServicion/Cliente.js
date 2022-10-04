@@ -80,7 +80,13 @@ export default function Cliente(props) {
         // if(osItem.Direccion != null || osItem.Direccion != "" || osItem.Direccion != " "){
         let clie = await GetClienteClienteName(osItem.ClienteNombre)
         const pro = await getCantonesStorageBy(clie[0].CantonID)
+        console.log("pro", pro[0].CustomerID)
         osItem.Ciudad = pro[0].descripcion
+        osItem.ClienteID = clie[0].CustomerID
+        osItem.ClienteNombre = clie[0].CustomerName
+        osItem.Direccion = JSON.parse(clie[0].Sucursal)[0].Direccion
+        osItem.FechaCreacion = moment().format('YYYY/MM/DD')
+
         setCliente({
             ...cliente,
             CustomerName: osItem.ClienteNombre,
@@ -104,7 +110,7 @@ export default function Cliente(props) {
             Estado: osItem.Estado,
             CodigoEquipoCliente: osItem.CodigoEquipoCliente,
         })
-        setFecha(osItem.FechaCreacion.split("T")[0])
+        setFecha(osItem.FechaCreacion)
         // }
         // return
 

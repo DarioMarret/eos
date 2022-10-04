@@ -1,5 +1,5 @@
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ConsultarFechaUltimaActualizacion } from "../../service/config";
+import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
 import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import { GetEventos } from "../../service/OSevento";
 import { isChecked } from "../../service/historiaEquipo";
@@ -17,6 +17,10 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import LoadingActi from "../../components/LoadingActi";
+import { RefresLogin } from "../../service/usuario";
+import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { ParseOS } from "../../service/OS";
+import { useIsConnected, NetworkConsumer } from 'react-native-offline';
 
 
 export default function Hoy(props) {
@@ -27,42 +31,39 @@ export default function Hoy(props) {
     const [loading, setLoading] = useState(false)
     const { navigation } = props
 
+    const isConnected = useIsConnected();
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                // let updateMinuto = await ConsultarFechaUltimaActualizacion()
                 setLoading(true)
-                let updateMinuto = await ConsultarFechaUltimaActualizacion()
-                // if (updateMinuto && isOFFLINE) {
-                //     await RefresLogin()
-                //     await HistorialEquipoIngeniero();
-                //     await ActualizarFechaUltimaActualizacion()
-                // }
                 var date = moment().format('YYYY-MM-DD');
                 const respuesta = await GetEventos(`${date}T00:00:00`)
-                console.log("respuesta-->", respuesta)
-
+                // console.log(respuesta)
                 setEventos(respuesta)
-                // if (isOFFLINE) {
-                //     await getTPTCKStorage()
-                //     var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                //     var hoy = moment().format('YYYY-MM-DD');
-                //     var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                //     const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                //     ticket_id.map(async (r) => {
-                //         await EquipoTicket(r.ticket_id)
-                //         await OrdenServicioAnidadas(r.evento_id)
-                //     })
-                // }
-                db.transaction(tx => {
-                    tx.executeSql(
-                        `SELECT * FROM OrdenesServicio`,
-                        [],
-                        (tx, results) => {
-                            console.log("results.rows.length", results.rows.length)
-                        }
-                    );
-                });
                 setLoading(false)
+
+                console.log("isConnected-->", isConnected)
+                // db.transaction(tx => {
+                //     tx.executeSql(`select * from OrdenesServicio where ticket_id = ?`, ['131197154'], (tx, results) => {
+                //         var len = results.rows;
+                //         console.log(len)
+                //     })
+                // })
+                db.transaction(tx => {
+                    tx.executeSql(`select * from OS_OrdenServicio where ticket_id = ?`, ['399590922'], (tx, results) => {
+                        var len = results.rows;
+                        console.log(len)
+                    })
+                })
+
+                if (isConnected) {
+                    // setLoading(true)
+                    await RefresLogin()
+                    await ActualizarFechaUltimaActualizacion()
+                    // setLoading(false)
+                }
             })()
         }, [])
     )
@@ -101,11 +102,9 @@ export default function Hoy(props) {
                 console.log("no hay anidadas")
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                        console.log("id_equipo-->", rows._array[0].id_equipo)
+                        // console.log("id_equipo-->", rows._array[0])
                         db.transaction(tx => {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                                // console.log("equipo selecionado hoy row", rows._array)
-                                console.log("equipo selecionado hoy row", JSON.parse(rows._array[0].historial)[0].OrdenServicioID)
                                 Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado)
                             })
                         })
@@ -137,9 +136,12 @@ export default function Hoy(props) {
             console.log("OrdenServicioID", OrdenServicioID)
             if (equipo.length != 0) {
                 await AsyncStorage.removeItem(ticketID)
-                OS.ticket_id = ticket_id
-                OS.evento_id = evento_id
-                await AsyncStorage.setItem("OS", JSON.stringify(OS))
+                const OS = await SelectOSOrdenServicioID(OrdenServicioID)
+                let parse = await ParseOS(OS, estado)
+                console.log("OS", parse)
+                parse.ticket_id = ticket_id
+                parse.evento_id = evento_id
+                await AsyncStorage.setItem("OS", JSON.stringify(parse))
                 await AsyncStorage.setItem(ticketID, JSON.stringify({
                     ticket_id,
                     equipo,
@@ -162,7 +164,6 @@ export default function Hoy(props) {
         } catch (error) {
             console.log("error", error)
         }
-
     }
 
 

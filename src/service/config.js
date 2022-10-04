@@ -145,12 +145,12 @@ export const ConsultarFechaUltimaActualizacion = async () => {
                 var a = moment(horaActual);
                 var b = moment(ultimActu);
                 let minuto = a.diff(b, 'minutes')
-                if (minuto > 5) {
+                if (minuto > 60) {
                     resolve(true)
                 } else {
                     resolve(false)
                 }
-            });
+            })
         })
     })
 }

@@ -1175,6 +1175,7 @@ export const os_checklist = {
     Estado: "ACTI",
     Observacion: null
 }
+
 export const os_firma = {
     OS_OrdenServicio: null,
     IdFirma: 0,
@@ -1193,6 +1194,7 @@ export const os_firma = {
     Correo: "",
     archivo: ""
 }
+
 export const ParteRespuestos = {
     IdParte: 0,
     OrdenServicioID: 0,

@@ -11,10 +11,10 @@ import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { evento, OS, ticketID } from "../utils/constantes";
 
-import { Network } from "../service/Network";
 import { PostOS } from "../service/OS";
 import { ListarOrdenServicioLocal } from "../service/OS_OrdenServicio";
-import { SelectCategoriaDetalle } from "../service/catalogos";
+import { useIsConnected } from 'react-native-offline';
+import { BuscarOrdenServicioLocales } from "../service/ServicioLoca";
 
 
 export default function Banner(props) {
@@ -22,10 +22,10 @@ export default function Banner(props) {
 
     const [update, setupdate] = useState(false)
     const [message, setMessage] = useState("Actualizando...")
+    const isConnected = useIsConnected();
 
     async function ActualizarEventos() {
-        (console.log(await Network()))
-        if(Network()){
+        if (isConnected) {
             Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexión estable.", [
                 {
                     text: "OK",
@@ -65,34 +65,41 @@ export default function Banner(props) {
 
 
     async function Sincronizar() {
-        return new Promise((resolve, reject) => {
-            NetInfo.fetch().then(state => {
-                console.log("state", state)
-                if (state.isConnected === true) {
-                    (async () => {
-                        // await UpdateLocal()
-                        await TrucateUpdate()
-                        time(1500)
-                        await HistorialEquipoIngeniero()
-                        await time(1000)
-                        await GetEventosDelDia()
-                        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                        var hoy = moment().format('YYYY-MM-DD');
-                        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                        ticket_id.map(async (r) => {
-                            await EquipoTicket(r.ticket_id)
-                            await OrdenServicioAnidadas(r.evento_id)
-                        })
-                        resolve(true)
-                    })()
-                } else {
-                    resolve(false)
-                }
-            })
-        })
+        if (isConnected) {
+            const res = await BuscarOrdenServicioLocales()
+            if (res) {
+                Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambias")
+                await UpdateLocal()
+                await TrucateUpdate()
+                await HistorialEquipoIngeniero()
+                // await time(1000)
+                await GetEventosDelDia()
+                var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                var hoy = moment().format('YYYY-MM-DD');
+                var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                ticket_id.map(async (r) => {
+                    await EquipoTicket(r.ticket_id)
+                    await OrdenServicioAnidadas(r.evento_id)
+                })
+            }else{
+                await UpdateLocal()
+                await TrucateUpdate()
+                await HistorialEquipoIngeniero()
+                // await time(1000)
+                await GetEventosDelDia()
+                var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                var hoy = moment().format('YYYY-MM-DD');
+                var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                ticket_id.map(async (r) => {
+                    await EquipoTicket(r.ticket_id)
+                    await OrdenServicioAnidadas(r.evento_id)
+                })
+            }
+        }
     }
-    
+
     const CrearNuevoOrdenServicioSinTiket = async () => {
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
@@ -105,32 +112,26 @@ export default function Banner(props) {
         await AsyncStorage.setItem("OS", JSON.stringify(OS))
         navigation.navigate("Ordenes")
     }
+    
     const UpdateLocal = async () => {
-        const res = await ListarOrdenServicioLocal()
-        console.log("res", res)
-        if (res){
+        const res = await BuscarOrdenServicioLocales()
+        if (res) {
             res.map(async (r) => {
                 r.OS_PartesRepuestos = JSON.parse(r.OS_PartesRepuestos)
-                r.Estado = "ACTI"
                 r.OS_Tiempos = JSON.parse(r.OS_Tiempos)
                 r.OS_Firmas = JSON.parse(r.OS_Firmas)
                 r.OS_CheckList = JSON.parse(r.OS_CheckList)
                 r.ticket_id = 0
+                r.OrdenServicioID = 0
+                r.evento_id = 0
                 delete r.OS_Anexos
                 delete r.OS_Colaboradores
                 delete r.OS_Encuesta
-                console.log("OS", r)
-                // InsertEventosLocalesUpadte(r)
                 let P = await PostOS(r)
                 console.log("P", P)
-                if (P == "200") {
-                    // setModalVisible(false)
-                } else {
-                    // setModalVisible(false)
-                    Alert.alert("Error", "No se pudo crear la orden de servicio")
-                }
             })
-        }else{
+            return true
+        } else {
             return true
         }
     }

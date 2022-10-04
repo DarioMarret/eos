@@ -63,11 +63,11 @@ export const time = time => new Promise(resolve => setTimeout(resolve, time));
 
 //eliminar tablas cada que cierre la app
 export const TrucateTable = async () => {
-    db.transaction(tx => {
-        tx.executeSql('delete table historialEquipo', [], (_, { rows }) => {
-            console.log("delete table historialEquipo", rows);
-        })
-    })
+    // db.transaction(tx => {
+    //     tx.executeSql('delete table historialEquipo', [], (_, { rows }) => {
+    //         console.log("delete table historialEquipo", rows);
+    //     })
+    // })
     db.transaction(tx => {
         tx.executeSql('delete table ingenieros', [], (_, { rows }) => {
             console.log("delete table ingenieros", rows);
@@ -105,13 +105,11 @@ export const TrucateTable = async () => {
 export const TrucateUpdate = async () => {
     return new Promise((resolve, reject) => {
         for (let index = 0; index < 2; index++) {
-
-            
-            db.transaction(tx => {
-                tx.executeSql('drop table historialEquipo', [], (_, { rows }) => {
-                    console.log("drop table historialEquipo", rows);
-                });
-            })
+            // db.transaction(tx => {
+            //     tx.executeSql('drop table historialEquipo', [], (_, { rows }) => {
+            //         console.log("drop table historialEquipo", rows);
+            //     });
+            // })
             db.transaction(tx => {
                 tx.executeSql('drop table OrdenesServicio', [], (_, { rows }) => {
                     console.log("drop table OrdenesServicio", rows);
