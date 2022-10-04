@@ -17,14 +17,15 @@ import { useFocusEffect } from "@react-navigation/native";
 import { InsertEventosLocales } from "../service/OSevento";
 import { SelectCategoriaDetalle } from "../service/catalogos";
 import { InserOSOrdenServicioIDLocal, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
-
+import { ActualizarOrdenServicioLocal, EditareventoLocal, EditarOrdenServicioLocal, registartEquipoTicket, RestablecerLocalStore } from "../service/ServicioLoca";
+import { useIsConnected } from 'react-native-offline';
 
 export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
     const { name, params } = route
 
     const [modalVisible, setModalVisible] = useState(false)
-
+    const isConnected = useIsConnected();
 
 
     const { TabTitle } = tabNavigation()
@@ -113,7 +114,7 @@ export default function BannerOrderServi(props) {
                     let P = await PutOS(OS)
                     if (P == 204) {
                         console.log("PUT OK")
-                        await UpdateOSOrdenServicioID(OrdenServicioID)
+                        await UpdateOSOrdenServicioID([OrdenServicioID])
                         await LimpiandoDatos()
                         setModalVisible(false)
                     } else {
@@ -158,88 +159,97 @@ export default function BannerOrderServi(props) {
         return Math.floor(Math.random() * max)
     }
     const GuadarLocalmente = async () => {
-        const os = await AsyncStorage.getItem("OS")
-        var OS = JSON.parse(os)
-        var rando = getRandomInt(1000)
-        let OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-        let OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
-        let OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
-        let OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
-        let OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-        OS.OS_PartesRepuestos = OS_PartesRepuestos
-        OS.OS_CheckList = OS_CheckList
-        OS.OS_Tiempos = OS_Tiempos
-        OS.OS_Firmas = OS_Firmas
-        OS.OS_Anexos = OS_Anexos
-        OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        OS.OS_Colaboradores = []
-        OS.OS_Encuesta = []
-        OS.ticket_id = rando
-        OS.Estado = "ACTI"
-        OS.OS_LOCAL = "UPDATE"
-        console.log("OS", OS)
-        console.log("OS Object keys", Object.keys(OS).length)
+        var itenSelect = await AsyncStorage.getItem(ticketID)
+        console.log("itenSelect", itenSelect)
+        const item = JSON.parse(itenSelect)
+        const { Accion, OrdenServicioID } = item
+        var OS = JSON.parse(await AsyncStorage.getItem("OS"))
+        if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
+            var rando = getRandomInt(1000000000)
+            let OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+            let OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+            let OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+            let OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+            let OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+            OS.OS_PartesRepuestos = OS_PartesRepuestos
+            OS.OS_CheckList = OS_CheckList
+            OS.OS_Tiempos = OS_Tiempos
+            OS.OS_Firmas = OS_Firmas
+            OS.OS_Anexos = OS_Anexos
+            OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            OS.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            OS.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+            OS.OS_Colaboradores = []
+            OS.OS_Encuesta = []
+            OS.ticket_id = rando
+            OS.evento_id = rando
+            OS.OrdenServicioID = rando
+            OS.Estado = "ACTI"
+            OS.OS_LOCAL = "UPDATE"
+            console.log("OS", OS)
+            console.log("OS Object keys", Object.keys(OS).length)
 
-        // let ordenLocal = await InserOSOrdenServicioIDLocal(OS)
-        await InsertEventosLocalesUpadte(OS, rando)
+            await registartEquipoTicket(OS.equipo_id, OS.contrato_id, rando)
+            await InsertEventosLocalesUpadte(OS, rando)
+            await InserOSOrdenServicioIDLocal(OS, rando)
 
-        // console.log("ordenLocal", ordenLocal)
-        await AsyncStorage.removeItem("OS_PartesRepuestos")
-        await AsyncStorage.removeItem("OS_CheckList")
-        await AsyncStorage.removeItem("OS_Tiempos")
-        await AsyncStorage.removeItem("OS_Firmas")
-        await AsyncStorage.removeItem("OS_Anexos")
-        await AsyncStorage.removeItem("OS")
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
-        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
-        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
-        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
-        await AsyncStorage.setItem("OS", JSON.stringify(OS))
+            await RestablecerLocalStore()
+            resetTab()
+            navigation.navigate("Consultas")
+
+        } else {
+            let OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+            let OS_CheckList = JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
+            let OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
+            let OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
+            let OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+            OS.OS_PartesRepuestos = OS_PartesRepuestos
+            OS.OS_CheckList = OS_CheckList
+            OS.OS_Tiempos = OS_Tiempos
+            OS.OS_Firmas = OS_Firmas
+            OS.OS_Anexos = OS_Anexos
+            OS.OS_Colaboradores = []
+            OS.OS_Encuesta = []
+            OS.Estado = "PROC"
+            OS.OS_LOCAL = "UPDATE"
+            console.log("OS", OS)
+            console.log("OS Object keys", Object.keys(OS).length)
+            await EditareventoLocal("PROCESO", OrdenServicioID)
+            await ActualizarOrdenServicioLocal(OS)
+            // await EditarOrdenServicioLocal(OS, OrdenServicioID)
+            await RestablecerLocalStore()
+            resetTab()
+            navigation.navigate("Consultas")
+        }
 
     }
 
     const InsertEventosLocalesUpadte = async (r, tikeck) => {
         const itenSelect = await AsyncStorage.getItem(ticketID)
-        if (itenSelect != null) {
-            const item = JSON.parse(itenSelect)
-            const { Accion, OrdenServicioID } = item
-            if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
-                evento.tck_cliente = r.ClienteNombre
-                evento.ev_estado = "PENDIENTE"
-                evento.tck_direccion = r.Direccion
-                evento.ticket_id = tikeck
-                evento.ev_fechaAsignadaDesde = `${moment().format("YYYY-MM-DDT00:00:00")}`
-                evento.ev_fechaAsignadaHasta = `${moment().format("YYYY-MM-DDT00:00:00")}`
-                evento.ev_horaAsignadaDesde = `${moment().format("HH:mm:ss")}`
-                evento.ev_horaAsignadaHasta = `${moment().format("HH:mm:ss")}`
-                evento.tck_tipoTicket = await SelectCategoriaDetalle(r.TipoVisita)
-                console.log("evento", evento)
-                const res = await InsertEventosLocales(evento)
-                console.log("evento registrado", res)
-                resetTab()
-                navigation.navigate("Consultas")
-            }
+        const item = JSON.parse(itenSelect)
+        const { Accion, OrdenServicioID } = item
+        if (Accion == "clonar" || Accion == "OrdenSinTicket" || Accion == "NUEVO OS TICKET") {
+            evento.tck_cliente = r.ClienteNombre
+            evento.ev_estado = "PROCESO"
+            evento.tck_direccion = r.Direccion
+            evento.ticket_id = tikeck
+            evento.ev_fechaAsignadaDesde = `${moment().format("YYYY-MM-DDT00:00:00")}`
+            evento.ev_fechaAsignadaHasta = `${moment().format("YYYY-MM-DDT00:00:00")}`
+            evento.ev_horaAsignadaDesde = `${moment().format("HH:mm:ss")}`
+            evento.ev_horaAsignadaHasta = `${moment().format("HH:mm:ss")}`
+            evento.tck_tipoTicket = await SelectCategoriaDetalle(r.TipoVisita)
+            console.log("evento", evento)
+            const res = await InsertEventosLocales(evento)
+            console.log("evento registrado", res)
+            resetTab()
+            navigation.navigate("Consultas")
         }
     }
 
 
     async function LimpiandoDatos() {
         await Sincronizar()
-        await AsyncStorage.removeItem("OS_PartesRepuestos")
-        await AsyncStorage.removeItem("OS_CheckList")
-        await AsyncStorage.removeItem("OS_Tiempos")
-        await AsyncStorage.removeItem("OS_Firmas")
-        await AsyncStorage.removeItem("OS_Anexos")
-        await AsyncStorage.removeItem("OS")
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
-        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
-        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
-        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
-        await AsyncStorage.setItem("OS", JSON.stringify(OS))
+        await RestablecerLocalStore()
         resetTab()
         navigation.navigate("Consultas")
     }
@@ -315,23 +325,21 @@ export default function BannerOrderServi(props) {
                                 flexDirection: 'row',
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
-                            }} onPress={() => {
-                                NetInfo.fetch().then(state => {
-                                    if (state.isConnected == true) {
-                                        GUARDAR_OS()
-                                    } else {
-                                        Alert.alert(
-                                            "Info",
-                                            "No hay conexión a internet se guardara en el dispositivo",
-                                            [
-                                                {
-                                                    text: "OK",
-                                                    onPress: () => GuadarLocalmente()
-                                                }
-                                            ]
-                                        )
-                                    }
-                                });
+                            }} onPress={async () => {
+                                if (!isConnected) {
+                                    await GUARDAR_OS()
+                                } else {
+                                    Alert.alert(
+                                        "Info",
+                                        "No hay conexión a internet se guardara en el dispositivo",
+                                        [
+                                            {
+                                                text: "OK",
+                                                onPress: () => GuadarLocalmente()
+                                            }
+                                        ]
+                                    )
+                                }
                             }}>
                                 {
                                     editar ?

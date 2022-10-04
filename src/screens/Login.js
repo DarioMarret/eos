@@ -4,9 +4,10 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Image, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Asset } from "expo-asset";
 import logo from '../../assets/logo_eos.png';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import useUser from '../hook/useUser';
 import { LoginForm } from '../service/usuario';
+import { useIsConnected } from 'react-native-offline';
 
 export default function Login() {
   const [isChecked, setChecked] = useState(false);
@@ -17,11 +18,14 @@ export default function Login() {
 
   const [errorLog, setErrorLog] = useState(false);
   const [visible, setVisible] = useState(false);
+  const [sinconexion, setSinConexion] = useState(false);
   const toggleAlert = useCallback(() => {
     setVisible(!visible);
-  }, [visible]);
+  }, [visible])
 
-  const { login } = useUser();
+
+  const { login } = useUser()
+  const isConnected = useIsConnected()
 
   const handleCheckboxChange = () => {
     setChecked(!isChecked);
@@ -31,29 +35,36 @@ export default function Login() {
   }
 
   const handleLogin = async () => {
-    setVisible(!visible);
-    const data = await LoginForm(userData)
-    console.log("LoginForm-->", data)
-    if (data.success == false) {
-      setUserData({
-        username: "",
-        password: ""
-      });
-      setVisible(false);
-      setErrorLog(true)
-      return;
-    } else {
-      const r = await login(data)
-      if (r == false) {
-        setVisible(!visible);
+    if (isConnected) {
+      setVisible(!visible);
+      const data = await LoginForm(userData)
+      console.log("LoginForm-->", data)
+      if (data.success == false) {
         setUserData({
           username: "",
           password: ""
         });
+        setVisible(false);
+        setErrorLog(true)
         return;
       } else {
-        setVisible(!visible);
+        const r = await login(data)
+        if (r == false) {
+          setVisible(!visible);
+          setUserData({
+            username: "",
+            password: ""
+          });
+          return;
+        } else {
+          setVisible(!visible);
+        }
       }
+    } else {
+      setSinConexion(true)
+      setTimeout(() => {
+        setSinConexion(false)
+      }, 2000);
     }
   }
 
@@ -79,19 +90,34 @@ export default function Login() {
 
           <Modal
             animationType="slide"
+            visible={sinconexion}
+            transparent={true}
+            style={{ backgroundColor: 'white' }}
+          >
+            <View style={styles.centeredView}>
+              <View style={styles.modalView}>
+                <Ionicons name="cloud-offline" size={30} color="#FF6B00" />
+                <Text style={{ marginTop: 16, marginBottom: 32 }}>Sin conexion a internet</Text>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal
+            animationType="slide"
             visible={errorLog}
             transparent={true}
-            style={{ backgroundColor: 'white'
+            style={{
+              backgroundColor: 'white'
             }}
           >
             <View style={styles.centeredView}>
-              <View style={{...styles.modalView, height:'auto'}}>
-                <Text style={{fontSize: 20, color: '#FF6B00', fontWeight: 'bold' }}>Usuario o contraseña incorrectos.</Text>
-                <Text style={{marginTop:20}} onPress={()=>setErrorLog(false)} >
-                  <AntDesign name="closecircle" size={30} color="#FF6B00" />  
+              <View style={{ ...styles.modalView, height: 'auto' }}>
+                <Text style={{ fontSize: 20, color: '#FF6B00', fontWeight: 'bold' }}>Usuario o contraseña incorrectos.</Text>
+                <Text style={{ marginTop: 20 }} onPress={() => setErrorLog(false)} >
+                  <AntDesign name="closecircle" size={30} color="#FF6B00" />
                 </Text>
               </View>
-              
+
             </View>
           </Modal>
 

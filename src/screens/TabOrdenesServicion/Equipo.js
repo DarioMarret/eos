@@ -141,6 +141,7 @@ export default function Equipo(props) {
                     } else if (Accion == "PROCESO") {
 
                         console.log("PROCESO")
+                        console.log("OS", os)
                         let equiId = await getHistorialEquiposStoragId(os.equipo_id)
                         GuadadoOS(equiId[0])
                         equiId.map((item, index) => {

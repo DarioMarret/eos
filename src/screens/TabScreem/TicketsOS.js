@@ -29,10 +29,13 @@ import { time, TrucateUpdate } from "../../service/CargaUtil";
 import LoadingActi from "../../components/LoadingActi";
 
 import Firmador from "../../components/Firmador"
+import { useIsConnected } from 'react-native-offline';
+import { FinalizarOSLocal } from "../../service/ServicioLoca";
 
 export default function TicketsOS(props) {
     const { navigation } = props
     const [eventosAnidados, seteventosAnidados] = useState([])
+    const isConnected = useIsConnected()
 
     const [Fini, setFini] = useState(false)
 
@@ -51,6 +54,8 @@ export default function TicketsOS(props) {
     const [pdfview, setPdfview] = useState(true)
     const [pdfurl, setPdfurl] = useState("")
 
+    const [tin, setTin] = useState(false)
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -60,7 +65,6 @@ export default function TicketsOS(props) {
             })()
         }, [])
     )
-
 
     const functionColor = (type) => {
         if (type == "PENDIENTE") {
@@ -129,22 +133,22 @@ export default function TicketsOS(props) {
     }
 
     async function EnviarOS(item) {
-        console.log("EnviarOS", item)
-        const { ClienteID, UsuarioCreacion } = await getRucCliente(item)
-        console.log("ClienteID", ClienteID)
-
-        const { token } = await getToken()
-        const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        })
-        console.log("data", data)
-        setlistadoEmails(data)
-        setIdOrdenServicio(item)
-        setModalVisible(!modalVisible)
+        if (isConnected) {
+            const { ClienteID, UsuarioCreacion } = await getRucCliente(item)
+            const { token } = await getToken()
+            const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            setlistadoEmails(data)
+            setIdOrdenServicio(item)
+            setModalVisible(!modalVisible)
+        } else {
+            Alert.alert("Error de conexion", "No se puede enviar la orden de servicio sin conexion a internet")
+        }
 
     }
 
@@ -235,21 +239,50 @@ export default function TicketsOS(props) {
                 OrdenServicioI.push(item.OrdenServicioID)
             }
         })
-        var os = JSON.parse(await AsyncStorage.getItem("OS"))
-        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-        const { OrdenServicioID } = itenSelect
-        if (OrdenServicioID != null) {
-            let respuesta = await FinalizarOS_(OrdenServicioID, os)
-            console.log("FinalizarOS", respuesta)
-        }
-        const respuesta = await FinalizarOS(OrdenServicioI)
-        if (respuesta == 200) {
-            const re = await Sincronizar()
-            if (re) {
-                setFini(false)
-                setLoading(false)
-                navigation.navigate("Consultas")
+
+        if (isConnected) {
+            var os = JSON.parse(await AsyncStorage.getItem("OS"))
+            const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
+            const { OrdenServicioID } = itenSelect
+            if (OrdenServicioID != null) {
+                let respuesta = await FinalizarOS_(OrdenServicioID, os)
+                console.log("FinalizarOS", respuesta)
             }
+            const respuesta = await FinalizarOS(OrdenServicioI)
+            if (respuesta == 200) {
+                const re = await Sincronizar()
+                if (re) {
+                    setFini(false)
+                    let event = eventosAnidados.map((item, index) => {
+                        if (item.OrdenServicioID == OrdenServicioI[index]) {
+                            return {
+                                ...item,
+                                ev_estado: "FINALIZADO"
+                            }
+                        }else{
+                            return item
+                        }
+                    })
+                    seteventosAnidados(event)
+                    setTin(!tin)
+                    setLoading(false)
+                }
+            }
+        } else {
+
+            await FinalizarOSLocal(OrdenServicioI)
+            setFini(false)
+            let event = eventosAnidados.map((item, index) => {
+                if (item.OrdenServicioID == OrdenServicioI[index]) {
+                    return {
+                        ...item,
+                        ev_estado: "FINALIZADO"
+                    }
+                }else{
+                    return item
+                }
+            })
+            seteventosAnidados(event)
         }
         // const ticket_id = JSON.parse(await AsyncStorage.getItem(ticketID)).ticket_id
         // const response = await getOrdenServicioAnidadasTicket_id(ticket_id)

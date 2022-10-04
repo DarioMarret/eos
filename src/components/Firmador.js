@@ -9,6 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { ActualizarOrdenServicioFirmas, ListarFirmas, SelectOSOrdenServicioID } from "../service/OS_OrdenServicio";
 import axios from "axios";
+import { useIsConnected } from 'react-native-offline';
 
 
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
@@ -16,6 +17,8 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     const [listF, setListF] = useState([])
     const [OrdenServicioID, setOrdenServicioID] = useState(0)
     const [obs, setObs] = useState(false)
+    const isConnected = useIsConnected()
+
 
     const handleOK = async (signature) => {
         console.log("signature", signature)
@@ -149,22 +152,30 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
         rest[0].OS_FINALIZADA = ""
         rest[0].OS_ASUNTO = ""
         rest[0].OS_Anexos = OS_Anexos
-        console.log("rest", rest[0])
-        try {
-            const { token } = await getToken()
-            const { status } = await axios.put(
-                `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
-                rest[0], {
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                }
-            })
+        // console.log("rest", rest[0])
+        if(isConnected){
+            try {
+                const { token } = await getToken()
+                const { status } = await axios.put(
+                    `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
+                    rest[0], {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
+                setModalSignature(false)
+                return status
+            } catch (error) {
+                console.log("PutOS", error)
+                return false
+            }
+        }else{
+            await ActualizarFirmaLocal(OrdenServicioID, OS_Firmas)
             await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
             setModalSignature(false)
-            return status
-        } catch (error) {
-            console.log("PutOS", error)
+            Alert.alert("Orden de Servicio", "Se ha guardado la firma localmente")
             return false
         }
     }

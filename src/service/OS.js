@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import { timpo } from "../utils/constantes";
 import { time } from "./CargaUtil";
-import { InserOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
+import { InserOSOrdenServicioID, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 export const PostOS = async (data) => {
@@ -61,20 +62,53 @@ export const PutOS = async (datos) => {
  * @returns 
  */
 export const FinalizarOS = async (OrdenServicioID) => {
+    console.log("FinalizarOS", OrdenServicioID)
     const { token } = await getToken()
-    return new Promise((resolve, reject) => {
-        OrdenServicioID.map(async (item, index) => {
-            const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${item}`, {}, {
+    OrdenServicioID.map(async (item) => {
+        const os = await SelectOSOrdenServicioID(item)
+        const OS_PartesRepuestos = JSON.parse(os[0].OS_PartesRepuestos)
+        const OS_CheckList = JSON.parse(os[0].OS_CheckList)
+        const OS_Tiempos = JSON.parse(os[0].OS_Tiempos)
+        const OS_Anexos = JSON.parse(os[0].OS_Anexos)
+        const OS_Firmas = JSON.parse(os[0].OS_Firmas)
+        os[0].OS_PartesRepuestos = OS_PartesRepuestos
+        os[0].OS_CheckList = OS_CheckList
+        os[0].OS_Tiempos = OS_Tiempos
+        os[0].OS_Firmas = OS_Firmas
+        os[0].OS_Colaboradores = []
+        os[0].OS_Encuesta = []
+        os[0].OS_ASUNTO = ""
+        os[0].OS_FINALIZADA = ""
+        os[0].Estado = "FINA"
+        console.log("FinalizarOS", os[0])
+        os[0].OS_Anexos = OS_Anexos
+        try {
+            const { data, status } = await axios.put(
+                `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${os[0].OrdenServicioID}`,
+                os[0], {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
                 }
             })
-            console.log("status", status)
-
-        })
-        resolve(200)
+            console.log("PutOS", data)
+            console.log("PutOS Status", status)
+        } catch (error) {
+            console.log("PutOS ERROR", error)
+            return false
+        }
     })
+    await time(1000)
+    OrdenServicioID.map(async (item) => {
+        const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${item}`, {}, {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        console.log("status", status)
+    })
+    return 200
 }
 
 export const FinalizarOS_ = async (OrdenServicioID, datos) => {
@@ -106,8 +140,9 @@ export const FinalizarOS_ = async (OrdenServicioID, datos) => {
         console.log("PutOS", data)
         console.log("PutOS Status", status)
         if (status == 204) {
+            await time(6000)
             await FinalizarOS([OrdenServicioID])
-            await UpdateOSOrdenServicioID(OrdenServicioID)
+            await UpdateOSOrdenServicioID([OrdenServicioID])
             return status
         } else {
             return false

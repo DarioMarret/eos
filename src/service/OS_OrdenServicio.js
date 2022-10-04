@@ -32,18 +32,19 @@ export const UpdateOSOrdenServicioID = async (OrdenServicioID) => {
     await DeleteOrdenServicioID(OrdenServicioID)
     try {
         const { token, userId } = await getToken()
-        console.log("----> ", token, "\n", userId)
-        const url = `${host}MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`;
-        const response = await fetch(url, {
-            method: "GET",
-            headers: {
-                'Authorization': 'Bearer ' + token
-            }
+        OrdenServicioID.map(async (item) => {
+            const url = `${host}MSOrdenServicio/api/OS_OrdenServicio/${item}`;
+            const response = await fetch(url, {
+                method: "GET",
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                }
+            })
+            const resultado = await response.json()
+            const { Response } = resultado
+            await InserOSOrdenServicioID(Response)
+            return true
         })
-        const resultado = await response.json()
-        const { Response } = resultado
-        await InserOSOrdenServicioID(Response)
-        return true
     } catch (error) {
         console.log("errores OSOrdenServicioID--->", error);
     }
@@ -221,16 +222,19 @@ export async function SelectOSOrdenServicioID(OrdenServicioID) {
 
 export async function DeleteOrdenServicioID(OrdenServicioID) {
     return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-            tx.executeSql(`DELETE FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
-                [OrdenServicioID], (_, { rows: { _array } }) => {
-                    if (_array.length > 0) {
-                        console.log("existe OS_OrdenServicioID-->", _array)
-                        resolve(_array)
-                    } else {
-                        resolve(false)
-                    }
-                })
+        OrdenServicioID.map((item) => {
+            db.transaction((tx) => {
+                tx.executeSql(`DELETE FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                    [item], (_, { rows: { _array } }) => {
+                        if (_array.length > 0) {
+                            console.log("existe OS_OrdenServicioID-->", _array)
+                            resolve(_array)
+                        } else {
+                            resolve(false)
+                        }
+                    })
+            })
+
         })
     })
 }
@@ -383,7 +387,7 @@ export async function ComponenteOSOrdenServicioID(OrdenServicioID) {
 }
 
 
-export const InserOSOrdenServicioIDLocal = async (r) => {
+export const InserOSOrdenServicioIDLocal = async (r, rando) => {
     console.log("InserOSOrdenServicioIDLocal-->", r.OrdenServicioID)
     return new Promise((resolve, reject) => {
         db.exec([{
@@ -463,7 +467,7 @@ export const InserOSOrdenServicioIDLocal = async (r) => {
                 r.cantonId,
                 r.localidad,
                 r.tipoIncidencia,
-                r.OrdenServicioID,
+                rando,
                 r.TipoVisita,
                 r.Fecha,
                 r.Estado,
@@ -513,7 +517,7 @@ export const InserOSOrdenServicioIDLocal = async (r) => {
                 r.OS_FINALIZADA,
                 r.enviado,
                 r.codOS,
-                r.OS_LOCAL
+                "UPDATE"
             ],
         }], false, (err, results) => {
             if (err) {
@@ -525,6 +529,7 @@ export const InserOSOrdenServicioIDLocal = async (r) => {
         resolve(true)
     });
 }
+
 export const ListarOrdenServicioLocal = async () => {
     return new Promise((resolve, reject) => {
         db.transaction(tx => {
@@ -534,7 +539,7 @@ export const ListarOrdenServicioLocal = async () => {
                 (tx, results) => {
                     if (results.rows.length > 0) {
                         resolve(results.rows._array)
-                    }else{
+                    } else {
                         resolve(false)
                     }
                 }
