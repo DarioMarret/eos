@@ -444,7 +444,7 @@ export default function TicketsOS(props) {
                                                                 }
                                                                 <MenuOption
                                                                     onSelect={() => VisualizarPdf(item.OrdenServicioID)}
-                                                                    text='Visializar PDF'
+                                                                    text='Visualizar PDF'
                                                                     customStyles={{
                                                                         optionText: {
                                                                             fontSize: 16,

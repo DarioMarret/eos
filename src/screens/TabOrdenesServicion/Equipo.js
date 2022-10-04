@@ -1,5 +1,5 @@
 import { getHistorialEquiposStorage, getHistorialEquiposStoragId, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
-import { FlatList, ActivityIndicador, Pressable, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
+import { FlatList, ActivityIndicador, Pressable, ScrollView, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getIngenierosStorageById } from "../../service/ingenieros"
@@ -27,6 +27,8 @@ export default function Equipo(props) {
     const [loading, setLoading] = useState(false)
 
     const [isLoading, setIsLoading] = useState(false)
+
+    const [modalCreateEquip, setModalCreateEquip] = useState(false)
 
     const [isdisabel, setDisable] = useState(true)
     const [isdisabelsub, setDisableSub] = useState(true)
@@ -413,6 +415,30 @@ export default function Equipo(props) {
     return (
         <View style={styles.container}>
             {/* <ActivityIndicador size={100} color="#FF6B00" /> */}
+            <Modal
+                transparent={true}
+                visible={modalCreateEquip}
+                onRequestClose={() => {
+                    setModalCreateEquip(!modalCreateEquip);
+                }}
+                propagateSwipe={true}
+            >
+                <View style={styles.centeredView}>
+                    <View style={styles.modalContainer}>
+                        <ScrollView
+                        showsHorizontalScrollIndicator={false}
+                        showsVerticalScrollIndicator={false}
+                        style={{ width: "100%", height: 100 }}>
+                        <Text style={{
+                            fontSize: 16,
+                            color: '#000',
+                            fontFamily: 'Roboto',
+                            marginLeft: "5%"
+                        }}>Crear Equipo</Text>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
             <View style={styles.contenedor}>
                 <LoadingActi loading={loading} />
                 <View style={styles.ContainetEquipo}>
@@ -541,7 +567,7 @@ export default function Equipo(props) {
                     width: "100%",
                     backgroundColor: "#FFFFFF"
                 }}>
-                    <TouchableOpacity style={styles.btn} onPress={() => console.log("Crear Equipo")}>
+                    <TouchableOpacity style={styles.btn} onPress={() => setModalCreateEquip(true)}>
                         <AntDesign name="plus" size={24} color="#FFF" />
                         <Text style={{
                             fontSize: 16,
@@ -748,5 +774,29 @@ const styles = StyleSheet.create({
     textModalInfo: {
         fontSize: 16,
         color: '#666666'
-    }
+    },
+    centeredView: {
+        flex: 1,
+        height: "auto",
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 22,
+    },
+    modalContainer: {
+        width: "90%",
+        height: "95%",
+        borderRadius: 5,
+        backgroundColor: "#FFFFFF",
+        shadowColor: "#000000",
+        shadowOffset: {
+            width: 0,
+            height: 3,
+        },
+        shadowOpacity: 0.17,
+        shadowRadius: 3.05,
+        elevation: 4,
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: 5,
+    },
 })

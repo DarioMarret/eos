@@ -4,11 +4,11 @@ import PDFReader from 'rn-pdf-reader-js-improved'
 
 
 export default function VisualizadorPDF(props) {
-    const { url, setPdfview, setPdfurl } = props;
+    const { url, setPdfview, setPdfurl,pdfview } = props;
 
     const source = { base64: `data:application/pdf;base64,${url}`, cache: true };
     function Volver(){
-        setPdfview(true);
+        setPdfview(!pdfview);
         setPdfurl("");
     }
     return (

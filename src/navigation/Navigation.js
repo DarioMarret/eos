@@ -23,7 +23,10 @@ import TicketsOS from "../screens/TabScreem/TicketsOS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID, os_firma } from "../utils/constantes";
 import { FinalizarOS_ } from "../service/OS";
-
+import VisualizadorPDF from "../components/VisualizadorPDF";
+import { PDFVisializar, getRucCliente } from "../service/OS_OrdenServicio";
+import { getToken } from "../service/usuario";
+import ModalGenerico from "../components/ModalGenerico";
 
 const Drawer = createDrawerNavigator();
 
@@ -60,9 +63,11 @@ function MenuLateral(prop) {
     )
 }
 
-function MenuFinal({modalSignature, setModalSignature}) {
+function MenuFinal({setModalEmails, setModalSignature, VisualizarPdf, item}) {
 
     const [estado, setEstado] = useState(null)
+    const [orderID, setOrderID] = useState(null)
+
     const FinalizarOS = async () => {
         var os = JSON.parse(await AsyncStorage.getItem("OS"))
         console.log(os)
@@ -83,6 +88,7 @@ function MenuFinal({modalSignature, setModalSignature}) {
                 const { OrdenServicioID, Accion } = itenSelect
                 console.log("OrdenServicioID", OrdenServicioID)
                 console.log("Accion", Accion)
+                setOrderID(OrdenServicioID)
                 setEstado(Accion)
             })()
         }, [])
@@ -131,7 +137,7 @@ function MenuFinal({modalSignature, setModalSignature}) {
                                 },
                             }} />
                         <MenuOption
-                            onSelect={() => console.log('Save')}
+                            onSelect={() => setModalEmails(true)}
                             text='Enviar OS'
                             customStyles={{
                                 optionText: {
@@ -142,7 +148,7 @@ function MenuFinal({modalSignature, setModalSignature}) {
                                 },
                             }} />
                         <MenuOption
-                            onSelect={() => console.log('Save')}
+                            onSelect={() => VisualizarPdf(orderID)}
                             text='Vizualizar PDF'
                             customStyles={{
                                 optionText: {
@@ -154,7 +160,7 @@ function MenuFinal({modalSignature, setModalSignature}) {
                             }} />
                     </> : <>
                         <MenuOption
-                            onSelect={() => console.log('Save')}
+                            onSelect={() => console.log("")}
                             text='Vizualizar PDF'
                             customStyles={{
                                 optionText: {
@@ -198,15 +204,56 @@ function NavigatioGotBack2() {
     const [modalSignature, setModalSignature] = useState(false);
     const [OrdenServicioID, setOrdenServicioID] = useState(null)
     const [userData, setUserData] = useState(os_firma)
+    const [pdfview, setPdfview] = useState(false)
+    const [pdfurl, setPdfurl] = useState("")
+
+    const [listadoEmails, setlistadoEmails] = useState([])
+    const [idOrdenServicio, setIdOrdenServicio] = useState(null)
+    const [modalEmails, setModalEmails] = useState(false);
+
     const enviarFirma = () => {
         setModalSignature(false)
+    }
+    async function EnviarOS(item) {
+        console.log("EnviarOS", item)
+        const { ClienteID, UsuarioCreacion } = await getRucCliente(item)
+        console.log("ClienteID", ClienteID)
+
+        const { token } = await getToken()
+        const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        setlistadoEmails(data)
+        setIdOrdenServicio(item)
+        setModalEmails(!modalEmails)
+
+    }
+    async function VisualizarPdf(item) {
+        const base64 = await PDFVisializar(item)
+        setPdfurl(base64)
+        setPdfview(true)
     }
     return (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 15, width: "60%" }}>
             <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
                 <Ionicons name="md-information-circle" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <MenuFinal modalSignature={modalSignature} setModalSignature={setModalSignature}/>
+            <MenuFinal setModalEmails={setModalEmails} modalSignature={modalSignature} VisualizarPdf={VisualizarPdf} setModalSignature={setModalSignature}/>
+            <ModalGenerico
+                modalVisible={modalEmails}
+                setModalVisible={setModalEmails}
+                titulo={"Envio de emails"}
+                txtboton1={"Enviar email"}
+                txtboton2={"Cancelar"}
+                subtitle={"Seleccione los emails a los que desea enviar la OS"}
+                contenflex={listadoEmails}
+                setlistadoEmails={setlistadoEmails}
+                idOrdenServicio={idOrdenServicio}
+            />
             <Modal
                     transparent={true}
                     visible={modalSignature}
@@ -223,6 +270,22 @@ function NavigatioGotBack2() {
                     OrdenServicioID={OrdenServicioID}
                 />
             </Modal>
+            <Modal
+                    transparent={true}
+                    visible={pdfview}
+                    onRequestClose={() => {
+                        setPdfview(!pdfview);
+                    }}
+                    propagateSwipe={true}
+                >
+                <VisualizadorPDF
+                    url={pdfurl}
+                    setPdfview={setPdfview}
+                    setPdfurl={setPdfurl}
+                    pdfview={pdfview}
+                />
+            </Modal>
+            
             <Modal
                 animationType="slide"
                 transparent={true}
