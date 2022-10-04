@@ -301,7 +301,7 @@ export const ParseOS = async (data, accion) => {
 
     } else if (accion == "PROCESO") {
 
-        console.log("ParseOS PROCESO", data[0].OS_CheckList)
+        console.log("ParseOS PROCESO", data)
 
         await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
         await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)

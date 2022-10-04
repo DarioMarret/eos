@@ -19,13 +19,13 @@ import moment from 'moment/moment';
 import { getToken } from '../../service/usuario';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import { ESTADO } from '../../service/OS';
 
 export default function Adjuntos(props) {
   const { navigation } = props;
   const [isEnabled, setIsEnabled] = useState(false)
 
   const [listAdjuntos, setListAdjuntos] = useState([])
+
 
   const [fini, setFini] = useState(true)
 
@@ -46,6 +46,23 @@ export default function Adjuntos(props) {
 
   const toggleSwitch = () => setIsEnabled((previousState) => !previousState)
 
+  const limpia = () => {
+    setAdjuntos({
+      OS_OrdenServicio: null,
+      IdAnexo: null,
+      OrdenServicioID: null,
+      Ruta: null,
+      FechaCreacion: null,
+      UsuarioCreacion: null,
+      FechaModificacion: null,
+      UsuarioModificacion: null,
+      Estado: null,
+      Descripcion: null,
+      esOSFisica: false,
+      archivo: null,
+    })
+  }
+  
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({})
     const file = await ImageManipulator.manipulateAsync(result.uri, [
@@ -147,6 +164,7 @@ export default function Adjuntos(props) {
         OS_Anexos.push(anexos)
         setListAdjuntos(OS_Anexos)
         await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
+        limpia()
       }
     }
   }
@@ -224,6 +242,7 @@ export default function Adjuntos(props) {
               <Text style={{ ...styles.textInfo, color: "#EA0029" }}>
                 Seleccionar archivo
               </Text>
+              <Text>{adjuntos.name != null ? adjuntos.name : null}</Text>
             </TouchableOpacity>
           </View>
 

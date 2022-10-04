@@ -52,8 +52,9 @@ export default function Hoy(props) {
                 //     })
                 // })
                 db.transaction(tx => {
-                    tx.executeSql(`select * from OS_OrdenServicio where ticket_id = ?`, ['399590922'], (tx, results) => {
-                        var len = results.rows;
+                    tx.executeSql(`select * from OS_OrdenServicio where ticket_id = ?`, ['594581897'], (tx, results) => {
+                        var len = results.rows._array[0];
+                        // delete len.OS_Firmas
                         console.log(len)
                     })
                 })
@@ -96,13 +97,14 @@ export default function Hoy(props) {
         setLoading(true)
         console.log("ticket_id", ticket_id)
         console.log("estado", estado)
+        console.log("OrdenServicioID", OrdenServicioID)
         try {
             const anidada = await getOrdenServicioAnidadas(ticket_id)
             if (anidada == null) {
                 console.log("no hay anidadas")
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                        // console.log("id_equipo-->", rows._array[0])
+                        console.log("id_equipo-->", rows._array[0])
                         db.transaction(tx => {
                             tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
                                 Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado)

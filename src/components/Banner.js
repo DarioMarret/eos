@@ -14,7 +14,7 @@ import { evento, OS, ticketID } from "../utils/constantes";
 import { PostOS } from "../service/OS";
 import { ListarOrdenServicioLocal } from "../service/OS_OrdenServicio";
 import { useIsConnected } from 'react-native-offline';
-import { BuscarOrdenServicioLocales } from "../service/ServicioLoca";
+import { BuscarOrdenServicioLocales, RestablecerLocalStore } from "../service/ServicioLoca";
 
 
 export default function Banner(props) {
@@ -101,6 +101,7 @@ export default function Banner(props) {
     }
 
     const CrearNuevoOrdenServicioSinTiket = async () => {
+        await RestablecerLocalStore()
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id: null,
