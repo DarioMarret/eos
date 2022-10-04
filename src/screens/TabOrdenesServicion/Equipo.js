@@ -698,7 +698,10 @@ export default function Equipo(props) {
                     width: "100%",
                     backgroundColor: "#FFFFFF"
                 }}>
-                    <TouchableOpacity style={styles.btn} onPress={() => setModalCreateEquip(true)}>
+                    <TouchableOpacity style={styles.btn} onPress={() => {
+                        console.log("hola")                        
+                    }/*setModalCreateEquip(true)*/
+                    }>
                         <AntDesign name="plus" size={24} color="#FFF" />
                         <Text style={{
                             fontSize: 16,

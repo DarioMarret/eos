@@ -232,7 +232,9 @@ export default function BannerOrderServi(props) {
             evento.tck_cliente = r.ClienteNombre
             evento.ev_estado = "PROCESO"
             evento.tck_direccion = r.Direccion
+            evento.OrdenServicioID = tikeck
             evento.ticket_id = tikeck
+            evento.evento_id = tikeck
             evento.ev_fechaAsignadaDesde = `${moment().format("YYYY-MM-DDT00:00:00")}`
             evento.ev_fechaAsignadaHasta = `${moment().format("YYYY-MM-DDT00:00:00")}`
             evento.ev_horaAsignadaDesde = `${moment().format("HH:mm:ss")}`
@@ -326,7 +328,7 @@ export default function BannerOrderServi(props) {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                             }} onPress={async () => {
-                                if (!isConnected) {
+                                if (isConnected) {
                                     await GUARDAR_OS()
                                 } else {
                                     Alert.alert(

@@ -355,6 +355,7 @@ function NavigatioGotBack2() {
                     </View>
                 </View>
             </Modal>
+            
         </View>
     )
 }
@@ -391,6 +392,7 @@ export default function DrawerNavigation(props) {
                         headerLeft: () => <NavigatioGotBack />,
                     }}
                 />
+                
             </Drawer.Navigator>
 
         </NavigationContainer>
