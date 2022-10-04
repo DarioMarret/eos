@@ -111,8 +111,7 @@ export default function IngresoHoras(props) {
       OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      compareHours(time, tiempoOS)
-      
+      // compareHours(time, tiempoOS)
       console.log("TRUE", OS_Tiempos)
       hideTimePicker()
     } else {
