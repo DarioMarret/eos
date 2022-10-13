@@ -114,7 +114,7 @@ export default function Cliente(props) {
         setFecha(osItem.FechaCreacion)
         // }
         // return
-
+        console.log("cliente", osItem)
     }
 
     useFocusEffect(
@@ -191,6 +191,7 @@ export default function Cliente(props) {
                             await AsyncStorage.setItem("OS", JSON.stringify(osItem))
                             setIsEnabled(true)
                             setDisableSub(true)
+                            console.log("CLIENTE", osItem)
 
                         } else if (Accion == "NUEVO OS TICKET") {
 
@@ -249,11 +250,11 @@ export default function Cliente(props) {
 
     const GuardarCodigoEquipoCliente = async (text) => {
 
-        console.log("value", value)
+        console.log("value", text)
         const os = await AsyncStorage.getItem("OS")
         const osItem = JSON.parse(os)
-        osItem.CodigoEquipoCliente = value,
-            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        osItem.CodigoEquipoCliente = text,
+        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
 
         setEquipoTicket({
             ...equipoTicket,

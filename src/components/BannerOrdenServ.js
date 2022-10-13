@@ -98,7 +98,7 @@ export default function BannerOrderServi(props) {
         if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
             const { Accion, OrdenServicioID } = item
-            if (Accion != "clonar" && Accion != "OrdenSinTicket" && Accion != "NUEVO OS TICKET") {
+            if (Accion != "clonar" && Accion != "OrdenSinTicket" && Accion != "NUEVO OS TICKET" && Accion != "PENDIENTE") {
                 try {
                     OS.OrdenServicioID = OrdenServicioID
                     OS.Fecha = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
@@ -116,15 +116,12 @@ export default function BannerOrderServi(props) {
                         console.log("PUT OK")
                         await UpdateOSOrdenServicioID([OrdenServicioID])
                         await LimpiandoDatos()
-                        setModalVisible(false)
+                        Alerta("Información", "Orden de servicio actualizada correctamente")
                     } else {
-                        setModalVisible(false)
-                        Alert.alert("Error", "No se pudo actualizar la orden de servicio")
+                        Alerta("Error", "No se pudo actualizar la orden de servicio")
                     }
                 } catch (error) {
-                    setModalVisible(false)
-                    console.log("error", error)
-                    Alert.alert("Error", "Error al actualizar la orden de servicio")
+                    Alerta("Server", "Error al crear la orden de servicio")
                 }
             } else {
                 try {
@@ -141,16 +138,13 @@ export default function BannerOrderServi(props) {
                     let P = await PostOS(OS)
                     if (P == "200") {
                         await LimpiandoDatos()
-                        setModalVisible(false)
+                        Alerta("Información", "Orden de servicio actualizada correctamente")
                     } else {
-                        setModalVisible(false)
-                        Alert.alert("Error", "No se pudo crear la orden de servicio")
+                        Alerta("Error", "No se pudo crear la orden de servicio")
                     }
 
                 } catch (error) {
-                    setModalVisible(false)
-                    console.log("error", error)
-                    Alert.alert("Error", "Error al crear la orden de servicio")
+                    Alerta("Server", "Error al crear la orden de servicio")
                 }
             }
         }
@@ -186,16 +180,13 @@ export default function BannerOrderServi(props) {
             OS.OrdenServicioID = rando
             OS.Estado = "ACTI"
             OS.OS_LOCAL = "UPDATE"
-            console.log("OS", OS)
-            console.log("OS Object keys", Object.keys(OS).length)
-
             await registartEquipoTicket(OS.equipo_id, OS.contrato_id, rando)
             await InsertEventosLocalesUpadte(OS, rando)
             await InserOSOrdenServicioIDLocal(OS, rando)
-
             await RestablecerLocalStore()
             resetTab()
-            navigation.navigate("Consultas")
+            Alerta("Información", "Orden de servicio actualizada localmente")
+
 
         } else {
             let OS_PartesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
@@ -219,7 +210,7 @@ export default function BannerOrderServi(props) {
             // await EditarOrdenServicioLocal(OS, OrdenServicioID)
             await RestablecerLocalStore()
             resetTab()
-            navigation.navigate("Consultas")
+            Alerta("Información", "Orden de servicio creado localmente cuando tenga conexion sincronizara para subir al servidor")
         }
 
     }
@@ -240,21 +231,40 @@ export default function BannerOrderServi(props) {
             evento.ev_horaAsignadaDesde = `${moment().format("HH:mm:ss")}`
             evento.ev_horaAsignadaHasta = `${moment().format("HH:mm:ss")}`
             evento.tck_tipoTicket = await SelectCategoriaDetalle(r.TipoVisita)
-            console.log("evento", evento)
             const res = await InsertEventosLocales(evento)
             console.log("evento registrado", res)
             resetTab()
-            navigation.navigate("Consultas")
         }
     }
 
+    function Alerta(title, message) {
+        Alert.alert(
+            title,
+            message,
+            [
+                {
+                    text: "OK", onPress: () => {
+                        setModalVisible(false)
+                        navigation.navigate("Consultas")
+                    }
+                }
+            ],
+            { cancelable: false }
+        )
+    }
 
     async function LimpiandoDatos() {
         await Sincronizar()
         await RestablecerLocalStore()
         resetTab()
-        navigation.navigate("Consultas")
     }
+
+    async function Reset() {
+        await RestablecerLocalStore()
+        resetTab()
+    }
+
+
 
     async function Sincronizar() {
         return new Promise((resolve, reject) => {
@@ -307,7 +317,7 @@ export default function BannerOrderServi(props) {
                         name !== "1-EQUIPO" ?
                             <TouchableOpacity style={styles.volver} onPress={changeScreenAnterior}>
                                 <AntDesign name="arrowleft" size={20} color="#FFFFFF" />
-                                <Text style={{ color: "#FFF", fontSize: 12, paddingLeft: 5 }}>
+                                <Text style={{ color: "#FFF", fontSize: 12, paddingLeft: 5, fontWeight: "bold" }}>
                                     VOLVER
                                 </Text>
                             </TouchableOpacity>
@@ -316,7 +326,7 @@ export default function BannerOrderServi(props) {
                     {
                         name !== "6-INGRESO HORAS" ?
                             <TouchableOpacity style={styles.volver} onPress={changeScreenSiguiente}>
-                                <Text style={{ color: "#FFF", fontSize: 12 }}>
+                                <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "bold" }}>
                                     SIGUIENTE
                                 </Text>
                                 <AntDesign name="arrowright" size={20} color="#FFFFFF" />
@@ -328,20 +338,38 @@ export default function BannerOrderServi(props) {
                                 justifyContent: 'space-between',
                                 alignItems: 'center',
                             }} onPress={async () => {
-                                if (isConnected) {
-                                    await GUARDAR_OS()
-                                } else {
+
+                                const itenSelect = await AsyncStorage.getItem(ticketID)
+                                const item = JSON.parse(itenSelect)
+                                const { Accion, OrdenServicioID } = item
+                                if (Accion != "FINALIZADO") {
+                                    if (isConnected) {
+                                        await GUARDAR_OS()
+                                    } else {
+                                        Alert.alert(
+                                            "Info",
+                                            "No hay conexión a internet se guardara en el dispositivo",
+                                            [
+                                                {
+                                                    text: "OK",
+                                                    onPress: () => GuadarLocalmente()
+                                                }
+                                            ]
+                                        )
+                                    }
+                                }else{
                                     Alert.alert(
                                         "Info",
-                                        "No hay conexión a internet se guardara en el dispositivo",
+                                        "La orden de servicio ya fue finalizada",
                                         [
                                             {
                                                 text: "OK",
-                                                onPress: () => GuadarLocalmente()
+                                                onPress: () => Reset()
                                             }
                                         ]
                                     )
                                 }
+
                             }}>
                                 {
                                     editar ?

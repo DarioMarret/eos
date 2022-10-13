@@ -24,37 +24,63 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID, os_firma } from "../utils/constantes";
 import { FinalizarOS_ } from "../service/OS";
 import VisualizadorPDF from "../components/VisualizadorPDF";
-import { PDFVisializar, getRucCliente } from "../service/OS_OrdenServicio";
+import { PDFVisializar, getRucCliente, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
 import { getToken } from "../service/usuario";
 import ModalGenerico from "../components/ModalGenerico";
+import { NavigationActions } from 'react-navigation';
+import { useDispatch } from "react-redux";
+import moment from "moment";
+import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando } from "../redux/sincronizacion";
+import { EditareventoLocal } from "../service/ServicioLoca";
+import { getIngenierosStorageById } from "../service/ingenieros";
+import axios from "axios";
+
 
 const Drawer = createDrawerNavigator();
 
 function MenuLateral(prop) {
 
     const { logout } = useUser()
+    const [user, setUser] = useState({
+        nombre: "",
+        email: "",
+    });
+
 
     const handleLogout = async () => {
         await logout()
     }
 
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                const { userId } = await getToken()
+                const { NombreUsuario } = await getIngenierosStorageById(userId)
+                setUser({
+                    nombre: NombreUsuario,
+                    email: JSON.parse(await AsyncStorage.getItem("user:")).username
+                })
+            })()
+        }, [])
+    )
+
     return (
         <View style={styles.menu}>
             <View style={styles.header}>
-                <Text style={{ fontWeight: "bold", fontSize: 20, color: "#FFF" }}>Soporte Pruebas</Text>
-                <Text style={{ fontSize: 12, color: "#FFF" }}>soporte@eos.med.ec</Text>
+                <Text style={{ fontWeight: "bold", fontSize: 20, color: "#FFF" }}>{ user.nombre }</Text>
+                <Text style={{ fontSize: 12, color: "#FFF" }}>{ user.email }</Text>
             </View>
             <Separador />
             <TouchableOpacity style={styles.MenuIten} onPress={() => prop.navigation.navigate("Consultas")}>
                 <View style={styles.item}>
-                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Inicia</Text>
+                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Inicio</Text>
                     <MaterialCommunityIcons name="home-floor-g" size={24} color="#B2B2AF" />
                 </View>
             </TouchableOpacity>
             <Separador />
             <TouchableOpacity style={styles.MenuIten} onPress={handleLogout}>
                 <View style={styles.item}>
-                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Cerrar</Text>
+                    <Text style={{ fontSize: 15, color: "#B2B2AF" }}>Cerrar Sesión</Text>
                     <MaterialCommunityIcons name="close-circle" size={24} color="#B2B2AF" />
                 </View>
             </TouchableOpacity>
@@ -63,31 +89,58 @@ function MenuLateral(prop) {
     )
 }
 
-function MenuFinal({setModalEmails, setModalSignature, VisualizarPdf, item}) {
+function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
 
     const [estado, setEstado] = useState(null)
     const [orderID, setOrderID] = useState(null)
 
     const FinalizarOS = async () => {
         var os = JSON.parse(await AsyncStorage.getItem("OS"))
-        console.log(os)
         const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
         const { OrdenServicioID, Accion } = itenSelect
 
         if (OrdenServicioID != null) {
+            dispatch(loadingCargando(true))
             let respuesta = await FinalizarOS_(OrdenServicioID, os)
+            await UpdateOSOrdenServicioID([OrdenServicioID])
+            await EditareventoLocal("FINALIZADO", OrdenServicioID)
+            await Dispatcher()
+            dispatch(loadingCargando(false))
             console.log("FinalizarOS", respuesta)
         }
     }
 
+    const dispatch = useDispatch()
+
+    async function Dispatcher() {
+        var hoy = moment().format('YYYY-MM-DD')
+        var ayer = moment().add(-1,'days').format('YYYY-MM-DD')
+        var mnn = moment().add(1,'days').format('YYYY-MM-DD')
+        const promisa_hoy = dispatch(getEventosByDate(`${hoy}T00:00:00`))
+        promisa_hoy.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarEventoHoy(res.payload))
+            }
+        })
+        const promisa_ayer = dispatch(getEventosByDate(`${ayer}T00:00:00`))
+        promisa_ayer.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarEventoAyer(res.payload))
+            }
+        })
+        const promisa_mnn = dispatch(getEventosByDate(`${mnn}T00:00:00`))
+        promisa_mnn.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarEventoMnn(res.payload))
+            }
+        })
+    }
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
                 const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
                 const { OrdenServicioID, Accion } = itenSelect
-                console.log("OrdenServicioID", OrdenServicioID)
-                console.log("Accion", Accion)
                 setOrderID(OrdenServicioID)
                 setEstado(Accion)
             })()
@@ -160,7 +213,7 @@ function MenuFinal({setModalEmails, setModalSignature, VisualizarPdf, item}) {
                             }} />
                     </> : <>
                         <MenuOption
-                            onSelect={() => console.log("")}
+                            onSelect={() => VisualizarPdf(orderID)}
                             text='Vizualizar PDF'
                             customStyles={{
                                 optionText: {
@@ -189,10 +242,16 @@ function MenuFinal({setModalEmails, setModalSignature, VisualizarPdf, item}) {
 }
 
 function NavigatioGotBack() {
-    const navigation = useNavigation();
+    const navigation = useNavigation()
+
+    const handleBack = () => {
+        navigation.navigate("Consultas")
+        navigation.goBack()
+    }
+
     return (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 10 }}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+            <TouchableOpacity onPress={handleBack}>
                 <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
         </View>
@@ -216,8 +275,10 @@ function NavigatioGotBack2() {
     }
     async function EnviarOS(item) {
         console.log("EnviarOS", item)
+
         const { ClienteID, UsuarioCreacion } = await getRucCliente(item)
         console.log("ClienteID", ClienteID)
+        console.log("UsuarioCreacion", UsuarioCreacion)
 
         const { token } = await getToken()
         const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&c=${UsuarioCreacion}`, {
@@ -230,19 +291,21 @@ function NavigatioGotBack2() {
         setlistadoEmails(data)
         setIdOrdenServicio(item)
         setModalEmails(!modalEmails)
-
     }
+
+
     async function VisualizarPdf(item) {
         const base64 = await PDFVisializar(item)
         setPdfurl(base64)
         setPdfview(true)
     }
+
     return (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingRight: 15, width: "60%" }}>
             <TouchableOpacity onPress={() => setModalVisible(!modalVisible)}>
                 <Ionicons name="md-information-circle" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <MenuFinal setModalEmails={setModalEmails} modalSignature={modalSignature} VisualizarPdf={VisualizarPdf} setModalSignature={setModalSignature}/>
+            <MenuFinal setModalEmails={setModalEmails} modalSignature={modalSignature} VisualizarPdf={VisualizarPdf} setModalSignature={setModalSignature} />
             <ModalGenerico
                 modalVisible={modalEmails}
                 setModalVisible={setModalEmails}
@@ -255,13 +318,13 @@ function NavigatioGotBack2() {
                 idOrdenServicio={idOrdenServicio}
             />
             <Modal
-                    transparent={true}
-                    visible={modalSignature}
-                    onRequestClose={() => {
-                        setModalSignature(!modalSignature);
-                    }}
-                    propagateSwipe={true}
-                >
+                transparent={true}
+                visible={modalSignature}
+                onRequestClose={() => {
+                    setModalSignature(!modalSignature);
+                }}
+                propagateSwipe={true}
+            >
                 <Firmador
                     enviarFirma={enviarFirma}
                     setModalSignature={setModalSignature}
@@ -271,13 +334,13 @@ function NavigatioGotBack2() {
                 />
             </Modal>
             <Modal
-                    transparent={true}
-                    visible={pdfview}
-                    onRequestClose={() => {
-                        setPdfview(!pdfview);
-                    }}
-                    propagateSwipe={true}
-                >
+                transparent={true}
+                visible={pdfview}
+                onRequestClose={() => {
+                    setPdfview(!pdfview);
+                }}
+                propagateSwipe={true}
+            >
                 <VisualizadorPDF
                     url={pdfurl}
                     setPdfview={setPdfview}
@@ -285,7 +348,7 @@ function NavigatioGotBack2() {
                     pdfview={pdfview}
                 />
             </Modal>
-            
+
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -316,9 +379,10 @@ function NavigatioGotBack2() {
                         }}>
                             <Text style={{ fontSize: 20, fontWeight: "bold", marginBottom: 10 }}>Información</Text>
                             <Text style={{ fontSize: 15, fontWeight: "normal" }}>
-                                Puedes escoger entre las opciones enumeradas en la parte superios para la sección que deseas ingresar, ademas puedes navegar
-                                enttre la seccioones para verificar informaciones y corregila si es necesario.
+                                Puedes escoger entre las opciones enumeradas que están en la parte superior del formulario para ingresar
+                                a la opción que desees.
                             </Text>
+                            <Text>Adicional puedes navegar entre las secciones en caso que sea necesario corregirlas.</Text>
                             <View>
                                 <Text style={{ fontSize: 15, fontWeight: "normal", marginTop: 10 }}>1-EQUIPO</Text>
                                 <Text style={{ fontSize: 15, fontWeight: "normal", marginTop: 10 }}>2-CLIENTE</Text>
@@ -355,7 +419,7 @@ function NavigatioGotBack2() {
                     </View>
                 </View>
             </Modal>
-            
+
         </View>
     )
 }
@@ -392,7 +456,7 @@ export default function DrawerNavigation(props) {
                         headerLeft: () => <NavigatioGotBack />,
                     }}
                 />
-                
+
             </Drawer.Navigator>
 
         </NavigationContainer>

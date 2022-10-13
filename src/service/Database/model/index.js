@@ -262,6 +262,7 @@ function InitDB() {
             ingeniero TEXT NULL,
             tipoIncidencia TEXT NULL,
             OrdenServicioID INTEGER NULL,
+            tck_tipoTicketCod TEXT NULL,
             estado_local TEXT NULL
         );`)
         })

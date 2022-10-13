@@ -60,8 +60,9 @@ async function InserEventosDiarios(r) {
                     ingeniero,
                     tipoIncidencia,
                     OrdenServicioID,
+                    tck_tipoTicketCod,
                     estado_local
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
                     r.evento_id,
                     r.ticket_id,
@@ -89,6 +90,7 @@ async function InserEventosDiarios(r) {
                     r.ingeniero,
                     r.tipoIncidencia,
                     r.OrdenServicioID,
+                    r.tck_tipoTicketCod,
                     "SIN"]
             }], false, (err, results) => {
                 if (err) {
@@ -136,7 +138,7 @@ export const InsertEventosLocales = async (r) => {
                         tipoIncidencia,
                         OrdenServicioID,
                         estado_local
-                            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
             args: [
                 r.evento_id,
                 r.ticket_id,
@@ -164,6 +166,7 @@ export const InsertEventosLocales = async (r) => {
                 r.ingeniero,
                 r.tipoIncidencia,
                 r.OrdenServicioID,
+                r.tck_tipoTicketCod,
                 "SIN"]
         }], false, (err, results) => {
             if (err) {

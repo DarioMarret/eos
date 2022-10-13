@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { timpo } from "../utils/constantes";
+import { OS, timpo } from "../utils/constantes";
 import { time } from "./CargaUtil";
 import { InserOSOrdenServicioID, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
@@ -9,6 +9,7 @@ export const PostOS = async (data) => {
     try {
         const { token } = await getToken()
         const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio`;
+        // const url = `http://192.168.101.4:3333/resultado`;
         const params = {
             method: "POST",
             headers: {
@@ -40,7 +41,8 @@ export const PutOS = async (datos) => {
 
     try {
         const { data, status } = await axios.put(
-            `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
+            'http://192.168.101.4:3333/resultado',
+            // `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
             datos, {
             headers: {
                 "Content-Type": "application/json",
@@ -227,25 +229,26 @@ export const ParseOS = async (data, accion) => {
     } else if (accion == "PENDIENTE") {
 
         // console.log("ParseOS PENDIENTE", data[0])
-        console.log("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)
-        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
-        await AsyncStorage.setItem("OS_Anexos", data[0].OS_Anexos)
-        data[0].OS_PartesRepuestos = []
-        data[0].OS_CheckList = []
-        data[0].OS_Tiempos = []
-        data[0].OS_Firmas = []
-        data[0].OS_Anexos = []
-        data[0].OrdenServicioID = 0
-        data[0].OS_Colaboradores = []
-        data[0].OS_Encuesta = []
-        data[0].Estado = "ACTI"
-        delete data[0].OS_FINALIZADA
-        delete data[0].OS_ASUNTO
-        delete data[0].codOS
+        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
+        await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
+        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([]))
+        await AsyncStorage.setItem("OS_Anexos", JSON.stringify([]))
+        await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
+        OS.OS_PartesRepuestos = []
+        OS.OS_CheckList = []
+        OS.OS_Tiempos = []
+        OS.OS_Firmas = []
+        OS.OS_Anexos = []
+        OS.equipo_id = data.equipo_id
+        OS.EstadoEquipo = data.equ_estado
+        OS.EstadoEqPrevio = data.equ_estado
+        OS.ClienteNombre = data.con_ClienteNombre
+        OS.OrdenServicioID = 0
+        OS.OS_Colaboradores = []
+        OS.OS_Encuesta = []
+        OS.Estado = "ACTI"
 
-        return data[0]
+        return OS
 
     } else if (accion == "FINALIZADO") {
 

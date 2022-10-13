@@ -61,7 +61,7 @@ async function InserIngenieros(r) {
         return true
     }
 }
-async function SelectIngenieros(IdUsuario) {
+export async function SelectIngenieros(IdUsuario) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(
@@ -69,7 +69,7 @@ async function SelectIngenieros(IdUsuario) {
                 [IdUsuario],
                 (tx, results) => {
                     if (results.rows._array.length > 0) {
-                        resolve(true)
+                        resolve(results.rows._array)
                     } else {
                         resolve(false)
                     }

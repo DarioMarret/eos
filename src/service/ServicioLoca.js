@@ -129,7 +129,7 @@ export const BuscarOrdenServicioLocales = async () => {
                 `SELECT * FROM OS_OrdenServicio WHERE OS_LOCAL = ?`,
                 ['UPDATE'],
                 (tx, results) => {
-                    if (results.rows.length > 0) {
+                    if (results.rows._array.length > 0) {
                         resolve(results.rows._array)
                     } else {
                         resolve(false)
@@ -445,5 +445,68 @@ export const RestablecerLocalStore = async () => {
     await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
     await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
     await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
-    await AsyncStorage.setItem("OS", JSON.stringify(OS))
+    await AsyncStorage.setItem("OS", JSON.stringify({
+        provinciaId: null,
+        cantonId: null,
+        tipoIncidencia: "",
+        localidad: null,
+        equ_hardware: null,
+        con_contratoLegal: "",
+        equ_fechaFabricacion: null,
+        equ_systemCode: null,
+        OrdenServicioID: 0,
+        TipoVisita: "",
+        Fecha: "",
+        Estado: "ACTI",
+        Finalizado: null,
+        evento_id: 0,
+        ticket_id: 0,
+        empresa_id: 1,
+        contrato_id: 0,
+        equipo_id: 0,
+        Serie: null,
+        TipoEquipo: null,
+        ModeloEquipo: null,
+        Marca: "",
+        ObservacionEquipo: null,
+        CodigoEquipoCliente: "",
+        ClienteID: "",
+        ClienteNombre: "",
+        Sintomas: "",
+        Causas: "",
+        Diagnostico: " ",
+        Acciones: "",
+        SitioTrabajo: "",
+        EstadoEquipo: "",
+        ComentarioRestringido: "",
+        IncluyoUpgrade: true,
+        ComentarioUpgrade: "",
+        Seguimento: true,
+        FechaSeguimiento: "",
+        ObservacionCliente: "",
+        ObservacionIngeniero: "",
+        IngenieroID: null,
+        UsuarioCreacion: null,
+        UsuarioModificacion: null,
+        FechaCreacion: "",
+        FechaModificacion: "",
+        IdEquipoContrato: 0,
+        EstadoEqPrevio: "",
+        ContactoInforme: "",
+        CargoContactoInforme: "",
+        ObservacionCheckList: "",
+        Direccion: "",
+        Ciudad: "",
+        incidencia: "",
+        nuevaVisita: true,
+        release: "",
+        OS_Anexos: [],
+        OS_CheckList: [],
+        OS_Colaboradores: [],
+        OS_Encuesta: [],
+        OS_Firmas: [],
+        OS_PartesRepuestos: [],
+        OS_Tiempos: [],
+        OS_LOCAL: 'ENVIADO'
+    }))
 }

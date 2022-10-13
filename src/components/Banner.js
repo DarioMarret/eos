@@ -1,21 +1,20 @@
-import { GetEventosByTicket, GetEventosDelDia, InsertEventosLocales } from "../service/OSevento";
+import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { EquipoTicket } from "../service/equipoTicketID";
-import NetInfo from '@react-native-community/netinfo';
 import { Fontisto } from '@expo/vector-icons';
 import React, { useState } from "react";
 import moment from "moment";
 import { time, TrucateUpdate } from "../service/CargaUtil";
 import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { evento, OS, ticketID } from "../utils/constantes";
+import { OS, ticketID } from "../utils/constantes";
 
 import { PostOS } from "../service/OS";
-import { ListarOrdenServicioLocal } from "../service/OS_OrdenServicio";
 import { useIsConnected } from 'react-native-offline';
 import { BuscarOrdenServicioLocales, RestablecerLocalStore } from "../service/ServicioLoca";
-
+import { useSelector, useDispatch } from "react-redux"
+import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando } from "../redux/sincronizacion";
 
 export default function Banner(props) {
     const { navigation, setTime, times } = props
@@ -24,9 +23,37 @@ export default function Banner(props) {
     const [message, setMessage] = useState("Actualizando...")
     const isConnected = useIsConnected();
 
+
+    const dispatch = useDispatch()
+
+    async function Dispatcher() {
+        var hoy = moment().format('YYYY-MM-DD')
+        var ayer = moment().add(-1,'days').format('YYYY-MM-DD')
+        var mnn = moment().add(1,'days').format('YYYY-MM-DD')
+        const promisa_hoy = dispatch(getEventosByDate(`${hoy}T00:00:00`))
+        promisa_hoy.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarEventoHoy(res.payload))
+            }
+        })
+        const promisa_ayer = dispatch(getEventosByDate(`${ayer}T00:00:00`))
+        promisa_ayer.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarEventoAyer(res.payload))
+            }
+        })
+        const promisa_mnn = dispatch(getEventosByDate(`${mnn}T00:00:00`))
+        promisa_mnn.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarEventoMnn(res.payload))
+            }
+        })
+    }
+
+
     async function ActualizarEventos() {
         if (isConnected) {
-            Alert.alert("Recomendación", "Estar conectado a una red Wifi segura o tener una conexión estable.", [
+            Alert.alert("Recomendación", "Debe estar conectado a una red de internet o datos estable.", [
                 {
                     text: "OK",
                     onPress: () => UP(),
@@ -51,28 +78,26 @@ export default function Banner(props) {
     async function UP() {
         setupdate(true)
         const respuesta = await Sincronizar()
+        await Dispatcher()
         if (respuesta) {
             setupdate(false)
             setTime(!times)
         } else {
-            setMessage("Sin conexión a internet")
             setupdate(true)
-            setTimeout(() => {
-                setupdate(false)
-            }, 2000)
+            setupdate(false)
         }
     }
 
 
     async function Sincronizar() {
         if (isConnected) {
+            dispatch(loadingCargando(true))
             const res = await BuscarOrdenServicioLocales()
             if (res) {
-                Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambias")
+                Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambios")
                 await UpdateLocal()
                 await TrucateUpdate()
                 await HistorialEquipoIngeniero()
-                // await time(1000)
                 await GetEventosDelDia()
                 var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
                 var hoy = moment().format('YYYY-MM-DD');
@@ -82,11 +107,10 @@ export default function Banner(props) {
                     await EquipoTicket(r.ticket_id)
                     await OrdenServicioAnidadas(r.evento_id)
                 })
-            }else{
-                await UpdateLocal()
+                dispatch(loadingCargando(false))
+            } else {
                 await TrucateUpdate()
                 await HistorialEquipoIngeniero()
-                // await time(1000)
                 await GetEventosDelDia()
                 var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
                 var hoy = moment().format('YYYY-MM-DD');
@@ -96,24 +120,25 @@ export default function Banner(props) {
                     await EquipoTicket(r.ticket_id)
                     await OrdenServicioAnidadas(r.evento_id)
                 })
+                dispatch(loadingCargando(false))
             }
         }
     }
 
     const CrearNuevoOrdenServicioSinTiket = async () => {
         await RestablecerLocalStore()
+        await time(1000)
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id: null,
             equipo: null,
-            OrdenServicioID: null,
+            OrdenServicioID: 0,
             OSClone: null,
             Accion: "OrdenSinTicket"
         }))
-        await AsyncStorage.setItem("OS", JSON.stringify(OS))
         navigation.navigate("Ordenes")
     }
-    
+
     const UpdateLocal = async () => {
         const res = await BuscarOrdenServicioLocales()
         if (res) {
@@ -156,6 +181,7 @@ export default function Banner(props) {
 
             <View style={{ ...styles.banner, paddingLeft: 20 }}>
                 <TouchableOpacity
+                // onPress={Dispatcher}
                     onPress={ActualizarEventos}
                 >
                     <Fontisto name="cloud-refresh" size={25} color={!update ? "#FFF" : "#099E15"} />

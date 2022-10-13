@@ -1,8 +1,8 @@
 import { useFocusEffect } from "@react-navigation/native";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
-import { ActivityIndicator, FlatList, Pressable, SafeAreaView, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { os_firma, ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
@@ -15,7 +15,7 @@ import {
     MenuTrigger,
 } from 'react-native-popup-menu';
 import VisualizadorPDF from "../../components/VisualizadorPDF";
-import { DeleteOrdenServicioID, getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
@@ -31,6 +31,8 @@ import LoadingActi from "../../components/LoadingActi";
 import Firmador from "../../components/Firmador"
 import { useIsConnected } from 'react-native-offline';
 import { FinalizarOSLocal } from "../../service/ServicioLoca";
+import { useDispatch, useSelector } from "react-redux"
+import { loadingCargando } from "../../redux/sincronizacion";
 
 export default function TicketsOS(props) {
     const { navigation } = props
@@ -44,6 +46,9 @@ export default function TicketsOS(props) {
     const [listadoEmails, setlistadoEmails] = useState([])
 
     const [OrdenServicioID, setOrdenServicioID] = useState(null)
+    const [ticket, setticket] = useState(null)
+    const [ClienteNombre, setClienteNombre] = useState(null)
+
     const [idOrdenServicio, setIdOrdenServicio] = useState(null)
 
     const [modalVisible, setModalVisible] = useState(false);
@@ -56,12 +61,22 @@ export default function TicketsOS(props) {
 
     const [tin, setTin] = useState(false)
 
+    const Events = useSelector(s => s.sincronizacion)
+    const dispatch = useDispatch()
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                const ticket_id = JSON.parse(await AsyncStorage.getItem(ticketID)).ticket_id
+                dispatch(loadingCargando(true))
+                const { ticket_id, equipo } = JSON.parse(await AsyncStorage.getItem(ticketID))
+                setticket(ticket_id)
+                setClienteNombre(equipo[0].con_ClienteNombre)
                 const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
-                seteventosAnidados(response.map((item) => { return { ...item, check: false } }))
+                if (response != null) {
+                    console.log(response)
+                    seteventosAnidados(response.map((item) => { return { ...item, check: false } }))
+                }
+                dispatch(loadingCargando(false))
             })()
         }, [])
     )
@@ -78,15 +93,16 @@ export default function TicketsOS(props) {
         }
     }
 
-    async function Ordene(ticket_id, OrdenServicioID, estado) {
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
         console.log("ticket_id", ticket_id)
         console.log("estado", estado)
+        dispatch(loadingCargando(true))
         try {
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            Rutes(rows._array, ticket_id, OrdenServicioID, null, estado)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
                         })
                     })
                 })
@@ -116,7 +132,14 @@ export default function TicketsOS(props) {
         console.log("enviado")
     }
 
-    async function ClonarOS(ticket_id, OrdenServicioID) {
+    async function ClonarOS(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
+        console.log("ticket_id", ticket_id)
+        console.log("evento_id", evento_id)
+        console.log("estado", estado)
+        console.log("OrdenServicioID", OrdenServicioID)
+        console.log("tck_tipoTicket", tck_tipoTicket)
+        console.log("estado", estado)
+
         const OSClone = await SelectOSOrdenServicioID(OrdenServicioID)
         let clon = await ParseOS(OSClone, "clonar")
         console.log("clonacion", clon)
@@ -125,7 +148,7 @@ export default function TicketsOS(props) {
             tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                        Rutes(rows._array, ticket_id, null, clon, "clonar")
+                        Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, "clonar", tck_tipoTicket)
                     })
                 })
             })
@@ -149,7 +172,6 @@ export default function TicketsOS(props) {
         } else {
             Alert.alert("Error de conexion", "No se puede enviar la orden de servicio sin conexion a internet")
         }
-
     }
 
     async function VisualizarPdf(item) {
@@ -166,8 +188,7 @@ export default function TicketsOS(props) {
      * @param {*} OSClone 
      * @param {*} accion string
      */
-    async function Rutes(equipo, ticket_id, OrdenServicioID, OSClone, accion) {
-        setLoading(true)
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket) {
         equipo[0]['isChecked'] = 'true'
         var clon;
         var equipo_id = []
@@ -177,22 +198,23 @@ export default function TicketsOS(props) {
             await AsyncStorage.setItem("OS", JSON.stringify(parse))
             equipo_id = await isChecked(parse.equipo_id)
             equipo_id[0]['isChecked'] = 'true'
+            dispatch(loadingCargando(false))
         }
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id,
             equipo: equipo_id,
             OrdenServicioID: OrdenServicioID == null || OrdenServicioID == "" ? null : OrdenServicioID,
-            OSClone: OSClone == null ? clon : OSClone,
+            OSClone: null,
             Accion: accion
         }))
         await isChecked(equipo[0].equipo_id)
-        setLoading(false)
+        dispatch(loadingCargando(false))
         navigation.navigate("Ordenes")
     }
 
     async function IngresarNuevoOsTicket() {
-        setLoading(true)
+        dispatch(loadingCargando(true))
         var equipo = []
         db.transaction(tx => {
             tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [eventosAnidados[0].ticket_id], (_, { rows }) => {
@@ -214,16 +236,29 @@ export default function TicketsOS(props) {
             OSClone: clon,
             Accion: "NUEVO OS TICKET"
         }))
-        setLoading(false)
+        dispatch(loadingCargando(false))
         navigation.navigate("Ordenes")
-
     }
+
+    async function IngresarNuevoOsTicket_() {
+        dispatch(loadingCargando(true))
+        const { equipo, evento_id, ticket_id } = JSON.parse(await AsyncStorage.getItem(ticketID))
+        let parse = await ParseOS(equipo[0], "PENDIENTE")
+        parse.ticket_id = ticket_id
+        parse.evento_id = evento_id
+        await AsyncStorage.setItem("OS", JSON.stringify(parse))
+        await isCheckedCancelaReturn(equipo[0].equipo_id)
+        dispatch(loadingCargando(false))
+        navigation.navigate("Ordenes")
+    }
+
     async function ColorCheckt(itemIndex, index) {
         var check = [...eventosAnidados]
         check[index].check = !check[index].check
         seteventosAnidados(check)
         CeckFini()
     }
+
     function CeckFini() {
         let even = eventosAnidados.filter((item) => {
             return item.check == true
@@ -232,7 +267,7 @@ export default function TicketsOS(props) {
     }
 
     async function Finalizar() {
-        setLoading(true)
+        dispatch(loadingCargando(true))
         var OrdenServicioI = []
         eventosAnidados.map((item, index) => {
             if (item.check == true) {
@@ -259,13 +294,13 @@ export default function TicketsOS(props) {
                                 ...item,
                                 ev_estado: "FINALIZADO"
                             }
-                        }else{
+                        } else {
                             return item
                         }
                     })
                     seteventosAnidados(event)
                     setTin(!tin)
-                    setLoading(false)
+                    dispatch(loadingCargando(false))
                 }
             }
         } else {
@@ -278,11 +313,12 @@ export default function TicketsOS(props) {
                         ...item,
                         ev_estado: "FINALIZADO"
                     }
-                }else{
+                } else {
                     return item
                 }
             })
             seteventosAnidados(event)
+            dispatch(loadingCargando(false))
         }
         // const ticket_id = JSON.parse(await AsyncStorage.getItem(ticketID)).ticket_id
         // const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
@@ -290,30 +326,22 @@ export default function TicketsOS(props) {
     }
 
     async function Sincronizar() {
-        return new Promise((resolve, reject) => {
-            NetInfo.fetch().then(state => {
-                if (state.isConnected === true) {
-                    (async () => {
-                        await TrucateUpdate()
-                        time(1500)
-                        await HistorialEquipoIngeniero()
-                        await time(1000)
-                        await GetEventosDelDia()
-                        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                        var hoy = moment().format('YYYY-MM-DD');
-                        var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                        const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                        ticket_id.map(async (r) => {
-                            await EquipoTicket(r.ticket_id)
-                            await OrdenServicioAnidadas(r.evento_id)
-                        })
-                        resolve(true)
-                    })()
-                } else {
-                    resolve(false)
-                }
+        if (isConnected) {
+            await TrucateUpdate()
+            await HistorialEquipoIngeniero()
+            await GetEventosDelDia()
+            var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+            var hoy = moment().format('YYYY-MM-DD');
+            var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+            const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+            ticket_id.map(async (r) => {
+                await EquipoTicket(r.ticket_id)
+                await OrdenServicioAnidadas(r.evento_id)
             })
-        })
+            return true
+        } else {
+            return false
+        }
     }
 
     return (
@@ -345,7 +373,7 @@ export default function TicketsOS(props) {
                                 fontSize: 15,
                             }}>Ticket #{eventosAnidados[0].ticket_id}</Text>
                             <View style={{ ...styles.body1 }} >
-                                <LoadingActi loading={loading} />
+                                <LoadingActi loading={Events.loading} />
                                 <ScrollView showsVerticalScrollIndicator={false} >
                                     {
                                         eventosAnidados.map((item, index) => {
@@ -384,7 +412,13 @@ export default function TicketsOS(props) {
                                                                 : null
                                                         }
                                                         <TouchableOpacity
-                                                            onPress={() => Ordene(String(item.ticket_id), item.OrdenServicioID, item.ev_estado)}>
+                                                            onPress={() => Ordene(
+                                                                String(item.ticket_id),
+                                                                String(item.evento_id),
+                                                                item.ev_estado,
+                                                                item.OrdenServicioID,
+                                                                item.tck_tipoTicket
+                                                            )}>
                                                             <View>
                                                                 <Text
                                                                     style={{
@@ -450,17 +484,30 @@ export default function TicketsOS(props) {
                                                                                 },
                                                                             }} /> : null
                                                                 }
-                                                                <MenuOption
-                                                                    onSelect={() => ClonarOS(String(item.ticket_id), item.OrdenServicioID)}
-                                                                    text='Clonar OS'
-                                                                    customStyles={{
-                                                                        optionText: {
-                                                                            fontSize: 16,
-                                                                            color: '#000000',
-                                                                            fontWeight: 'bold',
-                                                                            paddingBottom: 10,
-                                                                        },
-                                                                    }} />
+                                                                {
+                                                                    item.ev_estado == "FINALIZADO" ?
+                                                                        <MenuOption
+                                                                            onSelect={() => {
+                                                                                console.log(item);
+                                                                                ClonarOS(
+                                                                                    String(item.ticket_id),
+                                                                                    String(item.evento_id),
+                                                                                    item.ev_estado,
+                                                                                    item.OrdenServicioID,
+                                                                                    item.tck_tipoTicket
+                                                                                )
+                                                                            }}
+                                                                            text='Clonar OS'
+                                                                            customStyles={{
+                                                                                optionText: {
+                                                                                    fontSize: 16,
+                                                                                    color: '#000000',
+                                                                                    fontWeight: 'bold',
+                                                                                    paddingBottom: 10,
+                                                                                },
+                                                                            }} /> : null
+                                                                }
+
                                                                 {
                                                                     item.ev_estado !== "PENDIENTE" ?
                                                                         <MenuOption
@@ -517,13 +564,23 @@ export default function TicketsOS(props) {
                         :
                         <View style={styles.body}>
                             <View style={styles.body1}>
-                                <Text>{"TicketsOS"}</Text>
+                                <Text style={{
+                                    ...styles.header,
+                                    fontSize: 15,
+                                }}>Ticket #{ticket}</Text>
+                                <Text style={{
+                                    ...styles.header,
+                                    fontSize: 15,
+                                }}>{ClienteNombre}</Text>
+                                <LoadingActi loading={Events.loading} />
                             </View>
                             <View style={styles.body2}>
                                 <Text>Este ticket no tiene OS asociadas.</Text>
                             </View>
                             <View style={styles.body3}>
-                                <TouchableOpacity style={styles.opacity}>
+                                <TouchableOpacity
+                                    onPress={async () => await IngresarNuevoOsTicket_()}
+                                    style={styles.opacity}>
                                     <Text style={styles.text4}>INGRESAR NUEVO OS AL TICKET</Text>
                                 </TouchableOpacity>
                             </View>

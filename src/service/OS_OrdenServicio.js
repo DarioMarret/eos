@@ -1,7 +1,6 @@
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 //Consulta Orden de servicio por ID (CONSULTA SOLO SI EL ID ES MAYOR A 0)
 export const OSOrdenServicioID = async (OrdenServicioID) => {
@@ -258,11 +257,12 @@ export async function PDFVisializar(OrdenServicioID) {
 export async function SacarOSasunto(OrdenServicioID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
-            tx.executeSql(`SELECT OS_ASUNTO, OS_Firmas, ClienteNombre FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+            tx.executeSql(`SELECT OS_ASUNTO, OS_Firmas, OS_FINALIZADA, ClienteNombre FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
                         resolve({
                             OS_ASUNTO: _array[0].OS_ASUNTO,
+                            OS_FINALIZADA: _array[0].OS_FINALIZADA,
                             OS_Firmas: _array[0].OS_Firmas,
                             ClienteNombre: _array[0].ClienteNombre
                         })

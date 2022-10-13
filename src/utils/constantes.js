@@ -26,7 +26,7 @@ export const tiempos = "6-tiempos:"
 export const componente = [
     {
         id: 1,
-        description: "Parte Soliciada",
+        description: "Parte Solicitada",
     },
     {
         id: 2,

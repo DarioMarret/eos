@@ -117,7 +117,6 @@ export default function Componentes(props) {
             (async () => {
                 try {
                     const inci = await ListaComponentes()
-                    // console.log("ListaComponentes-->", inci)
                     setIncidente(inci)
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     if (itenSelect != null) {
@@ -136,13 +135,10 @@ export default function Componentes(props) {
                         } else if (Accion == "PENDIENTE") {
 
                             console.log("PENDIENTE")
-                            let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            if(parte.length > 0){
-                                console.log("parte-->", await AsyncStorage.getItem("OS_PartesRepuestos"))
-                                let filter = parte.filter((item) => item.Estado == "ACTI")
-                                setComponent(filter)
-                                // setOrdenServicioID(parte[0].OrdenServicioID)
-                            }
+                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
+                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent([])
+                            console.log("OrdenSinTicket-->", parte)
                             setFini(true)
 
                         } else if (Accion == "OrdenSinTicket") {
@@ -156,18 +152,24 @@ export default function Componentes(props) {
 
                         } else if (Accion == "clonar") {
 
-                            let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            if (parte.length > 0) {
-                                var part = parte.map((item) => {
-                                    return {
-                                        ...item,
-                                        OrdenServicioID: 0
-                                    }
-                                })
-                                let filter = part.filter((item) => item.Estado == "ACTI")
-                                setComponent(filter)
-                                await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(filter))
-                            }
+                            // let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            // console.log("clonar-->", parte)
+                            // if (parte.length > 0) {
+                            //     var part = parte.map((item) => {
+                            //         return {
+                            //             ...item,
+                            //             OrdenServicioID: 0
+                            //         }
+                            //     })
+                            //     let filter = part.filter((item) => item.Estado == "ACTI")
+                            //     setComponent(filter)
+                            //     await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(filter))
+                            // }
+                            // setFini(true)
+                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
+                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+                            setComponent([])
+                            console.log("OrdenSinTicket-->", parte)
                             setFini(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {

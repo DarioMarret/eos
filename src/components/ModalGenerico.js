@@ -1,7 +1,17 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
-import { Alert, Modal, StyleSheet, Text, Pressable, View, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import axios from 'axios';
+import React, { useCallback } from 'react';
+import { Alert, Modal, StyleSheet, Text, Pressable, View, ScrollView, TouchableOpacity } from 'react-native';
+import { useIsConnected } from 'react-native-offline';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadingCargando } from '../redux/sincronizacion';
 import { EnviarCorreo } from '../service/enviarCorreo';
+import { getRucCliente } from '../service/OS_OrdenServicio';
+import { getToken } from '../service/usuario';
+import { ticketID } from '../utils/constantes';
+import LoadingActi from './LoadingActi';
 
 export default function ModalGenerico(props) {
 
@@ -9,6 +19,9 @@ export default function ModalGenerico(props) {
         titulo, txtboton1, txtboton2, subtitle,
         contenflex, setlistadoEmails, idOrdenServicio
     } = props;
+
+    const Events = useSelector(s => s.sincronizacion)
+    const dispatch = useDispatch()
 
     const handleChange = (id_correoCliente) => {
         let temp = contenflex.map(listC => {
@@ -23,22 +36,85 @@ export default function ModalGenerico(props) {
         })
         setlistadoEmails(temp)
     }
+    const isConnected = useIsConnected();
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                if (isConnected) {
+                    dispatch(loadingCargando(true))
+                    const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
+                    const { OrdenServicioID } = itenSelect
+                    const { ClienteID, UsuarioCreacion } = await getRucCliente(OrdenServicioID)
+                    const { token } = await getToken()
+                    const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&ordServ=${OrdenServicioID}`, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        }
+                    })
+                    if (data.length > 0) {
+                        setlistadoEmails(data)
+                        dispatch(loadingCargando(false))
+                    }
+                    dispatch(loadingCargando(false))
+                }
+            })()
+        }, [])
+    );
 
     const handleEnviarCorreo = async () => {
         let temp = contenflex.filter(listC => listC.isChecked == "true")
-        var Correo = []
+        var Correo = [JSON.parse(await AsyncStorage.getItem("user:")).username]
         temp.forEach(element => {
             Correo.push(element.Correo)
         })
         if (Correo.length > 0) {
-            const { Message, Status } = await EnviarCorreo(Correo, idOrdenServicio)
-            if (Status) {
+            dispatch(loadingCargando(true))
+            const status = await EnviarCorreo(Correo, idOrdenServicio)
+            if (status == 200) {
                 Alert.alert("Correo", "Correo enviado correctamente", [
-                    { text: "Cancelar", onPress: () => setModalVisible(!modalVisible) },
-                    { text: "OK", onPress: () => setModalVisible(!modalVisible) }
+                    {
+                        text: "Cancelar", onPress: () => {
+                            setModalVisible(!modalVisible)
+                            dispatch(loadingCargando(false))
+                        }
+                    },
+                    {
+                        text: "OK", onPress: () => {
+                            setModalVisible(!modalVisible)
+                            dispatch(loadingCargando(false))
+                        }
+                    }
+                ])
+            } else {
+                Alert.alert("Correo", "Error al enviar correo", [
+                    {
+                        text: "Cancelar", onPress: () => {
+                            setModalVisible(!modalVisible)
+                            dispatch(loadingCargando(false))
+                        }
+                    },
+                    {
+                        text: "OK", onPress: () => {
+                            setModalVisible(!modalVisible)
+                            dispatch(loadingCargando(false))
+                        }
+                    }
                 ])
             }
+        } else {
+            Alert.alert("Correo", "No hay correos para enviar", [
+                {
+                    text: "Ok", onPress: () => {
+                        setModalVisible(!modalVisible)
+                        dispatch(loadingCargando(false))
+                    }
+                }
+            ])
+            
         }
+
     }
 
     const handleCancelar = () => {
@@ -54,6 +130,8 @@ export default function ModalGenerico(props) {
                 onRequestClose={() => { setModalVisible(!modalVisible) }}
             >
                 <View style={styles.centeredView}>
+                    {/* <LoadingActi loading={Events.loading} /> */}
+                    <LoadingActi loading={Events.loading} />
                     <View style={styles.modalView}>
                         <View
                             style={{
@@ -77,11 +155,11 @@ export default function ModalGenerico(props) {
                                             return (
                                                 <View key={index}
                                                     style={{
-                                                        width: '79%',
+                                                        width: '74%',
                                                         flexDirection: 'row',
                                                         justifyContent: 'space-between',
                                                         alignItems: 'flex-start',
-                                                        paddingVertical: 0,
+                                                        // paddingVertical: 0,
                                                         borderBottomWidth: 0.3,
                                                         borderBottomColor: '#B2B2AF',
                                                         marginBottom: 15
@@ -112,24 +190,32 @@ export default function ModalGenerico(props) {
                                 width: '100%',
                             }}
                         >
-                            <Pressable onPress={handleEnviarCorreo}>
+                            <TouchableOpacity onPress={handleEnviarCorreo}>
                                 <Text style={{
                                     ...styles.textStyle,
                                     color: '#FF6B00',
                                     fontWeight: 'bold',
                                     fontSize: 16,
                                     marginRight: 20,
+                                    borderWidth: 1,
+                                    borderColor: '#FF6B00',
+                                    borderRadius: 20,
+                                    padding: 8,
                                 }}>{txtboton1}</Text>
-                            </Pressable>
-                            <Pressable onPress={handleCancelar}>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={handleCancelar}>
                                 <Text style={{
                                     ...styles.textStyle,
                                     color: '#B2B2AF',
                                     fontWeight: 'bold',
                                     fontSize: 16,
                                     marginRight: 15,
+                                    borderWidth: 1,
+                                    borderColor: '#B2B2AF',
+                                    borderRadius: 20,
+                                    padding: 8,
                                 }}>{txtboton2}</Text>
-                            </Pressable>
+                            </TouchableOpacity>
                         </View>
 
                     </View>

@@ -7,9 +7,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { os_firma } from "../utils/constantes";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { ActualizarOrdenServicioFirmas, ListarFirmas, SelectOSOrdenServicioID } from "../service/OS_OrdenServicio";
+import { ActualizarOrdenServicioFirmas, ListarFirmas, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
 import axios from "axios";
+import { useSelector, useDispatch } from "react-redux"
 import { useIsConnected } from 'react-native-offline';
+import LoadingActi from "./LoadingActi";
+import { loadingCargando } from "../redux/sincronizacion";
 
 
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
@@ -18,7 +21,10 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     const [OrdenServicioID, setOrdenServicioID] = useState(0)
     const [obs, setObs] = useState(false)
     const isConnected = useIsConnected()
+    const [f_actual, setF_actual] = useState(0)
 
+    const Events = useSelector(s => s.sincronizacion)
+    const dispatch = useDispatch()
 
     const handleOK = async (signature) => {
         console.log("signature", signature)
@@ -39,6 +45,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 let firm = firmas.filter((item) => item.Estado == "ACTI")
                 console.log("f", firm)
                 setListF(firm)
+                setF_actual(firm.length)
                 console.log("firmas-->", firm)
             })()
         }, [])
@@ -136,47 +143,68 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
         }
     }
     const CerrarAndActualizar = async () => {
-        const rest = await SelectOSOrdenServicioID(OrdenServicioID)
-        const OS_PartesRepuestos = JSON.parse(rest[0].OS_PartesRepuestos)
-        const OS_CheckList = JSON.parse(rest[0].OS_CheckList)
-        const OS_Tiempos = JSON.parse(rest[0].OS_Tiempos)
-        const OS_Anexos = JSON.parse(rest[0].OS_Anexos)
         const OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
-        delete rest[0].OS_Firmas
-        delete rest[0].OS_Colaboradores
-        delete rest[0].OS_Encuesta
-        rest[0].OS_PartesRepuestos = OS_PartesRepuestos
-        rest[0].OS_CheckList = OS_CheckList
-        rest[0].OS_Tiempos = OS_Tiempos
-        rest[0].OS_Firmas = OS_Firmas
-        rest[0].OS_FINALIZADA = ""
-        rest[0].OS_ASUNTO = ""
-        rest[0].OS_Anexos = OS_Anexos
-        // console.log("rest", rest[0])
-        if(isConnected){
-            try {
-                const { token } = await getToken()
-                const { status } = await axios.put(
-                    `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
-                    rest[0], {
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${token}`
-                    }
-                })
+        if (f_actual == OS_Firmas.length) {
+            setModalSignature(false)
+        } else {
+            dispatch(loadingCargando(true))
+            const rest = await SelectOSOrdenServicioID(OrdenServicioID)
+            const OS_PartesRepuestos = JSON.parse(rest[0].OS_PartesRepuestos)
+            const OS_CheckList = JSON.parse(rest[0].OS_CheckList)
+            const OS_Tiempos = JSON.parse(rest[0].OS_Tiempos)
+            const OS_Anexos = JSON.parse(rest[0].OS_Anexos)
+            delete rest[0].OS_Firmas
+            delete rest[0].OS_Colaboradores
+            delete rest[0].OS_Encuesta
+            rest[0].OS_PartesRepuestos = OS_PartesRepuestos
+            rest[0].OS_CheckList = OS_CheckList
+            rest[0].OS_Tiempos = OS_Tiempos
+            rest[0].OS_Firmas = OS_Firmas
+            rest[0].OS_FINALIZADA = ""
+            rest[0].OS_ASUNTO = ""
+            rest[0].OS_Anexos = OS_Anexos
+            if (isConnected) {
+                try {
+                    const { token } = await getToken()
+                    const { status } = await axios.put(
+                        `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
+                        rest[0], {
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        }
+                    })
+                    await UpdateOSOrdenServicioID([OrdenServicioID])
+                    await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
+                    dispatch(loadingCargando(false))
+                    Alert.alert("Informacion",
+                        "Se ha guardado la firma exitosamente", [
+                        {
+                            text: "OK", onPress: () => {
+                                setModalSignature(false)
+                            }
+                        }
+                    ]);
+
+                } catch (error) {
+                    console.log("PutOS", error)
+                    return false
+                }
+            } else {
+                await ActualizarFirmaLocal(OrdenServicioID, OS_Firmas)
+                dispatch(loadingCargando(false))
                 await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
                 setModalSignature(false)
-                return status
-            } catch (error) {
-                console.log("PutOS", error)
-                return false
+                Alert.alert("Informacion",
+                    "Se ha guardado la firma localmente",
+                    [
+                        {
+                            text: "OK", onPress: () => {
+                                setModalSignature(false)
+                            }
+                        }
+                    ]);
             }
-        }else{
-            await ActualizarFirmaLocal(OrdenServicioID, OS_Firmas)
-            await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
-            setModalSignature(false)
-            Alert.alert("Orden de Servicio", "Se ha guardado la firma localmente")
-            return false
         }
     }
 
@@ -238,6 +266,11 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     return (
         <View style={styles.centeredView}>
             <View style={styles.circlePrimary}>
+                <LoadingActi
+                    loading={Events.loading}
+                    size={50}
+                    top={110}
+                />
                 <ScrollView
                     showsHorizontalScrollIndicator={false}
                     showsVerticalScrollIndicator={false}
@@ -319,11 +352,31 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                     </View>
                     <View style={{ width: "100%", flexDirection: "row", justifyContent: 'flex-end', padding: 15 }}>
                         <TouchableOpacity onPress={() => Grabar()}>
-                            <Text style={{ color: "#FF6B00" }}>AGREGAR FIRMA</Text>
+                            <Text style={{
+                                color: "#FF6B00",
+                                fontWeight: 'bold',
+                                fontSize: 16,
+                                marginLeft: 15,
+                                borderWidth: 1,
+                                borderColor: '#FF6B00',
+                                borderRadius: 20,
+                                padding: 8,
+                            }}>AGREGAR FIRMA</Text>
                         </TouchableOpacity>
                         <View style={{ paddingHorizontal: 20 }} />
-                        <TouchableOpacity onPress={() => CerrarAndActualizar()}>
-                            <Text style={{ color: "#B2B2AF" }}>CERRAR</Text>
+                        <TouchableOpacity
+
+                            onPress={() => CerrarAndActualizar()}>
+                            <Text style={{
+                                color: '#B2B2AF',
+                                fontWeight: 'bold',
+                                fontSize: 16,
+                                marginRight: 15,
+                                borderWidth: 1,
+                                borderColor: '#B2B2AF',
+                                borderRadius: 20,
+                                padding: 8,
+                            }}>CERRAR</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>

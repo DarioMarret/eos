@@ -18,7 +18,6 @@ import BannerOrderServi from "../../components/BannerOrdenServ";
 import { ticketID, timpo } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { TiempoOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import LoadingActi from "../../components/LoadingActi";
 import { time } from "../../service/CargaUtil";
 
@@ -43,7 +42,8 @@ export default function IngresoHoras(props) {
   //parala fecha
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
-  };
+  }
+
   const handleConfirm = async (date) => {
     let fec = new Date()
     setFechas({
@@ -62,9 +62,7 @@ export default function IngresoHoras(props) {
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
     }
     hideDatePicker();
-
   };
-  //fin
 
   const showTimePicker = (name) => {
     setTiempoOS(name);
@@ -76,58 +74,93 @@ export default function IngresoHoras(props) {
   const alert = (message, name, time) => {
     Alert.alert("Alerta", message, [
       {
-          text: "OK",
-          onPress: () => {
-            setFechas({ ...fechas, [name]: "" })
-          },
-          style: { color: "#FF6B00" },
+        text: "OK",
+        onPress: () => {
+          setFechas({ ...fechas, [name]: "" })
+        },
+        style: { color: "#FF6B00" },
       }
-  ])
+    ])
   }
-  const compareHours = (time, name) => {
-    console.log("compareHours", {time,name})
-    const hour = new Date(fechas.HoraSalidaOrigen).getTime()
-    const compare = new Date(time).getTime()
-    console.log("GAAAAAAAAAA",{hour,compare})
-    if(name === "HoraLlegadaCliente"){
-      if(Moment(fechas.HoraSalidaOrigen).format("HH:mm") > Moment(fechas.HoraLlegadaCliente).format("HH:mm")){
+  const compareHours = async (time, name) => {
+    console.log("compareHours", { time, name })
+    var os = await AsyncStorage.getItem("OS_Tiempos")
+    var OS_Tiempos = JSON.parse(os)
+    if (name == "HoraLlegadaCliente") {
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraSalidaOrigen, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      console.log("diff", diff)
+      if (diff <= 0) {
         alert("La hora de llegada no puede ser menor a la salida de origen.", name, time)
+      }else{
+        OS_Tiempos[0].TiempoViaje = diff
+        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       }
-    }else if(name === "HoraFinTrabajo"){
-      if(Moment(fechas.HoraInicioTrabajo).format("HH:mm") > Moment(time).format("HH:mm")){
+
+    } else if (name == "HoraInicioTrabajo") {
+
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraLlegadaCliente, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      console.log("diff", diff)
+      if (diff <= 0) {
+        alert("La hora de inicio no puede ser menor a la llegada al cliente.", name, time)
+      }
+
+    } else if (name == "HoraFinTrabajo") {
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraInicioTrabajo, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      console.log("diff", diff)
+      if (diff <= 0) {
         alert("La hora final no puede ser menor a la hora inicial de trabajo.", name, time)
+      }else{
+        OS_Tiempos[0].TiempoTrabajo = diff
+        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       }
-    }else if(name === "HoraLlegadaSgteDestino"){
-      if(Moment(fechas.HoraSalidaCliente).format("HH:mm") > Moment(time).format("HH:mm")){
+
+    } else if (name == "HoraSalidaCliente") {
+
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraFinTrabajo, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      console.log("diff", diff)
+      if (diff <= 0) {
+        alert("La hora de salida no puede ser menor a la hora final de trabajo.", name, time)
+      }
+
+    } else if (name == "HoraLlegadaSgteDestino") {
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraSalidaCliente, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      console.log("diff", diff)
+      if (diff <= 0) {
         alert("La hora de llegada no puede ser menor a la salida.", name, time)
       }
+
     }
   }
   const handleConfirmTime = async (time) => {
     var os = await AsyncStorage.getItem("OS_Tiempos")
     let OS_Tiempos = JSON.parse(os)
-    
+
     if (OS_Tiempos.length > 0) {
-      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
+      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm:ss")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      // compareHours(time, tiempoOS)
-      console.log("TRUE", OS_Tiempos)
+      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm:ss") })
+      setFecha({ ...fecha, [tiempoOS]: Moment(time).format("YYYY-MM-DD HH:mm:ss") })
+      setMinTime(Moment(time).format("HH:mm:ss"))
+      compareHours(time, tiempoOS)
+      // console.log("TRUE", OS_Tiempos)
       hideTimePicker()
     } else {
       OS_Tiempos = [timpo]
-      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm")
+      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm:ss")
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm DD/MM/YYYY") })
-      console.log("FALSE", OS_Tiempos)
+      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm:ss") })
+      setFecha({ ...fecha, [tiempoOS]: Moment(time).format("YYYY-MM-DD HH:mm:ss") })
+      setMinTime(Moment(time).format("HH:mm:ss"))
+      compareHours(time, tiempoOS)
+      // console.log("FALSE", OS_Tiempos)
       hideTimePicker()
     }
-    
+
     console.log("tiempoOS", OS_Tiempos.length)
-    console.log("tiempoOS", JSON.parse(await AsyncStorage.getItem("OS")))
+    // console.log("tiempoOS", JSON.parse(await AsyncStorage.getItem("OS")))
   }
 
-  
+
 
   const handeldeffTime = async () => {
     var os = await AsyncStorage.getItem("OS_Tiempos")
@@ -143,9 +176,11 @@ export default function IngresoHoras(props) {
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
       setFechas({ ...fechas, [tiempoOS]: "" })
       hideTimePicker()
-      onsole.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
+      // onsole.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
     }
   }
+
+  const [minTime, setMinTime] = useState(Moment().format("HH:mm:ss"))
 
   const [fechas, setFechas] = useState({
     Fecha: "", //fecha de ingreso
@@ -160,7 +195,19 @@ export default function IngresoHoras(props) {
     FechaMostrar: "",
     HoraLlegadaSgteDestino: "",
     TiempoViajeSalida: 0,
-    switch: false,
+  })
+  const [fecha, setFecha] = useState({
+    HoraSalidaOrigen: "",//salida origen
+    HoraLlegadaCliente: "",//arribo cliente
+    HoraInicioTrabajo: "",
+    HoraFinTrabajo: "",
+    HoraSalidaCliente: "",
+    TiempoEspera: 0,
+    TiempoTrabajo: 0,
+    TiempoViaje: 0,
+    FechaMostrar: "",
+    HoraLlegadaSgteDestino: "",
+    TiempoViajeSalida: 0,
   })
 
   function LimpiarImput() {
@@ -180,6 +227,21 @@ export default function IngresoHoras(props) {
       TiempoViajeSalida: 0,
       switch: false,
     })
+    setFecha({
+      ...fecha,
+      HoraSalidaOrigen: "",
+      HoraLlegadaCliente: "",
+      HoraInicioTrabajo: "",
+      HoraFinTrabajo: "",
+      HoraSalidaCliente: "",
+      TiempoEspera: 0,
+      TiempoTrabajo: 0,
+      TiempoViaje: 0,
+      FechaMostrar: "",
+      HoraLlegadaSgteDestino: "",
+      TiempoViajeSalida: 0,
+    })
+    setMinTime(Moment().format("HH:mm:ss"))
   }
 
 
@@ -420,9 +482,11 @@ export default function IngresoHoras(props) {
             />
             <DateTimePickerModal
               isVisible={isTimePickerVisible}
-              mode='datetime'
+              mode='time'
+              minTime={minTime}
               onConfirm={handleConfirmTime}
               onCancel={hideTimePicker}
+              is24Hour={true}
               style={{ color: "#FF6B00" }}
             />
 

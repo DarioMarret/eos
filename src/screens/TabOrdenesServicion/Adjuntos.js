@@ -109,6 +109,10 @@ export default function Adjuntos(props) {
             } else if (Accion == "OrdenSinTicket") {
 
               await AsyncStorage.setItem("OS_Anexos", JSON.stringify([]))
+              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
+              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
+              await AsyncStorage.setItem("OS_Anexos", JSON.stringify(filter))
+              setListAdjuntos(filter)
 
             } else if (Accion == "NUEVO OS TICKET") {
 

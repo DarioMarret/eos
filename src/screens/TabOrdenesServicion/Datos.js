@@ -21,13 +21,13 @@ export default function Datos(props) {
 
     const [isDatePickerVisible, setDatePickerVisibility] = useState(false)
 
-    const [ OrdenServicioID, setOrdenServicioID ] = useState(0)
+    const [OrdenServicioID, setOrdenServicioID] = useState(0)
 
     const [isRecordatorio, setIsRecordatorio] = useState(false);
     const [isUpgrade, setIsUpgrade] = useState(false);
     const [isVisita, setIsVisita] = useState(false);
     const [incidente, setIncidente] = useState([]);
-    const [estadoEquipo, setEstadoEquipo] = useState([])
+    const [estadoEquipo, setEstadoEquipo] = useState("")
 
     const [CategoriaTPCK, setCategoriaTPCK] = useState([])
     const [CategoriaTPINC, setCategoriaTPINC] = useState([])
@@ -91,7 +91,6 @@ export default function Datos(props) {
             setOfCheck(true)
         } else {
             const list = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
-            console.log("list", list)
             if (list != null) {
                 const { userId } = await getToken()
                 var l = list.map(item => {
@@ -99,7 +98,7 @@ export default function Datos(props) {
                         check_actividad: item.check_actividad,
                         OS_OrdenServicio: null,
                         CheckListID: 0,
-                        OrdenServicioID: OrdenServicioID == 0 ? null : OrdenServicioID,
+                        OrdenServicioID: OrdenServicioID == 0 ? 0 : OrdenServicioID,
                         empresa_id: 1,
                         IdCheckList: item.check_id,//#CONSULTA
                         Checked: false,
@@ -111,6 +110,7 @@ export default function Datos(props) {
                         Observacion: item.check_observacion
                     }
                 })
+                console.log("list", l)
                 setListCheck(l)
                 setOfCheck(true)
             }
@@ -154,6 +154,9 @@ export default function Datos(props) {
         const os = JSON.parse(await AsyncStorage.getItem("OS"))
         os[name] = value
         await AsyncStorage.setItem("OS", JSON.stringify(os))
+        if(name == "EstadoEquipo"){
+            setEstadoEquipo(value)
+        }
 
     }
     const handleConfirmTime = async (time) => {
@@ -204,10 +207,13 @@ export default function Datos(props) {
                 setCategoriaTPINC(await SelectCategoria("TPINC"))
                 setCategoriaESTEQ(await SelectCategoria("ESTEQ"))
                 var osItem = JSON.parse(await AsyncStorage.getItem("OS"))
+                setEstadoEquipo(osItem.EstadoEquipo)
+                console.log("ESTADO EQUIPO", osItem.EstadoEquipo)
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
                     const { Accion, OrdenServicioID } = item
+                    console.log("item", OrdenServicioID)
                     setOrdenServicioID(OrdenServicioID)
                     if (Accion == "FINALIZADO") {
                         console.log("Estamos FINALIZADO")
@@ -238,7 +244,10 @@ export default function Datos(props) {
 
                         console.log("Estamos OrdenSinTicket")
                         console.log("osItem", datos.FechaSeguimientoMostrar)
-                        setDatos(osItem)
+                        setDatos({
+                            ...osItem,
+                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
+                        })
                         setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
@@ -246,6 +255,8 @@ export default function Datos(props) {
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist() : setOfCheck(false)
                         console.log("Checklist", await AsyncStorage.getItem("OS_CheckList"))
+
+                        console.log("osItem", osItem)
 
                     } else if (Accion == "PENDIENTE") {
 
@@ -264,6 +275,7 @@ export default function Datos(props) {
                             ? ActivarChecklist() : setOfCheck(false)
                         setIsEnabled(true)
                         setDisableSub(true)
+                        
 
                     } else if (Accion == "NUEVO OS TICKET") {
 
@@ -276,7 +288,7 @@ export default function Datos(props) {
                         console.log("osItem", osItem.TipoVisita)
                         await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
-                        ? ActivarChecklist() : setOfCheck(false)
+                            ? ActivarChecklist() : setOfCheck(false)
                         setIsEnabled(true)
                         setDisableSub(true)
 
@@ -288,7 +300,7 @@ export default function Datos(props) {
                             FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
                         })
 
-                        setSelect(true)//desabilidar select en este estado
+                        setSelect(false)//desabilidar select en este estado
                         setIsEnabled(true)
                         setDisableSub(true)
 
@@ -297,19 +309,6 @@ export default function Datos(props) {
 
                     }
                 }
-
-                // const inci = await ListaComponentes()
-                // setIncidente(inci)
-
-                // const estadoE = await ListaDiagnostico()
-                // setEstadoEquipo(estadoE)
-
-                // let est = await EstadoSwitch(2)
-                // if (est.estado == 1) {
-                //     setIsEnabled(!true)
-                // } else {
-                //     setIsEnabled(!false)
-                // }
                 time(1000)
                 setLoading(false)
             })()
@@ -630,8 +629,8 @@ export default function Datos(props) {
                                     padding: 10,
 
                                 }}
-                                selectedValue={datos.EstadoEquipo}
-                                enabled={isEnabled}
+                                selectedValue={estadoEquipo}
+                                enabled={true}
                                 onValueChange={(itemValue, itemIndex) =>
                                     handleOnchange('EstadoEquipo', itemValue)
                                 }>
@@ -639,7 +638,7 @@ export default function Datos(props) {
                                     CategoriaESTEQ ?
                                         CategoriaESTEQ.map((item, index) => (
                                             // console.log('entro', datos.EstadoEquipo) ,
-                                            datos.EstadoEquipo == item.IdCatalogoDetalle ?
+                                            estadoEquipo == item.IdCatalogoDetalle ?
                                                 <Picker.Item
                                                     key={index + 1}
                                                     label={item.Descripcion}
@@ -759,18 +758,20 @@ export default function Datos(props) {
                                 fontFamily: "Roboto",
                             }}
                         >Fecha Recordatorio</Text>
-                        <View style={{
-                            borderWidth: 1,
-                            borderColor: "#CECECA",
-                            width: "100%",
-                            height: 60,
-                            borderRadius: 10,
-                            padding: 10,
-                            flexDirection: "row",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            marginBottom: 20,
-                        }}>
+                        <TouchableOpacity
+                            onPress={() => hideTimePicker()}
+                            style={{
+                                borderWidth: 1,
+                                borderColor: "#CECECA",
+                                width: "100%",
+                                height: 60,
+                                borderRadius: 10,
+                                padding: 10,
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: 20,
+                            }}>
                             <TextInput
                                 style={{ width: "80%", height: "100%" }}
                                 placeholder='Fecha Recordatorio'
@@ -787,13 +788,13 @@ export default function Datos(props) {
                                 }}
                             >
                                 <AntDesign
-                                    onPress={() => hideTimePicker()}
+
                                     name='clockcircleo'
                                     size={24}
                                     color='#000000'
                                 />
                             </View>
-                        </View>
+                        </TouchableOpacity>
                         <View style={{
                             ...styles.wFull,
                             height: 60,

@@ -11,6 +11,8 @@ import { MenuProvider } from 'react-native-popup-menu';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NetworkProvider } from 'react-native-offline';
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos } from './src/utils/constantes';
+import { Provider as StoreProvider } from 'react-redux'
+import store from './src/redux/store'
 
 const theme = {
   ...DefaultTheme,
@@ -97,20 +99,22 @@ export default function App() {
 
   return (
     // <Firmador/>
-    <NetworkProvider>
-      <userContext.Provider value={UserData}>
-        <PaperProvider theme={theme}>
-          <MenuProvider>
-            <StatusBar style="auto" />
-            {Token ? (
-              <DrawerNavigation />
-            ) : (
-              <Login />
-            )}
-          </MenuProvider>
-        </PaperProvider>
-      </userContext.Provider>
-    </NetworkProvider>
+    <StoreProvider store={store}>
+      <NetworkProvider>
+        <userContext.Provider value={UserData}>
+          <PaperProvider theme={theme}>
+            <MenuProvider>
+              <StatusBar style="auto" />
+              {Token ? (
+                <DrawerNavigation />
+              ) : (
+                <Login />
+              )}
+            </MenuProvider>
+          </PaperProvider>
+        </userContext.Provider>
+      </NetworkProvider>
+    </StoreProvider>
   )
 
 }

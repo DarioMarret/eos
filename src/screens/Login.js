@@ -81,7 +81,10 @@ export default function Login() {
             style={{ backgroundColor: 'white' }}
           >
             <View style={styles.centeredView}>
-              <View style={styles.modalView}>
+              <View style={{
+                ...styles.modalView,
+                width: '80%',
+              }}>
                 <ActivityIndicator size={100} color="#FF6B00" />
                 <Text style={{ marginTop: 16, marginBottom: 32 }}>Cargando...</Text>
               </View>
@@ -148,7 +151,7 @@ export default function Login() {
               <TouchableOpacity
                 onPress={handleLogin}
                 style={{ backgroundColor: "#FF6B00", padding: 15, borderRadius: 15, paddingHorizontal: 50 }}>
-                <Text style={{ fontSize: 16, color: '#FFF', fontFamily: 'Roboto', letterSpacing: 0.5 }}>INICIA SESIÓN
+                <Text style={{ fontSize: 16, color: '#FFF', fontFamily: 'Roboto', letterSpacing: 0.5 }}>INICIAR SESION
                   <AntDesign name="arrowright" size={16} color="#FFF" />
                 </Text>
               </TouchableOpacity>

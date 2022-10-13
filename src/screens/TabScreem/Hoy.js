@@ -1,11 +1,10 @@
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { ActualizarFechaUltimaActualizacion, ConsultarFechaUltimaActualizacion } from "../../service/config";
+import { ActualizarFechaUltimaActualizacion } from "../../service/config";
 import { getOrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
-import { GetEventos } from "../../service/OSevento";
 import { isChecked } from "../../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { OS, ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
 import Banner from "../../components/Banner";
@@ -20,54 +19,50 @@ import LoadingActi from "../../components/LoadingActi";
 import { RefresLogin } from "../../service/usuario";
 import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import { ParseOS } from "../../service/OS";
-import { useIsConnected, NetworkConsumer } from 'react-native-offline';
-
+import { useIsConnected } from 'react-native-offline';
+import { useSelector, useDispatch } from "react-redux"
+import { listarEventoHoy, getEventosByDate, loadingCargando } from "../../redux/sincronizacion";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
     const [typeCalentar, setTypeCalendar] = useState(1)
     const [bg, setBg] = useState("")
     const [times, setTime] = useState(false)
-    const [loading, setLoading] = useState(false)
     const { navigation } = props
 
     const isConnected = useIsConnected();
+    const Events = useSelector(s => s.sincronizacion)
+
+    const dispatch = useDispatch()
+
+    useEffect(() => {
+        if (Events.eventos_hoy.length > 0) {
+            setEventos(Events.eventos_hoy)
+            console.log("eventos_hoy", Events.eventos_hoy)
+        }
+    }, [Events.eventos_hoy])
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                // let updateMinuto = await ConsultarFechaUltimaActualizacion()
-                setLoading(true)
+                dispatch(loadingCargando(true))
                 var date = moment().format('YYYY-MM-DD');
-                const respuesta = await GetEventos(`${date}T00:00:00`)
-                // console.log(respuesta)
-                setEventos(respuesta)
-                setLoading(false)
-
-                console.log("isConnected-->", isConnected)
-                // db.transaction(tx => {
-                //     tx.executeSql(`select * from OrdenesServicio where ticket_id = ?`, ['131197154'], (tx, results) => {
-                //         var len = results.rows;
-                //         console.log(len)
-                //     })
-                // })
-                db.transaction(tx => {
-                    tx.executeSql(`select * from OS_OrdenServicio where ticket_id = ?`, ['594581897'], (tx, results) => {
-                        var len = results.rows._array[0];
-                        // delete len.OS_Firmas
-                        console.log(len)
-                    })
+                const promisa = dispatch(getEventosByDate(`${date}T00:00:00`))
+                promisa.then((res) => {
+                    res.payload.length > 0 ?
+                        dispatch(listarEventoHoy(res.payload))
+                        : null
                 })
-
+                dispatch(loadingCargando(false))
                 if (isConnected) {
-                    // setLoading(true)
                     await RefresLogin()
                     await ActualizarFechaUltimaActualizacion()
-                    // setLoading(false)
                 }
             })()
         }, [])
     )
+
+    // 01 09 solo llevan a la pantalla de ticket
 
     const typeImage = () => {
         if (typeCalentar === 0) {
@@ -85,7 +80,6 @@ export default function Hoy(props) {
         }
     }
 
-
     /**
      * 
      * @param {*} ticket_id 
@@ -93,30 +87,31 @@ export default function Hoy(props) {
      * @param {*} estado 
      * @param {*} OrdenServicioID 
      */
-    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID) {
-        setLoading(true)
+     async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
         console.log("ticket_id", ticket_id)
-        console.log("estado", estado)
-        console.log("OrdenServicioID", OrdenServicioID)
+        dispatch(loadingCargando(true))
         try {
-            const anidada = await getOrdenServicioAnidadas(ticket_id)
-            if (anidada == null) {
-                console.log("no hay anidadas")
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                        console.log("id_equipo-->", rows._array[0])
-                        db.transaction(tx => {
-                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                                Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado)
-                            })
+            // const anidada = await getOrdenServicioAnidadas(ticket_id)
+            // console.log("anidada", anidada)
+            // if (anidada == null) {
+            // console.log("no hay anidadas")
+
+            db.transaction(tx => {
+                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                    console.log("id_equipo-->", rows)
+                    db.transaction(tx => {
+                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                            console.log("equipo selecionado hoy row", rows._array)
+                            // Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
                         })
                     })
                 })
-            }
-            if (anidada.length > 0) {
-                console.log("hay anidadas")
-                Rutes([], ticket_id)
-            }
+            })
+            // }
+            // if (anidada.length > 0) {
+            //     Rutes([], ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
+            // }
         } catch (error) {
             console.log("error", error)
         }
@@ -129,39 +124,82 @@ export default function Hoy(props) {
      * @param {*} evento_id 
      * @param {*} OrdenServicioID 
      * @param {*} estado 
+     * @param {*} tck_tipoTicket
      */
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado) {
+     async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket) {
         try {
+            console.log("equipo", equipo)
             console.log("estado", estado)
             console.log("ticket_id", ticket_id)
             console.log("evento_id", evento_id)
             console.log("OrdenServicioID", OrdenServicioID)
-            if (equipo.length != 0) {
-                await AsyncStorage.removeItem(ticketID)
-                const OS = await SelectOSOrdenServicioID(OrdenServicioID)
-                let parse = await ParseOS(OS, estado)
-                console.log("OS", parse)
-                parse.ticket_id = ticket_id
-                parse.evento_id = evento_id
-                await AsyncStorage.setItem("OS", JSON.stringify(parse))
-                await AsyncStorage.setItem(ticketID, JSON.stringify({
-                    ticket_id,
-                    equipo,
-                    OrdenServicioID: OrdenServicioID,
-                    OSClone: null,
-                    Accion: estado
-                }))
-                await isChecked(equipo[0].equipo_id)
-                await time(800)
-                setLoading(false)
-                navigation.navigate("Ordenes")
-            }
-
-            if (equipo.length == 0) {
-                await AsyncStorage.removeItem(ticketID)
-                await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
-                setLoading(false)
-                navigation.navigate("Ticket")
+            console.log("tck_tipoTicket", tck_tipoTicket)
+            if (OrdenServicioID != 0) {
+                if (tck_tipoTicket.toLowerCase() == "servicio programado" || tck_tipoTicket.toLowerCase() == "servicio programado manual") {
+                    await AsyncStorage.removeItem(ticketID)
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        evento_id,
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ticket")
+                } else {
+                    await AsyncStorage.removeItem(ticketID)
+                    const OS = await SelectOSOrdenServicioID(OrdenServicioID)
+                    console.log("OS", OS)
+                    let parse = await ParseOS(OS, estado)
+                    console.log("OS", parse)
+                    parse.ticket_id = ticket_id
+                    parse.evento_id = evento_id
+                    await AsyncStorage.setItem("OS", JSON.stringify(parse))
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    await isChecked(equipo[0].equipo_id)
+                    // await time(800)
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ordenes")
+                }
+            } else {
+                if (tck_tipoTicket.toLowerCase() == "servicio programado" || tck_tipoTicket.toLowerCase() == "servicio programado manual") {
+                    await AsyncStorage.removeItem(ticketID)
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        evento_id,
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ticket")
+                } else {
+                    await AsyncStorage.removeItem(ticketID)
+                    let parse = await ParseOS(equipo[0], estado)
+                    console.log("OS", parse)
+                    parse.ticket_id = ticket_id
+                    parse.evento_id = evento_id
+                    await AsyncStorage.setItem("OS", JSON.stringify(parse))
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    await isChecked(equipo[0].equipo_id)
+                    // await time(800)
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ordenes")
+                }
             }
         } catch (error) {
             console.log("error", error)
@@ -185,7 +223,13 @@ export default function Hoy(props) {
         return [
             <View key={index}>
                 <TouchableOpacity
-                    onPress={() => Ordene(String(item.ticket_id), String(item.evento_id), item.ev_estado, item.OrdenServicioID)}>
+                    onPress={() => Ordene(
+                        String(item.ticket_id),
+                        String(item.evento_id),
+                        item.ev_estado,
+                        item.OrdenServicioID,
+                        item.tck_tipoTicket
+                    )}>
 
                     <View style={{
                         flexDirection: 'row',
@@ -236,7 +280,7 @@ export default function Hoy(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
-                <LoadingActi loading={loading} />
+                <LoadingActi loading={Events.loading} />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}

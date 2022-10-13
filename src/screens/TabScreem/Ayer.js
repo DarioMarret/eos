@@ -1,8 +1,7 @@
 import { FlatList, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Banner from "../../components/Banner";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import { GetEventos, GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
+import { useCallback, useEffect, useState } from "react";
 import moment from "moment";
 
 
@@ -11,17 +10,16 @@ import calok from '../../../assets/icons/cal-ok.png';
 import calsync from '../../../assets/icons/cal-sync.png';
 import calwait from '../../../assets/icons/cal-wait.png';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { OS, ticketID } from "../../utils/constantes";
-import { EquipoTicket } from "../../service/equipoTicketID";
+import { ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
-import { getOrdenServicioAnidadas, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import LoadingActi from "../../components/LoadingActi";
 import { isChecked } from "../../service/historiaEquipo";
 import { time } from "../../service/CargaUtil";
 
-import useUser from '../../hook/useUser';
+import { useSelector, useDispatch } from "react-redux"
 import { ParseOS } from "../../service/OS";
 import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { getEventosByDate, listarEventoAyer, loadingCargando } from "../../redux/sincronizacion";
 
 export default function Ayer(props) {
     const { navigation } = props;
@@ -30,31 +28,33 @@ export default function Ayer(props) {
     const [bg, setBg] = useState("")
     const [times, setTime] = useState(false)
 
-    const [loading, setLoading] = useState(false)
 
-    const { isOFFLINE, setreloadInt, reloadInt } = useUser()
+    const Events = useSelector(s => s.sincronizacion)
+    const dispatch = useDispatch()
+
+    useEffect(() => {
+        if (Events.eventos_ayer.length > 0) {
+            setEventos(Events.eventos_ayer)
+        }
+    }, [Events.eventos_ayer])
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                setreloadInt(!reloadInt)
-                console.log("OFFLINE-->", isOFFLINE)
-                setLoading(true)
-                var date = moment().add(-1, "days").format('YYYY-MM-DD');
-                const respuesta = await GetEventos(`${date}T00:00:00`)
-                setEventos(respuesta)
-                // if(isOFFLINE){
-                //     await GetEventosDelDia()
-                //     const ticket_id = await GetEventosByTicket()
-                //     ticket_id.map(async (r) => {
-                //         await EquipoTicket(r.ticket_id)
-                //         await OrdenServicioAnidadas(r.evento_id)
-                //     })
-                // }
-                setLoading(false)
+                dispatch(loadingCargando(true))
+                var date = moment().add(-1, 'days').format('YYYY-MM-DD');
+                const promisa = dispatch(getEventosByDate(`${date}T00:00:00`))
+                promisa.then((res) => {
+                    console.log(res.payload)
+                    res.payload.length > 0 ?
+                        dispatch(listarEventoAyer(res.payload))
+                        : null
+                })
+                dispatch(loadingCargando(false))
             })()
         }, [])
     )
+
     const typeImage = () => {
         if (typeCalentar === 0) {
             setBg("#FFECDE")
@@ -70,64 +70,110 @@ export default function Ayer(props) {
             return calwait
         }
     }
-    async function Ordene(ticket_id, estado) {
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
         console.log("ticket_id", ticket_id)
+        dispatch(loadingCargando(true))
         try {
-            const anidada = await getOrdenServicioAnidadas(ticket_id)
-            console.log("anidada",anidada)
-            if (anidada == null) {
-                console.log("no hay anidadas")
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                        console.log("id_equipo-->", rows._array[0].id_equipo)
-                        db.transaction(tx => {
-                            tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                                console.log("equipo selecionado hoy row", rows._array)
-                                // Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
-                                Rutes(rows._array, ticket_id, null, estado)
-                            })
+            // const anidada = await getOrdenServicioAnidadas(ticket_id)
+            // console.log("anidada", anidada)
+            // if (anidada == null) {
+            // console.log("no hay anidadas")
+            db.transaction(tx => {
+                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                    console.log("id_equipo-->", rows._array[0].id_equipo)
+                    db.transaction(tx => {
+                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                            console.log("equipo selecionado hoy row", rows._array)
+                            // Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
                         })
                     })
                 })
-            }
-            if (anidada.length > 0) {
-                console.log("hay anidadas")
-                Rutes([], ticket_id)
-            }
+            })
+            // }
+            // if (anidada.length > 0) {
+            //     Rutes([], ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
+            // }
         } catch (error) {
             console.log("error", error)
         }
     }
 
-    async function Rutes(equipo, ticket_id, OrdenServicioID, estado) {
-        console.log("estado", estado)
-        console.log("ticket_id", ticket_id)
-        console.log("OrdenServicioID", OrdenServicioID)
-        if (equipo.length != 0) {
-            await AsyncStorage.removeItem(ticketID)
-            const OS = await SelectOSOrdenServicioID(OrdenServicioID)
-            let parse = await ParseOS(OS, estado)
-            console.log("OS", parse)
-            parse.ticket_id = ticket_id
-            parse.evento_id = evento_id
-            await AsyncStorage.setItem("OS", JSON.stringify(OS))
-            await AsyncStorage.setItem(ticketID, JSON.stringify({
-                ticket_id,
-                equipo,
-                OrdenServicioID: OrdenServicioID,
-                OSClone: null,
-                Accion: estado
-            }))
-            await isChecked(equipo[0].equipo_id)
-            await time(800)
-            setLoading(false)
-            navigation.navigate("Ordenes")
-        }
-
-        if (equipo.length == 0) {
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({ ticket_id }))
-            navigation.navigate("Ticket")
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket) {
+        try {
+            console.log("estado", estado)
+            console.log("equipo", equipo)
+            console.log("OrdenServicioID", OrdenServicioID)
+            console.log("tck_tipoTicket", tck_tipoTicket)
+            if (OrdenServicioID != 0) {
+                if (tck_tipoTicket.toLowerCase() == "servicio programado" || tck_tipoTicket.toLowerCase() == "servicio programado manual") {
+                    await AsyncStorage.removeItem(ticketID)
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        evento_id,
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ticket")
+                } else {
+                    await AsyncStorage.removeItem(ticketID)
+                    const OS = await SelectOSOrdenServicioID(OrdenServicioID)
+                    console.log("OS", OS)
+                    let parse = await ParseOS(OS, estado)
+                    console.log("OS", parse)
+                    parse.ticket_id = ticket_id
+                    parse.evento_id = evento_id
+                    await AsyncStorage.setItem("OS", JSON.stringify(parse))
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    await isChecked(equipo[0].equipo_id)
+                    await time(800)
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ordenes")
+                }
+            } else {
+                if (tck_tipoTicket.toLowerCase() == "servicio programado" || tck_tipoTicket.toLowerCase() == "servicio programado manual") {
+                    await AsyncStorage.removeItem(ticketID)
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        evento_id,
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ticket")
+                } else {
+                    await AsyncStorage.removeItem(ticketID)
+                    let parse = await ParseOS(equipo[0], estado)
+                    console.log("OS", parse)
+                    parse.ticket_id = ticket_id
+                    parse.evento_id = evento_id
+                    await AsyncStorage.setItem("OS", JSON.stringify(parse))
+                    await AsyncStorage.setItem(ticketID, JSON.stringify({
+                        ticket_id,
+                        equipo,
+                        OrdenServicioID: OrdenServicioID,
+                        OSClone: null,
+                        Accion: estado
+                    }))
+                    await isChecked(equipo[0].equipo_id)
+                    await time(800)
+                    dispatch(loadingCargando(false))
+                    navigation.navigate("Ordenes")
+                }
+            }
+        } catch (error) {
+            console.log("error", error)
         }
     }
 
@@ -146,7 +192,14 @@ export default function Ayer(props) {
     function _renderItem({ item, index }) {
         return [
             <View key={index}>
-                <TouchableOpacity onPress={() => Ordene(String(item.ticket_id), item.ev_estado)}>
+                <TouchableOpacity
+                    onPress={() => Ordene(
+                        String(item.ticket_id),
+                        String(item.evento_id),
+                        item.ev_estado,
+                        item.OrdenServicioID,
+                        item.tck_tipoTicket
+                    )}>
                     <View style={{
                         flexDirection: 'row',
                         justifyContent: 'space-between',
@@ -196,7 +249,7 @@ export default function Ayer(props) {
     return (
         <View style={styles.container}>
             <View style={{ ...styles.flexlist, marginTop: "10%" }}>
-                <LoadingActi loading={loading} />
+                <LoadingActi loading={Events.loading} />
                 <SafeAreaView>
                     <FlatList
                         data={eventos}

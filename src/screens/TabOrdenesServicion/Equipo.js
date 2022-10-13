@@ -5,7 +5,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getIngenierosStorageById } from "../../service/ingenieros"
 import { getModeloEquiposStorage } from "../../service/modeloquipo"
 import BannerOrderServi from "../../components/BannerOrdenServ"
-import { DatosEquipo } from "../../service/OS_OrdenServicio"
 import { useFocusEffect } from "@react-navigation/native"
 import { getEquiposStorage } from "../../service/equipos"
 import { useCallback, useEffect, useState } from "react"
@@ -14,8 +13,9 @@ import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, ticketID } 
 import { getToken } from "../../service/usuario"
 import LoadingActi from "../../components/LoadingActi"
 import empty from "is-empty"
-import isEmpty from "is-empty"
-import { time } from "../../service/CargaUtil"
+import { GetClienteClienteName } from "../../service/clientes"
+import { useDispatch, useSelector } from "react-redux"
+import { loadingCargando } from "../../redux/sincronizacion"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -26,7 +26,6 @@ export default function Equipo(props) {
 
     const [loading, setLoading] = useState(false)
 
-    const [isLoading, setIsLoading] = useState(false)
 
     const [modalCreateEquip, setModalCreateEquip] = useState(false)
 
@@ -63,10 +62,13 @@ export default function Equipo(props) {
     const [itemIndex, setItemIndex] = useState(null)
     const [isVisible, setIsVisible] = useState(false)
 
+    const Events = useSelector(s => s.sincronizacion)
+    const dispatch = useDispatch()
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                setLoading(true)
+                dispatch(loadingCargando(true))
                 const response = await getEquiposStorage()
                 setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
                 const modelos = await getModeloEquiposStorage()
@@ -111,7 +113,7 @@ export default function Equipo(props) {
                             setSerie(item.equ_serie)
                             setModel(item.modelo)
                         })
-                        equiId[0]['isChecked'] = 'true'
+                        // equiId[0]['isChecked'] = 'true'
                         setHistorial(equiId)
                         setDisableSub(true)
                         setDisable(true)
@@ -155,28 +157,27 @@ export default function Equipo(props) {
                         setHistorial(equiId)
                     }
                 }
-                time(1000)
-                setLoading(false)
+                dispatch(loadingCargando(false))
             })()
         }, [])
     )
 
 
     async function onChangeTipo(tipo) {
-        setLoading(true)
+        dispatch(loadingCargando(true))
         setTipo(tipo)
         let result = await getHistorialEquiposStorage(tipo, "", "")
         const respuesta = modelo.filter(e => e.tipo_id === tipo)
         setModeloSub(respuesta)
         setHistorial(result)
-        setLoading(false)
+        dispatch(loadingCargando(false))
     }
     async function onChangeModelo(model) {
-        setLoading(true)
+        dispatch(loadingCargando(true))
         setModel(model)
         let result = await getHistorialEquiposStorage(tipo, model, "")
         setHistorial(result)
-        setLoading(false)
+        dispatch(loadingCargando(false))
     }
 
     async function onChangeSerie(text) {
@@ -197,7 +198,6 @@ export default function Equipo(props) {
                     setEquipoSelect(equipo[0])
                     setHistorial(equipo)
                     await GuadadoOS(equipo[0])
-                    // console.log("equipo-->", equipo[0])
                     equipo.forEach((item) => {
                         setTipo(item.tipo)
                         setModel(item.modelo)
@@ -211,17 +211,20 @@ export default function Equipo(props) {
         setHistorial(temp);
     }
     const GuadadoOS = async (item) => {
-        console.log(item.equipo_id)
+        // console.log(item.equipo_id)
         try {
             const { userId } = await getToken()
             const { IdUsuario } = await getIngenierosStorageById(userId)
             const os = await AsyncStorage.getItem("OS")
             const osItem = JSON.parse(os)
+            const cliente = await GetClienteClienteName(empty(osItem.ClienteNombre) ? item.con_ClienteNombre : osItem.ClienteNombre)
+            console.log("cliente-->", cliente[0].CustomerID)
             console.log("controtal-->", osItem.contrato_id)
             osItem.equipo_id = item.equipo_id,//#
-                osItem.contrato_id = item.id_contrato //#
+            osItem.contrato_id = item.id_contrato //#
             osItem.Serie = item.equ_serie,//#
-                osItem.Marca = item.marca //#
+            osItem.Marca = item.marca //#
+            osItem.ClienteID = empty(cliente) ? "" : cliente[0].CustomerID//#
             osItem.ClienteNombre = empty(osItem.ClienteNombre) ? item.con_ClienteNombre : osItem.ClienteNombre //#
             osItem.ObservacionCliente = "" //#
             osItem.IdEquipoContrato = Number(item.id_equipoContrato) //#
@@ -247,7 +250,6 @@ export default function Equipo(props) {
 
     const showModal = (type, item) => {
         let body
-        console.log("item", item, "item")
         if (type === 'history') {
             body = item.historial !== 'null' ? JSON.parse(item.historial)[0] :
                 {
@@ -361,38 +363,8 @@ export default function Equipo(props) {
         )
     }
 
-    async function EquipoHistorial() {
-        const itenSelect = await AsyncStorage.getItem(ticketID)
-        const item = JSON.parse(itenSelect)
-        const { OrdenServicioID, OSClone } = item
-        if (OrdenServicioID != null && OSClone == null) {
-            return
-        }
-
-        var result = []
-        console.log("tipo", tipo, "model", model, "serie", serie)
-        if (tipo !== "" && model !== "") {
-            console.log("tipo", tipo, "Model", model)
-            result = await getHistorialEquiposStorage(tipo, model, "")
-        } else if (tipo !== "") {
-            console.log("tipo", tipo)
-            result = await getHistorialEquiposStorage(tipo, "", "")
-        } else if (tipo !== "" && model !== "" && serie !== "") {
-            console.log("tipo", tipo, "Model", model, "serie", serie)
-            result = await getHistorialEquiposStorage(tipo, model, serie)
-        } else if (tipo !== "" && serie !== "") {
-            console.log("tipo", tipo, "serie", serie)
-            result = await getHistorialEquiposStorage(tipo, "", serie)
-        } else if (tipo == "" && model == "" && serie != "") {
-            console.log("serie", serie)
-            result = await getHistorialEquiposStorage("", "", serie)
-        }
-        setHistorial(result)
-    }
-
     async function CancelarEvento() {
-        setLoading(true)
-        await AsyncStorage.removeItem(ticketID)
+        dispatch(loadingCargando(true))
         await AsyncStorage.removeItem("OS_PartesRepuestos")
         await AsyncStorage.removeItem("OS_CheckList")
         await AsyncStorage.removeItem("OS_Firmas")
@@ -409,8 +381,8 @@ export default function Equipo(props) {
         setSerie("")
         setModeloSub([])
         setHistorial([])
-        setLoading(false)
-        navigation.navigate("Consultas")
+        dispatch(loadingCargando(false))
+        navigation.goBack()
     }
 
     return (
@@ -427,151 +399,151 @@ export default function Equipo(props) {
                 <View style={styles.centeredView}>
                     <View style={styles.modalContainer}>
                         <ScrollView
-                        showsHorizontalScrollIndicator={false}
-                        showsVerticalScrollIndicator={false}
-                        style={{ width: "100%", height: 'auto', marginLeft: 20}}>
-                        <Text style={{
-                            fontSize: 20,
-                            color: '#000',
-                            fontFamily: 'Roboto',
-                            fontWeight: 'bold',
-                            textAlign: 'center',
-                            marginTop: 10
-                        }}>Crear Equipo</Text>
-                        <View style={{...styles.ContainetEquipo, top: 0}}>
-                            <View style={styles.ContainetBuscador}>
-                                <View style={styles.ContainetTipoModelo}>
+                            showsHorizontalScrollIndicator={false}
+                            showsVerticalScrollIndicator={false}
+                            style={{ width: "100%", height: 'auto', marginLeft: 20 }}>
+                            <Text style={{
+                                fontSize: 20,
+                                color: '#000',
+                                fontFamily: 'Roboto',
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                marginTop: 10
+                            }}>Crear Equipo</Text>
+                            <View style={{ ...styles.ContainetEquipo, top: 0 }}>
+                                <View style={styles.ContainetBuscador}>
+                                    <View style={styles.ContainetTipoModelo}>
 
-                                    <Picker
-                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                        selectedValue={tipo}
-                                        onValueChange={(itemValue) => onChangeTipo(itemValue)}
-                                        enabled={isdisabelsub}
-                                    >
-                                        <Picker.Item label={tipo} value={""} />
-                                        {
-                                            equipo ?
-                                                equipo.map((item, index) => (
-                                                    <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
-                                                ))
-                                                : null
-                                        }
-                                    </Picker>
+                                        <Picker
+                                            style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                            selectedValue={tipo}
+                                            onValueChange={(itemValue) => onChangeTipo(itemValue)}
+                                            enabled={isdisabelsub}
+                                        >
+                                            <Picker.Item label={tipo} value={""} />
+                                            {
+                                                equipo ?
+                                                    equipo.map((item, index) => (
+                                                        <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
+                                                    ))
+                                                    : null
+                                            }
+                                        </Picker>
+                                    </View>
+                                    <View style={{ paddingHorizontal: 10 }} />
+                                    <View style={styles.ContainetTipoModelo}>
+                                        <Picker
+                                            style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                            selectedValue={model}
+                                            enabled={isdisabelsub}
+                                            onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+
+                                            <Picker.Item label={model} value={""} />
+                                            {
+                                                modelosub ?
+                                                    modelosub.map((item, index) => (
+                                                        <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                                    ))
+                                                    : null
+                                            }
+                                        </Picker>
+                                    </View>
                                 </View>
-                                <View style={{ paddingHorizontal: 10 }} />
-                                <View style={styles.ContainetTipoModelo}>
-                                    <Picker
-                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                        selectedValue={model}
-                                        enabled={isdisabelsub}
-                                        onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+                                <View style={{
+                                    flexDirection: "row",
+                                    marginTop: "10%",
+                                    width: "100%",
+                                }}>
+                                    <TextInput
+                                        style={{
+                                            borderWidth: 1,
+                                            borderColor: '#CECECA',
+                                            width: "95%",
+                                            height: 60,
+                                            borderRadius: 10,
+                                            padding: 10
+                                        }}
+                                        value={serie}
+                                        onChangeText={text => onChangeSerie(text)}
+                                        placeholder="Serie"
+                                        editable={isdisabelsub}
+                                    />
+                                </View>
 
-                                        <Picker.Item label={model} value={""} />
-                                        {
-                                            modelosub ?
-                                                modelosub.map((item, index) => (
-                                                    <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
-                                                ))
-                                                : null
-                                        }
-                                    </Picker>
+                                <View style={styles.ContainetBuscador}>
+                                    <View style={styles.ContainetTipoModelo}>
+
+                                        <Picker
+                                            style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                            selectedValue={tipo}
+                                            onValueChange={(itemValue) => onChangeTipo(itemValue)}
+                                            enabled={isdisabelsub}
+                                        >
+                                            <Picker.Item label={"Marca"} value={""} />
+                                            {
+                                                equipo ?
+                                                    equipo.map((item, index) => (
+                                                        <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
+                                                    ))
+                                                    : null
+                                            }
+                                        </Picker>
+                                    </View>
+                                    <View style={{ paddingHorizontal: 10 }} />
+                                    <View style={styles.ContainetTipoModelo}>
+                                        <Picker
+                                            style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
+                                            selectedValue={model}
+                                            enabled={isdisabelsub}
+                                            onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
+
+                                            <Picker.Item label={"Estado"} value={""} />
+                                            {
+                                                modelosub ?
+                                                    modelosub.map((item, index) => (
+                                                        <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
+                                                    ))
+                                                    : null
+                                            }
+                                        </Picker>
+                                    </View>
+                                </View>
+                                <View style={{
+                                    flexDirection: "row",
+                                    marginTop: "10%",
+                                    width: "100%",
+                                }}>
+                                    <TextInput
+                                        style={{
+                                            borderWidth: 1,
+                                            borderColor: '#CECECA',
+                                            width: "95%",
+                                            height: 60,
+                                            borderRadius: 10,
+                                            padding: 10
+                                        }}
+                                        value={serie}
+                                        onChangeText={text => onChangeSerie(text)}
+                                        placeholder="Observación"
+                                        editable={isdisabelsub}
+                                    />
                                 </View>
                             </View>
-                            <View style={{
-                                flexDirection: "row",
-                                marginTop: "10%",
-                                width: "100%",
-                            }}>
-                                <TextInput
-                                    style={{
-                                        borderWidth: 1,
-                                        borderColor: '#CECECA',
-                                        width: "95%",
-                                        height: 60,
-                                        borderRadius: 10,
-                                        padding: 10
-                                    }}
-                                    value={serie}
-                                    onChangeText={text => onChangeSerie(text)}
-                                    placeholder="Serie"
-                                    editable={isdisabelsub}
-                                />
+                            <View style={{ width: "100%", flexDirection: "row", justifyContent: 'center', padding: 15, marginTop: 20 }}>
+                                <TouchableOpacity >
+                                    <Text style={{ backgroundColor: "#FF6B00", borderRadius: 50, color: "#FFFFFF", paddingHorizontal: 30, paddingVertical: 10 }}>CREAR</Text>
+                                </TouchableOpacity>
+                                <View style={{ paddingHorizontal: 20 }} />
+                                <TouchableOpacity onPress={() => setModalCreateEquip(false)}>
+                                    <Text style={{ backgroundColor: "#FFFFFF", borderColor: "#FF6B00", borderWidth: 1, borderRadius: 50, color: "#FF6B00", paddingHorizontal: 30, paddingVertical: 10 }}>CERRAR</Text>
+                                </TouchableOpacity>
                             </View>
-
-                            <View style={styles.ContainetBuscador}>
-                                <View style={styles.ContainetTipoModelo}>
-
-                                    <Picker
-                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                        selectedValue={tipo}
-                                        onValueChange={(itemValue) => onChangeTipo(itemValue)}
-                                        enabled={isdisabelsub}
-                                    >
-                                        <Picker.Item label={"Marca"} value={""} />
-                                        {
-                                            equipo ?
-                                                equipo.map((item, index) => (
-                                                    <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
-                                                ))
-                                                : null
-                                        }
-                                    </Picker>
-                                </View>
-                                <View style={{ paddingHorizontal: 10 }} />
-                                <View style={styles.ContainetTipoModelo}>
-                                    <Picker
-                                        style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                        selectedValue={model}
-                                        enabled={isdisabelsub}
-                                        onValueChange={(itemValue, itemIndex) => onChangeModelo(itemValue)}>
-
-                                        <Picker.Item label={"Estado"} value={""} />
-                                        {
-                                            modelosub ?
-                                                modelosub.map((item, index) => (
-                                                    <Picker.Item key={index + 1} label={item.modelo_descripcion} value={item.modelo_descripcion} />
-                                                ))
-                                                : null
-                                        }
-                                    </Picker>
-                                </View>
-                            </View>
-                            <View style={{
-                                flexDirection: "row",
-                                marginTop: "10%",
-                                width: "100%",
-                            }}>
-                                <TextInput
-                                    style={{
-                                        borderWidth: 1,
-                                        borderColor: '#CECECA',
-                                        width: "95%",
-                                        height: 60,
-                                        borderRadius: 10,
-                                        padding: 10
-                                    }}
-                                    value={serie}
-                                    onChangeText={text => onChangeSerie(text)}
-                                    placeholder="Observación"
-                                    editable={isdisabelsub}
-                                />
-                            </View>
-                        </View>
-                        <View style={{ width: "100%", flexDirection: "row", justifyContent: 'center', padding: 15, marginTop: 20 }}>
-                            <TouchableOpacity >
-                                <Text style={{ backgroundColor:"#FF6B00", borderRadius:50, color: "#FFFFFF",paddingHorizontal: 30, paddingVertical: 10 }}>CREAR</Text>
-                            </TouchableOpacity>
-                            <View style={{ paddingHorizontal: 20 }} />
-                            <TouchableOpacity onPress={() => setModalCreateEquip(false)}>
-                                <Text style={{ backgroundColor:"#FFFFFF",borderColor:"#FF6B00", borderWidth: 1,borderRadius:50, color: "#FF6B00",paddingHorizontal: 30, paddingVertical: 10 }}>CERRAR</Text>
-                            </TouchableOpacity>
-                        </View>
                         </ScrollView>
                     </View>
                 </View>
             </Modal>
             <View style={styles.contenedor}>
-                <LoadingActi loading={loading} />
+                <LoadingActi loading={Events.loading} />
                 <View style={styles.ContainetEquipo}>
                     <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>
@@ -699,7 +671,7 @@ export default function Equipo(props) {
                     backgroundColor: "#FFFFFF"
                 }}>
                     <TouchableOpacity style={styles.btn} onPress={() => {
-                        console.log("hola")                        
+                        console.log("hola")
                     }/*setModalCreateEquip(true)*/
                     }>
                         <AntDesign name="plus" size={24} color="#FFF" />
