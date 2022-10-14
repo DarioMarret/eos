@@ -64,8 +64,9 @@ async function InsertOrdenServicioAnidadas(data) {
                     ingenieroId,
                     ingeniero,
                     tipoIncidencia,
-                    OrdenServicioID
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    OrdenServicioID,
+                    tck_tipoTicketCod
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 args: [
                     data.evento_id,
                     data.ticket_id,
@@ -92,7 +93,8 @@ async function InsertOrdenServicioAnidadas(data) {
                     data.ingenieroId,
                     data.ingeniero,
                     data.tipoIncidencia,
-                    data.OrdenServicioID
+                    data.OrdenServicioID,
+                    data.tck_tipoTicketCod
                 ],
             }], false, (err, results) => {
                 if (err) {

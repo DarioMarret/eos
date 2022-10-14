@@ -1,5 +1,4 @@
 import { useCallback, useState } from 'react';
-import Checkbox from 'expo-checkbox';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, Image, ImageBackground, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Asset } from "expo-asset";

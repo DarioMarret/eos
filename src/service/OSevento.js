@@ -96,7 +96,7 @@ async function InserEventosDiarios(r) {
                 if (err) {
                     console.log("error", err);
                 } else {
-                    console.log("results GetEventosDelDia-->", results);
+                    console.log("sincronizacion results GetEventosDelDia-->", results);
                 }
 
             })
@@ -137,6 +137,7 @@ export const InsertEventosLocales = async (r) => {
                         ingeniero,
                         tipoIncidencia,
                         OrdenServicioID,
+                        tck_tipoTicketCod,
                         estado_local
                             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
             args: [
@@ -172,7 +173,7 @@ export const InsertEventosLocales = async (r) => {
             if (err) {
                 console.log("error", err);
             } else {
-                console.log("results GetEventosDelDia-->", results);
+                console.log("aqui results GetEventosDelDia-->", results);
             }
 
         })
@@ -195,6 +196,7 @@ async function SelectTicket(ticket_id) {
         });
     })
 }
+
 export const GetEventos = async (ev_fechaAsignadaDesde) => {
     try {
         if (ev_fechaAsignadaDesde === "") {

@@ -35,7 +35,7 @@ export default function IngresoHoras(props) {
   const [tiempoOS, setTiempoOS] = useState("")
 
   const showDatePicker = (name) => {
-    setTiempoOS(name);
+    setTiempoOS('Fecha');
     setDatePickerVisibility(true);
   };
 
@@ -45,6 +45,7 @@ export default function IngresoHoras(props) {
   }
 
   const handleConfirm = async (date) => {
+    console.log("Fecha: ", date);
     let fec = new Date()
     setFechas({
       ...fechas,
@@ -54,11 +55,11 @@ export default function IngresoHoras(props) {
     var os = await AsyncStorage.getItem("OS_Tiempos")
     let OS_Tiempos = JSON.parse(os)
     if (OS_Tiempos.length > 0) {
-      OS_Tiempos[0].Fecha = `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      OS_Tiempos[0].Fecha = `${Moment(date).format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
     } else {
       OS_Tiempos = [timpo]
-      OS_Tiempos[0].Fecha = `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      OS_Tiempos[0].Fecha = `${Moment(date).format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
       await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
     }
     hideDatePicker();
@@ -258,8 +259,6 @@ export default function IngresoHoras(props) {
           if (Accion == "OrdenSinTicket") {
 
             console.log("OrdenSinTicket")
-            // console.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
-            // await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([]))
             LimpiarImput()
             setFini(false)
 
@@ -274,7 +273,7 @@ export default function IngresoHoras(props) {
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
-              FechaMostrar: Moment().format('DD/MM/YYYY'),
+              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
             })
             setFini(false)
 
@@ -286,7 +285,7 @@ export default function IngresoHoras(props) {
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
-              FechaMostrar: Moment().format('DD/MM/YYYY'),
+              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
             })
 
           } else if (Accion == "PENDIENTE") {
@@ -298,7 +297,7 @@ export default function IngresoHoras(props) {
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
-              FechaMostrar: Moment().format('DD/MM/YYYY'),
+              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
             })
             setFini(false)
 
@@ -313,20 +312,20 @@ export default function IngresoHoras(props) {
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
-              FechaMostrar: Moment().format('DD/MM/YYYY'),
+              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
             })
             setFini(false)
 
           } else if (Accion == "PROCESO") {
             console.log("PROCESO")
-            console.log("p", await AsyncStorage.getItem("OS_Anexos"))
             LimpiarImput()
-            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
+            console.log("OS_Tiempos", OS_Tiempos)
+            OS_Tiempos[0].Fecha == "" ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
             await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
             setFechas({
               ...fechas,
               ...OS_Tiempos[0],
-              FechaMostrar: Moment().format('DD/MM/YYYY'),
+              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
             })
             setFini(false)
           }

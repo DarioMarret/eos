@@ -80,31 +80,19 @@ export default function Manana(props) {
      * @param {*} estado 
      * @param {*} OrdenServicioID 
      */
-    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         dispatch(loadingCargando(true))
         try {
-            // const anidada = await getOrdenServicioAnidadas(ticket_id)
-            // console.log("anidada", anidada)
-            // if (anidada == null) {
-            // console.log("no hay anidadas")
-
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("id_equipo-->", rows)
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            console.log("equipo selecionado hoy row", rows._array)
-                            // Rutes(rows._array, ticket_id, JSON.parse(rows._array[0].historial)[0].OrdenServicioID, estado)
-                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
                         })
                     })
                 })
             })
-            // }
-            // if (anidada.length > 0) {
-            //     Rutes([], ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
-            // }
         } catch (error) {
             console.log("error", error)
         }
@@ -118,7 +106,7 @@ export default function Manana(props) {
      * @param {*} OrdenServicioID 
      * @param {*} estado 
      */
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket) {
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         try {
             console.log("equipo", equipo)
             console.log("estado", estado)
@@ -127,7 +115,7 @@ export default function Manana(props) {
             console.log("OrdenServicioID", OrdenServicioID)
             console.log("tck_tipoTicket", tck_tipoTicket)
             if (OrdenServicioID != 0) {
-                if (tck_tipoTicket.toLowerCase() == "servicio programado" || tck_tipoTicket.toLowerCase() == "servicio programado manual") {
+                if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
                     await AsyncStorage.removeItem(ticketID)
                     await AsyncStorage.setItem(ticketID, JSON.stringify({
                         evento_id,
@@ -142,11 +130,12 @@ export default function Manana(props) {
                 } else {
                     await AsyncStorage.removeItem(ticketID)
                     const OS = await SelectOSOrdenServicioID(OrdenServicioID)
-                    console.log("OS", OS)
                     let parse = await ParseOS(OS, estado)
                     console.log("OS", parse)
                     parse.ticket_id = ticket_id
                     parse.evento_id = evento_id
+                    parse.tipoIncidencia = tipoIncidencia
+                    parse.TipoVisita = tck_tipoTicketCod
                     await AsyncStorage.setItem("OS", JSON.stringify(parse))
                     await AsyncStorage.setItem(ticketID, JSON.stringify({
                         ticket_id,
@@ -160,7 +149,7 @@ export default function Manana(props) {
                     navigation.navigate("Ordenes")
                 }
             } else {
-                if (tck_tipoTicket.toLowerCase() == "servicio programado" || tck_tipoTicket.toLowerCase() == "servicio programado manual") {
+                if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
                     await AsyncStorage.removeItem(ticketID)
                     await AsyncStorage.setItem(ticketID, JSON.stringify({
                         evento_id,
@@ -178,6 +167,8 @@ export default function Manana(props) {
                     console.log("OS", parse)
                     parse.ticket_id = ticket_id
                     parse.evento_id = evento_id
+                    parse.tipoIncidencia = tipoIncidencia
+                    parse.TipoVisita = tck_tipoTicketCod
                     await AsyncStorage.setItem("OS", JSON.stringify(parse))
                     await AsyncStorage.setItem(ticketID, JSON.stringify({
                         ticket_id,
@@ -218,7 +209,9 @@ export default function Manana(props) {
                         String(item.evento_id),
                         item.ev_estado,
                         item.OrdenServicioID,
-                        item.tck_tipoTicket
+                        item.tck_tipoTicket,
+                        item.tipoIncidencia,
+                        item.tck_tipoTicketCod
                     )}>
 
                     <View style={{

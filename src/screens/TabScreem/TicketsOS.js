@@ -93,7 +93,7 @@ export default function TicketsOS(props) {
         }
     }
 
-    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         console.log("estado", estado)
         dispatch(loadingCargando(true))
@@ -102,7 +102,7 @@ export default function TicketsOS(props) {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
                         })
                     })
                 })
@@ -132,7 +132,7 @@ export default function TicketsOS(props) {
         console.log("enviado")
     }
 
-    async function ClonarOS(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket) {
+    async function ClonarOS(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         console.log("evento_id", evento_id)
         console.log("estado", estado)
@@ -142,13 +142,16 @@ export default function TicketsOS(props) {
 
         const OSClone = await SelectOSOrdenServicioID(OrdenServicioID)
         let clon = await ParseOS(OSClone, "clonar")
-        console.log("clonacion", clon)
-        await AsyncStorage.setItem("OS", JSON.stringify(OSClone[0]))
+        clon.ticket_id = ticket_id
+        clon.evento_id = evento_id
+        clon.tipoIncidencia = tipoIncidencia
+        clon.TipoVisita = tck_tipoTicketCod
+        await AsyncStorage.setItem("OS", JSON.stringify(clon))
         db.transaction(tx => {
             tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                 db.transaction(tx => {
                     tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                        Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, "clonar", tck_tipoTicket)
+                        Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, "clonar", tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
                     })
                 })
             })
@@ -188,15 +191,30 @@ export default function TicketsOS(props) {
      * @param {*} OSClone 
      * @param {*} accion string
      */
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket) {
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         equipo[0]['isChecked'] = 'true'
+        console.log("equipo", equipo)
+        console.log("ticket_id", ticket_id)
+        console.log("evento_id", evento_id)
+        console.log("OrdenServicioID", OrdenServicioID)
+        console.log("accion", accion)
+        console.log("tck_tipoTicket", tck_tipoTicket)
+        console.log("tipoIncidencia", tipoIncidencia)
+        console.log("tck_tipoTicketCod", tck_tipoTicketCod)
+
         var clon;
         var equipo_id = []
         if (accion == "PENDIENTE" || accion == "FINALIZADO" || accion == "PROCESO") {
             clon = await SelectOSOrdenServicioID(OrdenServicioID)
             let parse = await ParseOS(clon, accion)
+            parse.ticket_id = ticket_id
+            parse.evento_id = evento_id
+            parse.tipoIncidencia = tipoIncidencia
+            parse.TipoVisita = tck_tipoTicketCod
             await AsyncStorage.setItem("OS", JSON.stringify(parse))
+            // console.log("Clone", parse)
             equipo_id = await isChecked(parse.equipo_id)
+            // console.log("equipo_id", equipo_id)
             equipo_id[0]['isChecked'] = 'true'
             dispatch(loadingCargando(false))
         }
@@ -412,13 +430,18 @@ export default function TicketsOS(props) {
                                                                 : null
                                                         }
                                                         <TouchableOpacity
-                                                            onPress={() => Ordene(
-                                                                String(item.ticket_id),
-                                                                String(item.evento_id),
-                                                                item.ev_estado,
-                                                                item.OrdenServicioID,
-                                                                item.tck_tipoTicket
-                                                            )}>
+                                                            onPress={() =>{
+                                                                console.log("item",item)
+                                                                Ordene(
+                                                                    String(item.ticket_id),
+                                                                    String(item.evento_id),
+                                                                    item.ev_estado,
+                                                                    item.OrdenServicioID,
+                                                                    item.tck_tipoTicket,
+                                                                    item.tipoIncidencia,
+                                                                    item.tck_tipoTicketCod
+                                                                )
+                                                            }}>
                                                             <View>
                                                                 <Text
                                                                     style={{
@@ -494,7 +517,9 @@ export default function TicketsOS(props) {
                                                                                     String(item.evento_id),
                                                                                     item.ev_estado,
                                                                                     item.OrdenServicioID,
-                                                                                    item.tck_tipoTicket
+                                                                                    item.tck_tipoTicket,
+                                                                                    item.tipoIncidencia,
+                                                                                    item.tck_tipoTicketCod
                                                                                 )
                                                                             }}
                                                                             text='Clonar OS'

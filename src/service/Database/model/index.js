@@ -98,7 +98,8 @@ function InitDB() {
             ingenieroId INTEGER NULL,
             ingeniero TEXT NULL,
             tipoIncidencia TEXT NULL,
-            OrdenServicioID INTEGER NULL
+            OrdenServicioID INTEGER NULL,
+            tck_tipoTicketCod TEXT NULL
         );`)
         })
 
@@ -388,6 +389,80 @@ function InitDB() {
                 Estado TEXT NULL
             );`)
         })
+
+        //TABLA PARA FORMULARIO
+                //CREATE TABLA ORDENES DE SERVICIO
+                db.exec([{
+                    sql: `CREATE TABLE IF NOT EXISTS OSFORMULARIO 
+                    (
+                        OS_CheckList TEXT NULL,
+                        OS_Encuesta TEXT NULL,
+                        OS_Firmas TEXT NULL,
+                        OS_PartesRepuestos TEXT NULL,
+                        OS_Anexos TEXT NULL,
+                        OS_Tiempos TEXT NULL,
+                        OS_Colaboradores TEXT NULL,
+                        provinciaId INTEGER NULL,
+                        cantonId INTEGER NULL,
+                        localidad TEXT NULL,
+                        tipoIncidencia TEXT NULL,
+                        OrdenServicioID INTEGER NULL,
+                        TipoVisita TEXT NULL,
+                        Fecha TEXT NULL,
+                        Estado TEXT NULL,
+                        Finalizado INTEGER NULL,
+                        evento_id INTEGER NULL,
+                        ticket_id INTEGER NULL,
+                        empresa_id INTEGER NULL,
+                        contrato_id INTEGER NULL,
+                        equipo_id INTEGER NULL,
+                        Serie TEXT NULL,
+                        TipoEquipo INTEGER NULL,
+                        ModeloEquipo INTEGER NULL,
+                        Marca TEXT NULL,
+                        ObservacionEquipo TEXT NULL,
+                        CodigoEquipoCliente TEXT NULL,
+                        ClienteID TEXT NULL,
+                        ClienteNombre TEXT NULL,
+                        Sintomas TEXT NULL,
+                        Causas TEXT NULL,
+                        Diagnostico TEXT NULL,
+                        Acciones TEXT NULL,
+                        SitioTrabajo TEXT NULL,
+                        EstadoEquipo TEXT NULL,
+                        ComentarioRestringido TEXT NULL,
+                        IncluyoUpgrade INTEGER NULL,
+                        ComentarioUpgrade TEXT NULL,
+                        Seguimento INTEGER NULL,
+                        FechaSeguimiento TEXT NULL,
+                        ObservacionCliente TEXT NULL,
+                        ObservacionIngeniero TEXT,
+                        IngenieroID INTEGER NULL,
+                        UsuarioCreacion INTEGER NULL,
+                        FechaCreacion TEXT NULL,
+                        UsuarioModificacion INTEGER NULL,
+                        FechaModificacion TEXT NULL,
+                        IdEquipoContrato INTEGER NULL,
+                        EstadoEqPrevio TEXT NULL,
+                        ContactoInforme TEXT NULL,
+                        CargoContactoInforme TEXT NULL,
+                        ObservacionCheckList TEXT NULL,
+                        Direccion TEXT NULL,
+                        Ciudad TEXT NULL,
+                        nuevaVisita INTEGER NULL,
+                        incidencia TEXT NULL,
+                        release TEXT NULL,
+                        OS_ASUNTO TEXT NULL,
+                        OS_FINALIZADA TEXT NULL,
+                        enviado TEXT NULL,
+                        codOS TEXT NULL,
+                        OS_LOCAL TEXT NULL
+                        );`,
+                        args: []
+                    }], false, (tx, results) => {
+                        console.log("resultado tx", tx);
+                        console.log("resultado al crear la tabla OS_OrdenServicio", results);
+                })
 
 
         //

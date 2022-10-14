@@ -196,7 +196,8 @@ export const getUserInfo = async (userId, token) => {
 export const RefresLogin = async () => {
     const refres = await getdataUser()
     const { data, status } = await axios.post(`${hostBase}/login/authenticate`, refres)
-    if (status === 200) {
+    console.log("RefresLogin-->", data)
+    if (status == 200) {
         const { IdUsuario } = await getToken()
         await GuardarToken({ ...data, IdUsuario })
     }

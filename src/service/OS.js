@@ -41,8 +41,8 @@ export const PutOS = async (datos) => {
 
     try {
         const { data, status } = await axios.put(
-            'http://192.168.101.4:3333/resultado',
-            // `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
+            // 'http://192.168.101.4:3333/resultado',
+            `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
             datos, {
             headers: {
                 "Content-Type": "application/json",
@@ -100,7 +100,7 @@ export const FinalizarOS = async (OrdenServicioID) => {
             return false
         }
     })
-    await time(1000)
+    // await time(1000)
     OrdenServicioID.map(async (item) => {
         const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${item}`, {}, {
             headers: {
@@ -142,7 +142,7 @@ export const FinalizarOS_ = async (OrdenServicioID, datos) => {
         console.log("PutOS", data)
         console.log("PutOS Status", status)
         if (status == 204) {
-            await time(6000)
+            // await time(6000)
             await FinalizarOS([OrdenServicioID])
             await UpdateOSOrdenServicioID([OrdenServicioID])
             return status
@@ -247,7 +247,6 @@ export const ParseOS = async (data, accion) => {
         OS.OS_Colaboradores = []
         OS.OS_Encuesta = []
         OS.Estado = "ACTI"
-
         return OS
 
     } else if (accion == "FINALIZADO") {
@@ -279,7 +278,7 @@ export const ParseOS = async (data, accion) => {
         data[0].OS_Firmas = []
         data[0].OS_Anexos = []
         delete data[0].OS_FINALIZADA
-        delete data[0].OS_ASUNTO
+        // delete data[0].OS_ASUNTO
         data[0].Estado = "ACTI"
         delete data[0].codOS
         return data[0]
@@ -304,6 +303,7 @@ export const ParseOS = async (data, accion) => {
 
     } else if (accion == "PROCESO") {
 
+        // await AsyncStorage.removeItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
         console.log("ParseOS PROCESO", data)
 
         await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
@@ -321,7 +321,7 @@ export const ParseOS = async (data, accion) => {
         data[0].OS_Anexos = []
         delete data[0].OS_ASUNTO
         delete data[0].OS_FINALIZADA
-
+        console.log("ParseOS PROCESO", data[0])
         return data[0]
     }
 }

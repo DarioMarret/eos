@@ -1,4 +1,3 @@
-import { CambieEstadoSwitch, ListaComponentes, ListaDiagnostico } from "../../service/config"
 import { StyleSheet, Text, Pressable, TextInput, View, Modal, Switch, SafeAreaView, TouchableOpacity, ScrollView, Alert, FlatList } from "react-native"
 import DateTimePickerModal from "react-native-modal-datetime-picker"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -13,8 +12,9 @@ import moment from "moment"
 import LoadingActi from "../../components/LoadingActi"
 import { getHistorialEquiposStorageChecklist } from "../../service/historiaEquipo"
 import { getToken } from "../../service/usuario"
-import isEmpty from "is-empty"
-import { time } from "../../service/CargaUtil"
+import { loadingCargando } from "../../redux/sincronizacion"
+import { useDispatch } from "react-redux"
+import { useSelector } from "react-redux"
 
 export default function Datos(props) {
     const { navigation } = props
@@ -26,7 +26,6 @@ export default function Datos(props) {
     const [isRecordatorio, setIsRecordatorio] = useState(false);
     const [isUpgrade, setIsUpgrade] = useState(false);
     const [isVisita, setIsVisita] = useState(false);
-    const [incidente, setIncidente] = useState([]);
     const [estadoEquipo, setEstadoEquipo] = useState("")
 
     const [CategoriaTPCK, setCategoriaTPCK] = useState([])
@@ -41,13 +40,12 @@ export default function Datos(props) {
     const [isEnabled, setIsEnabled] = useState(true);
     const [isdisabelsub, setDisableSub] = useState(true)
 
-    const [loading, setLoading] = useState(false)
-
     const [showCheckList, setShowCheckList] = useState(false)
     const [listCheck, setListCheck] = useState([
     ])
 
-
+    const Events = useSelector(s => s.sincronizacion)
+    const dispatch = useDispatch()
 
     const [datos, setDatos] = useState({
         SitioTrabajo: "",
@@ -72,6 +70,30 @@ export default function Datos(props) {
         Seguimento: false,
     })
 
+    function FormarDtos(item) {
+        setDatos({
+            SitioTrabajo: item.SitioTrabajo,
+            tipoIncidencia: item.tipoIncidencia,
+            Causas: item.Causas,
+            Sintomas: item.Sintomas,
+            Diagnostico: item.Diagnostico,
+            EstadoEquipo: item.EstadoEquipo,
+            EstadoEqPrevio: item.EstadoEqPrevio,
+            Acciones: item.Acciones,
+            IncluyoUpgrade: item.IncluyoUpgrade,
+            ComentarioRestringido: item.ComentarioRestringido,
+            ComentarioUpgrade: item.ComentarioUpgrade,
+            FechaSeguimiento: item.FechaSeguimiento,
+            nuevaVisita: item.NuevaVisita,
+            release: item.Release,
+            ObservacionIngeniero: item.ObservacionIngeniero,
+            FechaSeguimiento: item.FechaSeguimiento,
+            FechaSeguimientoMostrar: moment(item.FechaSeguimiento).format("DD/MM/YYYY"),
+            TipoVisita: item.TipoVisita,
+            TipoVistaDescripcion: item.TipoVistaDescripcion,
+            Seguimento: item.Seguimento,
+        })
+    }
     async function ActivarChecklist(equipo_id) {
         var checklist = await JSON.parse(await AsyncStorage.getItem("OS_CheckList"))
         if (checklist.length > 0) {
@@ -134,18 +156,6 @@ export default function Datos(props) {
         }
     }
 
-    async function TipoIncidencia(items) {
-
-        console.log("TipoIncidencia", items)
-        const os = await AsyncStorage.getItem("OS")
-        const osItem = JSON.parse(os)
-        osItem.tipoIncidencia = items
-        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-        setDatos({
-            ...datos,
-            tipoIncidencia: items
-        })
-    }
     const handleOnchange = async (name, value) => {
         setDatos({
             ...datos,
@@ -154,7 +164,7 @@ export default function Datos(props) {
         const os = JSON.parse(await AsyncStorage.getItem("OS"))
         os[name] = value
         await AsyncStorage.setItem("OS", JSON.stringify(os))
-        if(name == "EstadoEquipo"){
+        if (name == "EstadoEquipo") {
             setEstadoEquipo(value)
         }
 
@@ -202,11 +212,11 @@ export default function Datos(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                setLoading(true)
+                dispatch(loadingCargando(true))
                 setCategoriaTPCK(await SelectCategoria("TPTCK"))
                 setCategoriaTPINC(await SelectCategoria("TPINC"))
                 setCategoriaESTEQ(await SelectCategoria("ESTEQ"))
-                var osItem = JSON.parse(await AsyncStorage.getItem("OS"))
+                const osItem = JSON.parse(await AsyncStorage.getItem("OS"))
                 setEstadoEquipo(osItem.EstadoEquipo)
                 console.log("ESTADO EQUIPO", osItem.EstadoEquipo)
                 const itenSelect = await AsyncStorage.getItem(ticketID)
@@ -217,90 +227,57 @@ export default function Datos(props) {
                     setOrdenServicioID(OrdenServicioID)
                     if (Accion == "FINALIZADO") {
                         console.log("Estamos FINALIZADO")
-                        setDatos({
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
+                        FormarDtos(osItem)
                         setIsEnabled(false)
                         setDisableSub(false)
                         setSelect(false)
 
                     } else if (Accion == "clonar") {
                         console.log("Estamos clonar")
-
-                        // TipoVisitadescripcion(osItem.TipoVisita)
-                        // TipoIncidencia(osItem.tipoIncidencia)
-
-
-                        setDatos({
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
+                        FormarDtos(osItem)
                         await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
+                        setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
 
                     } else if (Accion == "OrdenSinTicket") {
 
                         console.log("Estamos OrdenSinTicket")
-                        console.log("osItem", datos.FechaSeguimientoMostrar)
-                        setDatos({
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
+                        FormarDtos(osItem)
                         setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
                         await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist() : setOfCheck(false)
-                        console.log("Checklist", await AsyncStorage.getItem("OS_CheckList"))
-
-                        console.log("osItem", osItem)
 
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("Estamos PENDIENTE")
-                        // TipoVisitadescripcion(osItem.TipoVisita)
-                        // TipoIncidencia(osItem.tipoIncidencia)
-                        // console.log("osItem", osItem)
-                        delete osItem.OS_ASUNTO
-                        delete osItem.OS_Anexos
-                        delete osItem.OS_FINALIZADA
-                        setDatos({
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
+                        FormarDtos(osItem)
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist() : setOfCheck(false)
+                        setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
-                        
+
 
                     } else if (Accion == "NUEVO OS TICKET") {
 
                         console.log("Estamos NUEVO OS TICKET")
-                        setDatos({
-                            ...datos,
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
-                        console.log("osItem", osItem.TipoVisita)
+                        FormarDtos(osItem)
                         await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
                         osItem.TipoVisita == "01" || osItem.TipoVisita == "09"
                             ? ActivarChecklist() : setOfCheck(false)
+                        setSelect(true)
                         setIsEnabled(true)
                         setDisableSub(true)
 
                     } else if (Accion == "PROCESO") {
 
                         console.log("Estamos PROCESO")
-                        setDatos({
-                            ...osItem,
-                            FechaSeguimientoMostrar: moment(osItem.FechaSeguimiento).format("DD/MM/YYYY")
-                        })
-
-                        setSelect(false)//desabilidar select en este estado
+                        FormarDtos(osItem)
+                        setSelect(true)//desabilidar select en este estado
                         setIsEnabled(true)
                         setDisableSub(true)
 
@@ -309,8 +286,8 @@ export default function Datos(props) {
 
                     }
                 }
-                time(1000)
-                setLoading(false)
+                // time(1000)
+                dispatch(loadingCargando(false))
             })()
         }, [])
     )
@@ -430,7 +407,7 @@ export default function Datos(props) {
                             marginLeft: 5,
                         }}>Ingreso de datos</Text>
                     <View style={styles.ContainerInputs}>
-                        <LoadingActi loading={loading} />
+                        <LoadingActi loading={Events.loading} />
                         <Text
                             style={{
                                 fontSize: 16,
@@ -629,7 +606,7 @@ export default function Datos(props) {
                                     padding: 10,
 
                                 }}
-                                selectedValue={estadoEquipo}
+                                selectedValue={datos.EstadoEquipo}
                                 enabled={true}
                                 onValueChange={(itemValue, itemIndex) =>
                                     handleOnchange('EstadoEquipo', itemValue)
@@ -638,7 +615,7 @@ export default function Datos(props) {
                                     CategoriaESTEQ ?
                                         CategoriaESTEQ.map((item, index) => (
                                             // console.log('entro', datos.EstadoEquipo) ,
-                                            estadoEquipo == item.IdCatalogoDetalle ?
+                                            datos.EstadoEquipo == item.IdCatalogoDetalle ?
                                                 <Picker.Item
                                                     key={index + 1}
                                                     label={item.Descripcion}

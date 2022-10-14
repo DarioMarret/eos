@@ -269,6 +269,7 @@ export const Restablecer = async () => {
         ingeniero TEXT NULL,
         tipoIncidencia TEXT NULL,
         OrdenServicioID INTEGER NULL,
+        tck_tipoTicketCod TEXT NULL,
         estado_local TEXT NULL
     );`)
     })
@@ -357,7 +358,8 @@ export const Restablecer = async () => {
         ingenieroId INTEGER NULL,
         ingeniero TEXT NULL,
         tipoIncidencia TEXT NULL,
-        OrdenServicioID INTEGER NULL
+        OrdenServicioID INTEGER NULL,
+        tck_tipoTicketCod TEXT NULL
     );`)
     })
 
