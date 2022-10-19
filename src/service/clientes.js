@@ -105,7 +105,7 @@ export const GetClienteCustimerName = async (CustomerName) => {
     try {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
-                tx.executeSql(`select * from cliente where CustomerName like '%${CustomerName}%'`, [], (_, { rows }) => {
+                tx.executeSql(`select * from cliente where CustomerName like '%${CustomerName}%' limit 10`, [], (_, { rows }) => {
                     resolve(rows._array)
                 });
             })

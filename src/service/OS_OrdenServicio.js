@@ -386,6 +386,20 @@ export async function ComponenteOSOrdenServicioID(OrdenServicioID) {
     })
 }
 
+export const EstadoOSLOCAL = (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_LOCAL FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(_array[0].OS_LOCAL)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        });
+    })
+}
 
 export const InserOSOrdenServicioIDLocal = async (r, rando) => {
     console.log("InserOSOrdenServicioIDLocal-->", r.OrdenServicioID)

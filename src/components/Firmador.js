@@ -3,8 +3,6 @@ import Signature from 'react-native-signature-canvas';
 import { AntDesign } from '@expo/vector-icons';
 import { getToken } from "../service/usuario";
 import moment from "moment";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { os_firma } from "../utils/constantes";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react"
 import { ActualizarOrdenServicioFirmas, ListarFirmas, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
@@ -13,6 +11,9 @@ import { useSelector, useDispatch } from "react-redux"
 import { useIsConnected } from 'react-native-offline';
 import LoadingActi from "./LoadingActi";
 import { loadingCargando } from "../redux/sincronizacion";
+import { actualizarDatosTool, setFirmasTool } from "../redux/formulario";
+import { ActualizarFirmaLocal } from "../service/ServicioLoca";
+import isEmpty from "just-is-empty";
 
 
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
@@ -24,62 +25,80 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     const [f_actual, setF_actual] = useState(0)
 
     const Events = useSelector(s => s.sincronizacion)
+    const formulario = useSelector(s => s.formulario)
     const dispatch = useDispatch()
 
     const handleOK = async (signature) => {
-        console.log("signature", signature)
         setUserData({
             ...datauser,
             archivo: signature,
         })
-    };
+    }
+    const handleObservacionCliente = (value) => {
+        dispatch(actualizarDatosTool({
+            name: "ObservacionCliente",
+            value: value
+        }))
+        setUserData({ ...datauser, Observacion: value })
+    }
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                let os = JSON.parse(await AsyncStorage.getItem("OS"))
-                console.log("OrdenServicioID--> para firmar", os.OrdenServicioID)
-                setOrdenServicioID(os.OrdenServicioID)
-                let firmas = JSON.parse(await ListarFirmas(os.OrdenServicioID))
-                await AsyncStorage.setItem("OS_Firmas", JSON.stringify(firmas))
-                let firm = firmas.filter((item) => item.Estado == "ACTI")
-                console.log("f", firm)
-                setListF(firm)
-                setF_actual(firm.length)
-                console.log("firmas-->", firm)
+                if (typeof formulario.firmas !== "undefined") {
+                    if (formulario.firmas.length > 0) {
+                        setOrdenServicioID(formulario.OrdenServicioID)
+                        let firmas = JSON.parse(await ListarFirmas(formulario.OrdenServicioID))
+                        if (firmas.length > 0) {
+                            let firm = firmas.filter((item) => item.Estado == "ACTI")
+                            setListF(firm)
+                            
+                        } else {
+                            let firmfil = formulario.firmas.filter((item) => item.Estado == "ACTI")
+                            setListF(firmfil)
+                        }
+                    }
+                }
+                if(isEmpty(formulario.datos.ObservacionCliente)){
+                    setObs(false)
+                }else{
+                    setObs(true)
+                }
             })()
-        }, [])
+        }, [formulario.firmas])
     )
 
     const Grabar = async () => {
-        if (datauser.Nombre == "" || datauser.Cargo == "" || datauser.Correo == "" || datauser.archivo == "") {
+        if (isEmpty(datauser.Nombre) || isEmpty(datauser.Cargo) || isEmpty(datauser.Correo) || isEmpty(datauser.archivo)) {
             console.log("Falta datos", datauser.Nombre)
             console.log("Falta datos", datauser.Cargo)
             console.log("Falta datos", datauser.Correo)
+            console.log("Falta datos", datauser.archivo)
             Alert.alert("Error", "Debe llenar todos los campos")
         } else {
             const { userId } = await getToken()
-            const OS_Firm = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
-            os_firma.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`
-            os_firma.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`
-            os_firma.UsuarioCreacion = userId
-            os_firma.UsuarioModificacion = userId
-            os_firma.OrdenServicioID = OrdenServicioID
-            os_firma.Correo = datauser.Correo
-            os_firma.Cargo = datauser.Cargo
-            os_firma.Nombre = datauser.Nombre
-            os_firma.OS_OrdenServicio = null
-            os_firma.Cedula = ""
-            os_firma.Estado = "ACTI"
-            os_firma.Ruta = null
-            os_firma.Longitud = null
-            os_firma.Latitud = null
-            os_firma.archivo = datauser.archivo.split(",")[1]
-            // os_firma.Observacion = datauser.Observacion
-            OS_Firm.push(os_firma)
-            console.log("OS_Firmas", OS_Firm)
-            await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firm))
-            await ActualizarOrdenServicioFirmas(OS_Firm, OrdenServicioID)
+            var OS_Firm = formulario.firmas
+            let firmas = {
+                OS_OrdenServicio: null,
+                IdFirma: 0,
+                OrdenServicioID: OrdenServicioID,
+                Ruta: null,
+                FechaCreacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
+                FechaModificacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
+                UsuarioCreacion: userId,
+                UsuarioModificacion: userId,
+                Estado: "ACTI",
+                Cargo: datauser.Cargo,
+                Nombre: datauser.Nombre,
+                Cedula: "",
+                Longitud: null,
+                Latitud: null,
+                Correo: datauser.Correo,
+                archivo: datauser.archivo.split(",")[1]
+            }
+            OS_Firm = [...OS_Firm, firmas]
+            setListF(OS_Firm)
+            dispatch(setFirmasTool(OS_Firm))
             handleClear()
             setUserData({
                 ...datauser,
@@ -93,8 +112,6 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 UsuarioCreacion: "",
                 UsuarioModificacion: "",
             })
-            setListF(OS_Firm)
-            setObs(OS_Firm.length > 0 ? true : false)
         }
     }
 
@@ -107,7 +124,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
             },
             {
                 text: "OK", onPress: async () => {
-                    var f = listF.map((firmas) => {
+                    var f = formulario.firmas.map((firmas) => {
                         if (firmas.FechaCreacion == item.FechaCreacion) {
                             return {
                                 ...firmas,
@@ -117,11 +134,8 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             return firmas
                         }
                     })
-                    await AsyncStorage.setItem("OS_Firmas", JSON.stringify(f))
                     let firm = f.filter((item) => item.Estado == "ACTI")
-                    console.log("f", f)
                     setListF(firm)
-                    setObs(firm.length > 0 ? true : false)
                     await ActualizarOrdenServicioFirmas(f, OrdenServicioID)
                 }
             }
@@ -143,70 +157,67 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
         }
     }
     const CerrarAndActualizar = async () => {
-        const OS_Firmas = JSON.parse(await AsyncStorage.getItem("OS_Firmas"))
-        if (f_actual == OS_Firmas.length) {
-            setModalSignature(false)
-        } else {
-            dispatch(loadingCargando(true))
-            const rest = await SelectOSOrdenServicioID(OrdenServicioID)
-            const OS_PartesRepuestos = JSON.parse(rest[0].OS_PartesRepuestos)
-            const OS_CheckList = JSON.parse(rest[0].OS_CheckList)
-            const OS_Tiempos = JSON.parse(rest[0].OS_Tiempos)
-            const OS_Anexos = JSON.parse(rest[0].OS_Anexos)
-            delete rest[0].OS_Firmas
-            delete rest[0].OS_Colaboradores
-            delete rest[0].OS_Encuesta
-            rest[0].OS_PartesRepuestos = OS_PartesRepuestos
-            rest[0].OS_CheckList = OS_CheckList
-            rest[0].OS_Tiempos = OS_Tiempos
-            rest[0].OS_Firmas = OS_Firmas
-            rest[0].OS_FINALIZADA = ""
-            rest[0].OS_ASUNTO = ""
-            rest[0].OS_Anexos = OS_Anexos
-            if (isConnected) {
-                try {
-                    const { token } = await getToken()
-                    const { status } = await axios.put(
-                        `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
-                        rest[0], {
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Authorization": `Bearer ${token}`
-                        }
-                    })
-                    await UpdateOSOrdenServicioID([OrdenServicioID])
-                    await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
-                    dispatch(loadingCargando(false))
-                    Alert.alert("Informacion",
-                        "Se ha guardado la firma exitosamente", [
-                        {
-                            text: "OK", onPress: () => {
-                                setModalSignature(false)
-                            }
-                        }
-                    ]);
-
-                } catch (error) {
-                    console.log("PutOS", error)
-                    return false
-                }
-            } else {
-                await ActualizarFirmaLocal(OrdenServicioID, OS_Firmas)
+        const OS_Firmas = formulario.firmas
+        dispatch(loadingCargando(true))
+        const rest = await SelectOSOrdenServicioID(OrdenServicioID)
+        const OS_PartesRepuestos = JSON.parse(rest[0].OS_PartesRepuestos)
+        const OS_CheckList = JSON.parse(rest[0].OS_CheckList)
+        const OS_Tiempos = JSON.parse(rest[0].OS_Tiempos)
+        const OS_Anexos = JSON.parse(rest[0].OS_Anexos)
+        delete rest[0].OS_Colaboradores
+        delete rest[0].OS_Encuesta
+        rest[0].OS_PartesRepuestos = OS_PartesRepuestos
+        rest[0].OS_CheckList = OS_CheckList
+        rest[0].OS_Tiempos = OS_Tiempos
+        rest[0].OS_Firmas = OS_Firmas
+        rest[0].OS_FINALIZADA = ""
+        rest[0].OS_ASUNTO = ""
+        rest[0].OS_Anexos = OS_Anexos
+        if (isConnected) {
+            try {
+                const { token } = await getToken()
+                const { status } = await axios.put(
+                    `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
+                    rest[0], {
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    }
+                })
+                console.log("status firmas-->", status)
+                await UpdateOSOrdenServicioID([OrdenServicioID])
                 dispatch(loadingCargando(false))
-                await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
-                setModalSignature(false)
                 Alert.alert("Informacion",
-                    "Se ha guardado la firma localmente",
-                    [
-                        {
-                            text: "OK", onPress: () => {
-                                setModalSignature(false)
-                            }
+                    "Se ha guardado la firma exitosamente", [
+                    {
+                        text: "OK", onPress: () => {
+                            setModalSignature(false)
                         }
-                    ]);
+                    }
+                ]);
+
+            } catch (error) {
+                console.log("PutOS", error)
+                return false
             }
+        } else {
+            await ActualizarOrdenServicioFirmas(OS_Firmas, OrdenServicioID)
+            // await ActualizarFirmaLocal(OrdenServicioID, OS_Firmas)
+            dispatch(loadingCargando(false))
+            setModalSignature(false)
+            Alert.alert("Informacion",
+                "Se ha guardado la firma localmente",
+                [
+                    {
+                        text: "OK", onPress: () => {
+                            setModalSignature(false)
+                        }
+                    }
+                ]);
         }
     }
+
+
 
     // Called after end of stroke
     const handleEnd = () => {
@@ -302,8 +313,6 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                                     })
                                 }
                             </ScrollView>
-                            {/* <Text style={{ fontWeight: 'bold', fontSize: 12 }}>{`${datauser.Nombre || ''} ${datauser.Cargo || ''}`}</Text>
-                            <AntDesign name="delete" size={20} color="red" onPress={handleClear} /> */}
                         </View>
                     </View>
                     <View style={{ width: "100%", height: 190 }}>
@@ -312,7 +321,6 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             onEnd={handleEnd}
                             onOK={handleOK}
                             onEmpty={handleEmpty}
-                            // onClear={handleClear}
                             descriptionText="Firma"
                             clearText="LIMPIAR"
                             confirmText="AGREGAR"
@@ -345,33 +353,43 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                                     style={styles.input}
                                     value={datauser.Observacion}
                                     placeholder="Observacion del Cliente"
-                                    onChangeText={(text) => setUserData({ ...datauser, Observacion: text })}
+                                    onChangeText={(text) => handleObservacionCliente(text)}
                                 />) : null
                         }
 
                     </View>
-                    <View style={{ width: "100%", flexDirection: "row", justifyContent: 'flex-end', padding: 15 }}>
+                    <View style={{ width: "100%", flexDirection: "row", justifyContent: 'space-between', padding: 15 }}>
                         <TouchableOpacity onPress={() => Grabar()}>
                             <Text style={{
                                 color: "#FF6B00",
                                 fontWeight: 'bold',
                                 fontSize: 16,
-                                marginLeft: 15,
                                 borderWidth: 1,
                                 borderColor: '#FF6B00',
                                 borderRadius: 20,
                                 padding: 8,
-                            }}>AGREGAR FIRMA</Text>
+                            }}>AGREGAR</Text>
                         </TouchableOpacity>
-                        <View style={{ paddingHorizontal: 20 }} />
                         <TouchableOpacity
 
                             onPress={() => CerrarAndActualizar()}>
                             <Text style={{
+                                color: '#FF6B00',
+                                fontWeight: 'bold',
+                                fontSize: 16,
+                                borderWidth: 1,
+                                borderColor: '#FF6B00',
+                                borderRadius: 20,
+                                padding: 8,
+                            }}>GUARDAR</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+
+                            onPress={() => setModalSignature(false)}>
+                            <Text style={{
                                 color: '#B2B2AF',
                                 fontWeight: 'bold',
                                 fontSize: 16,
-                                marginRight: 15,
                                 borderWidth: 1,
                                 borderColor: '#B2B2AF',
                                 borderRadius: 20,

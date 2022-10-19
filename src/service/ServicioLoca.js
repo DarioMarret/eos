@@ -1,6 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos } from "../utils/constantes";
-import { time } from "./CargaUtil";
 import db from "./Database/model";
 
 
@@ -58,7 +57,6 @@ export const EditareventoLocal = async (ev_estado, OrdenServicioID) => {
  */
 export const EditarOrdenServicioLocal = async (OS, OrdenServicioID) => {
     await EliminarOrdenServicioLocal(OrdenServicioID)
-    await time(2000)
     await InserOSOrdenServicioIDLocal(OS)
 }
 

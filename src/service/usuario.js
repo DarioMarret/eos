@@ -195,7 +195,15 @@ export const getUserInfo = async (userId, token) => {
 
 export const RefresLogin = async () => {
     const refres = await getdataUser()
-    const { data, status } = await axios.post(`${hostBase}/login/authenticate`, refres)
+    const AxiosInst = axios.create({
+        baseURL: hostBase,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        timeout: 1000,
+        timeoutErrorMessage: 'Tiempo de espera agotado',
+    })
+    const { data, status } = await AxiosInst.post(`/login/authenticate`, refres)
     console.log("RefresLogin-->", data)
     if (status == 200) {
         const { IdUsuario } = await getToken()

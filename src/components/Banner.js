@@ -15,6 +15,7 @@ import { useIsConnected } from 'react-native-offline';
 import { BuscarOrdenServicioLocales, RestablecerLocalStore } from "../service/ServicioLoca";
 import { useSelector, useDispatch } from "react-redux"
 import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando } from "../redux/sincronizacion";
+import { resetFormularioTool } from "../redux/formulario";
 
 export default function Banner(props) {
     const { navigation, setTime, times } = props
@@ -75,6 +76,7 @@ export default function Banner(props) {
             ])
         }
     }
+    
     async function UP() {
         setupdate(true)
         const respuesta = await Sincronizar()
@@ -91,43 +93,46 @@ export default function Banner(props) {
 
     async function Sincronizar() {
         if (isConnected) {
-            dispatch(loadingCargando(true))
-            const res = await BuscarOrdenServicioLocales()
-            if (res) {
-                Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambios")
-                await UpdateLocal()
-                await TrucateUpdate()
-                await HistorialEquipoIngeniero()
-                await GetEventosDelDia()
-                var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                var hoy = moment().format('YYYY-MM-DD');
-                var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                ticket_id.map(async (r) => {
-                    await EquipoTicket(r.ticket_id)
-                    await OrdenServicioAnidadas(r.evento_id)
-                })
-                dispatch(loadingCargando(false))
-            } else {
-                await TrucateUpdate()
-                await HistorialEquipoIngeniero()
-                await GetEventosDelDia()
-                var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                var hoy = moment().format('YYYY-MM-DD');
-                var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                ticket_id.map(async (r) => {
-                    await EquipoTicket(r.ticket_id)
-                    await OrdenServicioAnidadas(r.evento_id)
-                })
+            try {
+                dispatch(loadingCargando(true))
+                const res = await BuscarOrdenServicioLocales()
+                if (res) {
+                    Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambios")
+                    await UpdateLocal()
+                    await TrucateUpdate()
+                    await HistorialEquipoIngeniero()
+                    await GetEventosDelDia()
+                    var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                    var hoy = moment().format('YYYY-MM-DD');
+                    var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                    const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                    ticket_id.map(async (r) => {
+                        await EquipoTicket(r.ticket_id)
+                        await OrdenServicioAnidadas(r.evento_id)
+                    })
+                    dispatch(loadingCargando(false))
+                } else {
+                    await TrucateUpdate()
+                    await HistorialEquipoIngeniero()
+                    await GetEventosDelDia()
+                    var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+                    var hoy = moment().format('YYYY-MM-DD');
+                    var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+                    const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                    ticket_id.map(async (r) => {
+                        await EquipoTicket(r.ticket_id)
+                        await OrdenServicioAnidadas(r.evento_id)
+                    })
+                    dispatch(loadingCargando(false))
+                }
+            } catch (error) {
+                console.log(error)
                 dispatch(loadingCargando(false))
             }
         }
     }
 
     const CrearNuevoOrdenServicioSinTiket = async () => {
-        await RestablecerLocalStore()
-        await time(1000)
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id: null,
@@ -136,26 +141,63 @@ export default function Banner(props) {
             OSClone: null,
             Accion: "OrdenSinTicket"
         }))
+        dispatch(resetFormularioTool())
         navigation.navigate("Ordenes")
     }
 
     const UpdateLocal = async () => {
         const res = await BuscarOrdenServicioLocales()
         if (res) {
-            res.map(async (r) => {
-                r.OS_PartesRepuestos = JSON.parse(r.OS_PartesRepuestos)
-                r.OS_Tiempos = JSON.parse(r.OS_Tiempos)
-                r.OS_Firmas = JSON.parse(r.OS_Firmas)
-                r.OS_CheckList = JSON.parse(r.OS_CheckList)
-                r.ticket_id = 0
-                r.OrdenServicioID = 0
-                r.evento_id = 0
-                delete r.OS_Anexos
-                delete r.OS_Colaboradores
-                delete r.OS_Encuesta
-                let P = await PostOS(r)
-                console.log("P", P)
-            })
+            for (let index = 0; index < res.length; index++) {
+                let el = res[index];
+                if(el.OrdenServicioID == el.evento_id){
+                    var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos)
+                    for (let index = 0; index < OS_PartesRepuestos.length; index++) {
+                        OS_PartesRepuestos[index].OrdenServicioID = 0
+                    }
+                    var OS_Tiempos = JSON.parse(el.OS_Tiempos)
+                    for (let index = 0; index < OS_Tiempos.length; index++) {
+                        OS_Tiempos[index].OrdenServicioID = 0
+                    }
+                    var OS_Firmas = JSON.parse(el.OS_Firmas)
+                    for (let index = 0; index < OS_Firmas.length; index++) {
+                        OS_Firmas[index].OrdenServicioID = 0
+                    }
+                    var OS_CheckList = JSON.parse(el.OS_CheckList)
+                    for (let index = 0; index < OS_CheckList.length; index++) {
+                        OS_CheckList[index].OrdenServicioID = 0
+                    }
+                    el.ticket_id = 0
+                    el.OrdenServicioID = 0
+                    el.evento_id = 0
+                    delete el.OS_Anexos
+                    delete el.OS_Colaboradores
+                    delete el.OS_Encuesta
+    
+                    el.OS_PartesRepuestos = OS_PartesRepuestos
+                    el.OS_Tiempos = OS_Tiempos
+                    el.OS_Firmas = OS_Firmas
+                    el.OS_CheckList = OS_CheckList
+    
+                    let P = await PostOS(el)
+                    console.log("P", P)                
+                }else{
+                    var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos)
+                    var OS_Tiempos = JSON.parse(el.OS_Tiempos)
+                    var OS_Firmas = JSON.parse(el.OS_Firmas)
+                    var OS_CheckList = JSON.parse(el.OS_CheckList)
+                    delete el.OS_Anexos
+                    delete el.OS_Colaboradores
+                    delete el.OS_Encuesta
+                    el.OS_PartesRepuestos = OS_PartesRepuestos
+                    el.OS_Tiempos = OS_Tiempos
+                    el.OS_Firmas = OS_Firmas
+                    el.OS_CheckList = OS_CheckList
+                    let P = await PostOS(el)
+                    console.log("P", P) 
+                }
+            }
+
             return true
         } else {
             return true

@@ -1,49 +1,55 @@
-import { Button, Modal, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import { GetClienteCustimerName } from '../service/clientes'
 import { AntDesign } from '@expo/vector-icons'
 import React, { useState } from 'react'
-import { getProvinciasStorageBy } from '../service/provincias';
 import { getCantonesStorageBy } from '../service/cantones';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useDispatch } from 'react-redux';
+import { actualizarClienteTool } from '../redux/formulario';
 
 export default function PickerSelect(props) {
 
     const { modalVisible, setModalVisible,
-        setCliente
+        setCliente,
+        setDirecciones
     } = props;
 
     const [listCline, setlistCline] = useState([])
     const [search, setSearch] = useState("")
+    const dispatch = useDispatch()
 
     const handleCancelar = () => {
         setModalVisible(!modalVisible);
-        setlistadoEmails("")
     }
 
     async function handleBuscarCliente() {
-        // setSearch(text)
         console.log(search)
         if (search.length > 0) {
             const list = await GetClienteCustimerName(search)
-            // console.log("list", list);
             setlistCline(list)
         }
     }
 
+
     const handleSelectCliente = async (cliente) => {
         const pro = await getCantonesStorageBy(cliente.CantonID)
-        const os = await AsyncStorage.getItem("OS")
-        const osItem = JSON.parse(os)
-        osItem.Direccion = cliente.Direccion,
-        osItem.Ciudad = pro[0].descripcion,
-        osItem.ClienteID = cliente.CustomerID,
-        osItem.ClienteNombre = cliente.CustomerName,
-        await AsyncStorage.setItem("OS", JSON.stringify(osItem))
+        dispatch(actualizarClienteTool({
+            name:'Ciudad',
+            value:pro[0].descripcion
+        }))
+        dispatch(actualizarClienteTool({
+            name:'ClienteID',
+            value:cliente.CustomerID
+        }))
+        dispatch(actualizarClienteTool({
+            name:'ClienteNombre',
+            value:cliente.CustomerName
+        }))
         setCliente({
             ...cliente,
             Sucursal: JSON.parse(cliente.Sucursal),
             Ciudad: pro[0].descripcion
         })
+        setDirecciones(JSON.parse(cliente.Sucursal))
         setModalVisible(!modalVisible)
     }
 
@@ -72,7 +78,10 @@ export default function PickerSelect(props) {
                             style={{ width: "90%", height: "100%" }}
                             placeholder="Escriba el nombre del cliente"
                             value={search}
-                            onChangeText={(text) => setSearch(text)}
+                            onChangeText={(text) => {
+                                setSearch(text)
+                                handleBuscarCliente()
+                            }}
                         // editable={false}
                         />
                         <AntDesign
@@ -112,8 +121,29 @@ export default function PickerSelect(props) {
                                 )
                             })
                         }
-
                     </ScrollView>
+                    <View>
+                        <TouchableOpacity
+                            style={{
+                                width: '100%',
+                                flexDirection: 'column',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                                paddingVertical: 0,
+                                borderWidth: 0.3,
+                                borderBottomColor: '#B2B2AF',
+                                marginBottom: 15,
+                                height: 50,
+                                width: 100,
+                                borderRadius: 20,
+                            }}
+                            onPress={() => handleCancelar()}
+                        >
+                            <Text>
+                                Cancelar
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </Modal>

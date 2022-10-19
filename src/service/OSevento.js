@@ -1,13 +1,16 @@
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
+import moment from "moment";
 
 export const GetEventosDelDia = async () => {
 
     try {
         const { token, userId } = await getToken()
         // console.log("----> ", token, "\n", userId)
-        const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}`;
+        let fechaInic = moment().add(-1,'days').format('YYYY-MM-DD')
+        let fechaFini = moment().add(1,'days').format('YYYY-MM-DD')
+        const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}&fechaInicio=${fechaInic}&fechaFin=${fechaFini}`;
         const response = await fetch(url, {
             method: "GET",
             headers: {
@@ -28,8 +31,20 @@ export const GetEventosDelDia = async () => {
     }
 }
 
+export async function DeleteEventes(ticket_id) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`DELETE FROM OrdenesServicio WHERE ticket_id = ?`,
+                [ticket_id], (_, { rows: { _array } }) => {
+                    resolve(true)
+                })
+        });
+    })
+}
 async function InserEventosDiarios(r) {
-    const existe = await SelectTicket(r.ticket_id)
+    // await DeleteEventes(r.evento_id)
+    // const existe = await SelectTicket(r.ticket_id)
+    const existe = await SelectTicket(r.evento_id)
     if (!existe) {
         return new Promise((resolve, reject) => {
             db.exec([{
@@ -181,12 +196,35 @@ export const InsertEventosLocales = async (r) => {
     })
 }
 
+/**
+ * 
+ * @param {*} estado 
+ * @param {*} OrdenServicioID 
+ * @param {*} evento_id 
+ * @returns 
+ */
+export const AactualizarEventos = async (estado, OrdenServicioID, evento_id) => {
+    console.log("AactualizarEventos-->", estado, OrdenServicioID, evento_id);
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `UPDATE OrdenesServicio SET ev_estado = ? WHERE OrdenServicioID = ? AND evento_id = ?`,
+            args: [estado, OrdenServicioID, evento_id]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                console.log("aqui results GetEventosDelDia-->", results);
+            }
+        })
+        resolve(true);
+    })
+}
 
-async function SelectTicket(ticket_id) {
+async function SelectTicket(evento_id) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
-            tx.executeSql(`SELECT * FROM OrdenesServicio WHERE ticket_id = ?`,
-                [ticket_id], (_, { rows: { _array } }) => {
+            tx.executeSql(`SELECT * FROM OrdenesServicio WHERE evento_id = ?`,
+                [evento_id], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
                         resolve(true)
                     } else {

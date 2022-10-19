@@ -29,11 +29,10 @@ export const EquipoTicket = async (ticket_id) => {
 }
 
 async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
-const existe = await SelectTicket(ticket_id)
-    if (!existe) {
-        return new Promise((resolve, reject) => {
-            db.exec([{
-                sql: `INSERT INTO equipoTicket (
+    // await DeleteTicket(ticket_id)
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `INSERT INTO equipoTicket (
                         id_equipoContrato,
                         con_ClienteNombre,
                         id_equipo,
@@ -86,80 +85,104 @@ const existe = await SelectTicket(ticket_id)
                         estado_local,
                         ticket_id
                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-                args: [
-                    r.id_equipoContrato,
-                    con_ClienteNombre,
-                    r.id_equipo,
-                    r.id_contrato,
-                    r.empresa_id,
-                    r.eqc_conRepuesto,
-                    r.eqc_frecuenciaVisita,
-                    r.eqc_periodo,
-                    r.eqc_tiempoVisita,
-                    r.eqc_horarioAtencionDesde,
-                    r.eqc_horarioAtencionHasta,
-                    r.eqc_lunes,
-                    r.eqc_martes,
-                    r.eqc_miercoles,
-                    r.eqc_jueves,
-                    r.eqc_viernes,
-                    r.eqc_sabado,
-                    r.eqc_domingo,
-                    r.eqc_monto,
-                    r.eqc_usuarioCreacion,
-                    r.eqc_UsuarioModificacion,
-                    r.eqc_fechaCreacion,
-                    r.eqc_fechaModificacion,
-                    r.localidad_id,
-                    r.eqc_estado,
-                    r.eqc_tiempoServicio,
-                    r.eqc_frecuenciaServicio,
-                    r.eqc_manoObra,
-                    r.eqc_estadoProgramado,
-                    r.eqc_fechaIniGaranC,
-                    r.eqc_fechaFinGaranC,
-                    r.eqc_fechaServicio,
-                    r.eqc_fechaServicioFin,
-                    r.eqc_oldContract,
-                    r.eqc_tiempoRepuestos,
-                    r.eqc_tiempoManoObra,
-                    r.eqc_consumibles,
-                    r.eqc_tiempoConsumibles,
-                    r.eqc_fungibles,
-                    r.eqc_tiempoFungibles,
-                    r.eqc_kitMantenimiento,
-                    r.eqc_fechaKitMantenimiento,
-                    r.eqc_rutaAdjunto,
-                    r.eqc_rucComodato,
-                    r.eqc_codComodato,
-                    r.eqc_frecVisSitePlan,
-                    r.eqc_periodoSitePlan,
-                    r.eqc_observacion,
-                    JSON.stringify(r.Equipo),
-                    "SIN",
-                    ticket_id
-                ],
-            }], false, (err, results) => {
-                if (err) {
-                    console.log("error", err);
-                } else {
-                    console.log("results", results);
-                }
-            })
-            resolve(true)
+            args: [
+                r.id_equipoContrato,
+                con_ClienteNombre,
+                r.id_equipo,
+                r.id_contrato,
+                r.empresa_id,
+                r.eqc_conRepuesto,
+                r.eqc_frecuenciaVisita,
+                r.eqc_periodo,
+                r.eqc_tiempoVisita,
+                r.eqc_horarioAtencionDesde,
+                r.eqc_horarioAtencionHasta,
+                r.eqc_lunes,
+                r.eqc_martes,
+                r.eqc_miercoles,
+                r.eqc_jueves,
+                r.eqc_viernes,
+                r.eqc_sabado,
+                r.eqc_domingo,
+                r.eqc_monto,
+                r.eqc_usuarioCreacion,
+                r.eqc_UsuarioModificacion,
+                r.eqc_fechaCreacion,
+                r.eqc_fechaModificacion,
+                r.localidad_id,
+                r.eqc_estado,
+                r.eqc_tiempoServicio,
+                r.eqc_frecuenciaServicio,
+                r.eqc_manoObra,
+                r.eqc_estadoProgramado,
+                r.eqc_fechaIniGaranC,
+                r.eqc_fechaFinGaranC,
+                r.eqc_fechaServicio,
+                r.eqc_fechaServicioFin,
+                r.eqc_oldContract,
+                r.eqc_tiempoRepuestos,
+                r.eqc_tiempoManoObra,
+                r.eqc_consumibles,
+                r.eqc_tiempoConsumibles,
+                r.eqc_fungibles,
+                r.eqc_tiempoFungibles,
+                r.eqc_kitMantenimiento,
+                r.eqc_fechaKitMantenimiento,
+                r.eqc_rutaAdjunto,
+                r.eqc_rucComodato,
+                r.eqc_codComodato,
+                r.eqc_frecVisSitePlan,
+                r.eqc_periodoSitePlan,
+                r.eqc_observacion,
+                JSON.stringify(r.Equipo),
+                "SIN",
+                ticket_id
+            ],
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                console.log("results", results);
+            }
         })
-    }else{
-        return true
-    }
+        resolve(true)
+    })
 }
 
-async function SelectTicket(ticket_id) {
+export async function DeleteTicket(ticket_id) {
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `DELETE FROM equipoTicket WHERE ticket_id = ?`,
+            args: [ticket_id],
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                console.log("results", results);
+            }
+        })
+        resolve(true)
+    })
+}
+
+/**
+ * 
+ * @param {*} ticket_id 
+ * @returns Array de id_equio [
+ *   2916,
+ *   3865]
+ */
+export async function SelectTicket(ticket_id) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
             tx.executeSql(`SELECT * FROM equipoTicket WHERE ticket_id = ?`,
                 [ticket_id], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
-                        resolve(true)
+                        var id_equios = []
+                        _array.forEach((element) => {
+                            id_equios.push(element.id_equipo)
+                        });
+                        resolve(id_equios)
                     } else {
                         resolve(false)
                     }

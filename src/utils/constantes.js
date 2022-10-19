@@ -1284,5 +1284,6 @@ export const evento = {
     "ingenieroId": 0,
     "ingeniero": null,
     "tipoIncidencia": null,
-    "OrdenServicioID": 0
+    "OrdenServicioID": 0,
+    "tck_tipoTicketCod": null,
 }

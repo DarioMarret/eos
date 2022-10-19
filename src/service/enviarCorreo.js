@@ -14,9 +14,6 @@ import axios from "axios"
  */
 export const EnviarCorreo = async (Correo, OrdenServicioID) => {
     const { token } = await getToken()
-    console.log(token)
-    // const { OS_ASUNTO, OS_Firmas, ClienteNombre, OS_FINALIZADA } = await SacarOSasunto(OrdenServicioID)
-    // console.log(OS_ASUNTO, ClienteNombre)
     console.log("enviar por correo", Correo, OrdenServicioID)
     const { data, status } = await axios.post(`https://technical.eos.med.ec/MSOrdenServicio/enviaCorreoOs`, {
         // file: [OS_FINALIZADA],
@@ -30,7 +27,7 @@ export const EnviarCorreo = async (Correo, OrdenServicioID) => {
             'Authorization': `Bearer ${token}`
         }
     })
-    console.log("respuesta--> ",data)
+    console.log("respuesta--> ",data, "RESPUESTA STATUS",status)
     const { Message } = data
     console.log(Message)
     return status

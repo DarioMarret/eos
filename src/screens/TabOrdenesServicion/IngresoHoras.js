@@ -19,7 +19,11 @@ import { ticketID, timpo } from "../../utils/constantes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import LoadingActi from "../../components/LoadingActi";
-import { time } from "../../service/CargaUtil";
+import { useDispatch, useSelector } from "react-redux";
+import { loadingCargando } from "../../redux/sincronizacion";
+import { actualizarTiempoTool } from "../../redux/formulario";
+import isEmpty from "just-is-empty";
+import moment from "moment";
 
 
 
@@ -28,42 +32,29 @@ export default function IngresoHoras(props) {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [isTimePickerVisible, setTimePickerVisibility] = useState(false);
 
-  const [loading, setLoading] = useState(false)
-
-  const [fini, setFini] = useState(false);
+  const [fini, setFini] = useState(false)
+  const [OrdenServicioID, setOrdenServicioID] = useState(0)
 
   const [tiempoOS, setTiempoOS] = useState("")
+
+  const Events = useSelector(s => s.sincronizacion)
+  const TiempoStor = useSelector(s => s.formulario)
+  const dispatch = useDispatch()
+
+
+
 
   const showDatePicker = (name) => {
     setTiempoOS('Fecha');
     setDatePickerVisibility(true);
   };
 
-  //parala fecha
+  //para la fecha
   const hideDatePicker = () => {
     setDatePickerVisibility(false);
   }
 
-  const handleConfirm = async (date) => {
-    console.log("Fecha: ", date);
-    let fec = new Date()
-    setFechas({
-      ...fechas,
-      Fecha: fec,
-      FechaMostrar: Moment(date).format("DD/MM/YYYY"),
-    })
-    var os = await AsyncStorage.getItem("OS_Tiempos")
-    let OS_Tiempos = JSON.parse(os)
-    if (OS_Tiempos.length > 0) {
-      OS_Tiempos[0].Fecha = `${Moment(date).format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-    } else {
-      OS_Tiempos = [timpo]
-      OS_Tiempos[0].Fecha = `${Moment(date).format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-    }
-    hideDatePicker();
-  };
+
 
   const showTimePicker = (name) => {
     setTiempoOS(name);
@@ -85,46 +76,48 @@ export default function IngresoHoras(props) {
   }
   const compareHours = async (time, name) => {
     console.log("compareHours", { time, name })
-    var os = await AsyncStorage.getItem("OS_Tiempos")
-    var OS_Tiempos = JSON.parse(os)
+
     if (name == "HoraLlegadaCliente") {
-      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraSalidaOrigen, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fechas.HoraSalidaOrigen, "YYYY-MM-DD HH:mm:ss"), 'minutes')
       console.log("diff", diff)
       if (diff <= 0) {
         alert("La hora de llegada no puede ser menor a la salida de origen.", name, time)
-      }else{
-        OS_Tiempos[0].TiempoViaje = diff
-        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      } else {
+        dispatch(actualizarTiempoTool({
+          name: 'TiempoViaje',
+          value: diff
+        }))
       }
-
     } else if (name == "HoraInicioTrabajo") {
 
-      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraLlegadaCliente, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fechas.HoraLlegadaCliente, "YYYY-MM-DD HH:mm:ss"), 'minutes')
       console.log("diff", diff)
       if (diff <= 0) {
         alert("La hora de inicio no puede ser menor a la llegada al cliente.", name, time)
       }
 
     } else if (name == "HoraFinTrabajo") {
-      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraInicioTrabajo, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fechas.HoraInicioTrabajo, "YYYY-MM-DD HH:mm:ss"), 'minutes')
       console.log("diff", diff)
       if (diff <= 0) {
         alert("La hora final no puede ser menor a la hora inicial de trabajo.", name, time)
-      }else{
-        OS_Tiempos[0].TiempoTrabajo = diff
-        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      } else {
+        dispatch(actualizarTiempoTool({
+          name: 'TiempoTrabajo',
+          value: diff
+        }))
       }
 
     } else if (name == "HoraSalidaCliente") {
 
-      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraFinTrabajo, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fechas.HoraFinTrabajo, "YYYY-MM-DD HH:mm:ss"), 'minutes')
       console.log("diff", diff)
       if (diff <= 0) {
         alert("La hora de salida no puede ser menor a la hora final de trabajo.", name, time)
       }
 
     } else if (name == "HoraLlegadaSgteDestino") {
-      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fecha.HoraSalidaCliente, "YYYY-MM-DD HH:mm:ss"), 'minutes')
+      let diff = Moment(time, "YYYY-MM-DD HH:mm:ss").diff(Moment(fechas.HoraSalidaCliente, "YYYY-MM-DD HH:mm:ss"), 'minutes')
       console.log("diff", diff)
       if (diff <= 0) {
         alert("La hora de llegada no puede ser menor a la salida.", name, time)
@@ -132,52 +125,17 @@ export default function IngresoHoras(props) {
 
     }
   }
+
   const handleConfirmTime = async (time) => {
-    var os = await AsyncStorage.getItem("OS_Tiempos")
-    let OS_Tiempos = JSON.parse(os)
-
+    let OS_Tiempos = TiempoStor.tiempos
     if (OS_Tiempos.length > 0) {
-      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm:ss")
-      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
+      dispatch(actualizarTiempoTool({
+        name: [tiempoOS],
+        value: Moment(time).format("HH:mm:ss")
+      }))
       setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm:ss") })
-      setFecha({ ...fecha, [tiempoOS]: Moment(time).format("YYYY-MM-DD HH:mm:ss") })
-      setMinTime(Moment(time).format("HH:mm:ss"))
       compareHours(time, tiempoOS)
-      // console.log("TRUE", OS_Tiempos)
       hideTimePicker()
-    } else {
-      OS_Tiempos = [timpo]
-      OS_Tiempos[0][tiempoOS] = Moment(time).format("HH:mm:ss")
-      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-      setFechas({ ...fechas, [tiempoOS]: Moment(time).format("HH:mm:ss") })
-      setFecha({ ...fecha, [tiempoOS]: Moment(time).format("YYYY-MM-DD HH:mm:ss") })
-      setMinTime(Moment(time).format("HH:mm:ss"))
-      compareHours(time, tiempoOS)
-      // console.log("FALSE", OS_Tiempos)
-      hideTimePicker()
-    }
-
-    console.log("tiempoOS", OS_Tiempos.length)
-    // console.log("tiempoOS", JSON.parse(await AsyncStorage.getItem("OS")))
-  }
-
-
-
-  const handeldeffTime = async () => {
-    var os = await AsyncStorage.getItem("OS_Tiempos")
-    let OS_Tiempos = JSON.parse(os)
-    if (OS_Tiempos.length > 0) {
-      OS_Tiempos[0][tiempoOS] = ""
-      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-      setFechas({ ...fechas, [tiempoOS]: "" })
-      hideTimePicker()
-    } else {
-      OS_Tiempos = [timpo]
-      OS_Tiempos[0][tiempoOS] = ""
-      await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-      setFechas({ ...fechas, [tiempoOS]: "" })
-      hideTimePicker()
-      // onsole.log("OrdenSinTicket-->", JSON.parse(await AsyncStorage.getItem("OS")))
     }
   }
 
@@ -197,19 +155,20 @@ export default function IngresoHoras(props) {
     HoraLlegadaSgteDestino: "",
     TiempoViajeSalida: 0,
   })
-  const [fecha, setFecha] = useState({
-    HoraSalidaOrigen: "",//salida origen
-    HoraLlegadaCliente: "",//arribo cliente
-    HoraInicioTrabajo: "",
-    HoraFinTrabajo: "",
-    HoraSalidaCliente: "",
-    TiempoEspera: 0,
-    TiempoTrabajo: 0,
-    TiempoViaje: 0,
-    FechaMostrar: "",
-    HoraLlegadaSgteDestino: "",
-    TiempoViajeSalida: 0,
-  })
+
+  const handleConfirm = async (date) => {
+    console.log("Fecha: ", date);
+    let fec = new Date(date)
+    dispatch(actualizarTiempoTool({
+      name: 'Fecha',
+      value: `${moment(fec).format("YYYY-MM-DDTHH:mm:ss.SSS")}`
+    }))
+    setFechas({
+      ...fechas,
+      Fecha: `${moment(fec).format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
+    })
+    hideDatePicker();
+  }
 
   function LimpiarImput() {
     setFechas({
@@ -228,110 +187,61 @@ export default function IngresoHoras(props) {
       TiempoViajeSalida: 0,
       switch: false,
     })
-    setFecha({
-      ...fecha,
-      HoraSalidaOrigen: "",
-      HoraLlegadaCliente: "",
-      HoraInicioTrabajo: "",
-      HoraFinTrabajo: "",
-      HoraSalidaCliente: "",
-      TiempoEspera: 0,
-      TiempoTrabajo: 0,
-      TiempoViaje: 0,
-      FechaMostrar: "",
-      HoraLlegadaSgteDestino: "",
-      TiempoViajeSalida: 0,
-    })
     setMinTime(Moment().format("HH:mm:ss"))
   }
 
+  useFocusEffect(
+    useCallback(() => {
+      if (typeof TiempoStor.tiempos != "undefined") {
+        if (TiempoStor.tiempos.length > 0) {
+          LimpiarImput()
+          setFechas(TiempoStor.tiempos[0])
+        }
+      }
+    }, [TiempoStor.tiempos])
+  )
 
   useFocusEffect(
     useCallback(() => {
       (async () => {
-        setLoading(true)
+        dispatch(loadingCargando(true))
         const itenSelect = await AsyncStorage.getItem(ticketID)
         if (itenSelect != null) {
           const item = JSON.parse(itenSelect)
-          const { Accion } = item
-          const OS_Tiempos = JSON.parse(await AsyncStorage.getItem("OS_Tiempos"))
-          if (OS_Tiempos.length == 0) OS_Tiempos.push(timpo)
+          const { Accion, OrdenServicioID } = item
+          setOrdenServicioID(OrdenServicioID)
+          console.log("TiempoStor", TiempoStor.tiempos[0])
           if (Accion == "OrdenSinTicket") {
 
             console.log("OrdenSinTicket")
-            LimpiarImput()
+           
             setFini(false)
 
           } else if (Accion == "clonar") {
 
-            LimpiarImput()
-            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
-            OS_Tiempos[0].OrdenServicioID = 0
-            OS_Tiempos[0].IdTiempo = 0
-            console.log("OS_Tiempo", OS_Tiempos)
-            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-            setFechas({
-              ...fechas,
-              ...OS_Tiempos[0],
-              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
-            })
             setFini(false)
 
           } else if (Accion == "FINALIZADO") {
 
             console.log("FINALIZADO")
-            LimpiarImput()
             setFini(true)
-            setFechas({
-              ...fechas,
-              ...OS_Tiempos[0],
-              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
-            })
 
           } else if (Accion == "PENDIENTE") {
 
             console.log("PENDIENTE")
-            LimpiarImput()
-            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
-            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-            setFechas({
-              ...fechas,
-              ...OS_Tiempos[0],
-              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
-            })
+            // LimpiarImput()
             setFini(false)
 
           } else if (Accion == "NUEVO OS TICKET") {
             console.log("NUEVO OS TICKET")
-            LimpiarImput()
-            OS_Tiempos[0].Fecha == null ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
-            OS_Tiempos[0].OrdenServicioID = 0
-            OS_Tiempos[0].IdTiempo = 0
-            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-            console.log("OS_Tiempo", OS_Tiempos)
-            setFechas({
-              ...fechas,
-              ...OS_Tiempos[0],
-              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
-            })
             setFini(false)
 
           } else if (Accion == "PROCESO") {
             console.log("PROCESO")
-            LimpiarImput()
-            console.log("OS_Tiempos", OS_Tiempos)
-            OS_Tiempos[0].Fecha == "" ? `${Moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z` : OS_Tiempos[0].Fecha
-            await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-            setFechas({
-              ...fechas,
-              ...OS_Tiempos[0],
-              FechaMostrar: Moment(OS_Tiempos[0].Fecha).format('DD/MM/YYYY'),
-            })
             setFini(false)
           }
         }
-        await time(300)
-        setLoading(false)
+        dispatch(loadingCargando(false))
       })()
     }, [])
   )
@@ -352,7 +262,7 @@ export default function IngresoHoras(props) {
         </Text>
         <ScrollView showsVerticalScrollIndicator={false} >
           <View style={styles.ContainerInputs}>
-            <LoadingActi loading={loading} />
+            <LoadingActi loading={Events.loading} />
             <Text>Fecha</Text>
             <TouchableOpacity
               disabled={fini}
@@ -361,7 +271,10 @@ export default function IngresoHoras(props) {
               <TextInput
                 style={{ width: "90%", height: "100%", color: '#000000' }}
                 placeholder='Fecha de Ingreso'
-                value={fechas.FechaMostrar}
+                value={
+                  !isEmpty(fechas.Fecha) ? fechas.Fecha.split('T')[0]
+                    : ''
+                }
                 editable={false}
               />
               <AntDesign
@@ -492,8 +405,6 @@ export default function IngresoHoras(props) {
           </View>
 
         </ScrollView>
-
-        {/* <View style={{ padding: 50 }} ></View> */}
       </View >
       <BannerOrderServi
         {...props}

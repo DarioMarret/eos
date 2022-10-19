@@ -1,5 +1,5 @@
-import { getHistorialEquiposStorage, getHistorialEquiposStoragId, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
-import { FlatList, ActivityIndicador, Pressable, ScrollView, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
+import { getHistorialEquiposStorage, getHistorialEquiposStorageChecked, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
+import { FlatList, Pressable, ScrollView, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getIngenierosStorageById } from "../../service/ingenieros"
@@ -9,13 +9,14 @@ import { useFocusEffect } from "@react-navigation/native"
 import { getEquiposStorage } from "../../service/equipos"
 import { useCallback, useEffect, useState } from "react"
 import { Picker } from '@react-native-picker/picker'
-import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, ticketID } from "../../utils/constantes"
+import { ticketID } from "../../utils/constantes"
 import { getToken } from "../../service/usuario"
 import LoadingActi from "../../components/LoadingActi"
 import empty from "is-empty"
 import { GetClienteClienteName } from "../../service/clientes"
 import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion"
+import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, setEquipoTool } from "../../redux/formulario"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -25,6 +26,7 @@ export default function Equipo(props) {
     const [historial, setHistorial] = useState([])
 
     const [loading, setLoading] = useState(false)
+    const [OrdenServicioID, setOrdenServicioID] = useState(0)
 
 
     const [modalCreateEquip, setModalCreateEquip] = useState(false)
@@ -63,8 +65,50 @@ export default function Equipo(props) {
     const [isVisible, setIsVisible] = useState(false)
 
     const Events = useSelector(s => s.sincronizacion)
+    const EquipoStor = useSelector(s => s.formulario)
     const dispatch = useDispatch()
 
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                var equipoCheck = await getHistorialEquiposStorageChecked()
+                console.log("equipoCheck", equipoCheck)
+                if (equipoCheck.length > 1) {
+                    const itenSelect = await AsyncStorage.getItem(ticketID)
+                    if (itenSelect != null) {
+                        const item = JSON.parse(itenSelect)
+                        const { equipo } = item
+                        equipo.map((item, index) => {
+                            if (equipoCheck[0].equipo_id == equipo[index].equipo_id) {
+                                setTipo(item.tipo)
+                                setSerie(item.equ_serie)
+                                setModel(item.modelo)
+                                GuadadoOS(item)
+                                item.isChecked = "true"
+                            }
+                        })
+                        setHistorial(equipo)
+                    }
+                } else {
+                    const itenSelect = await AsyncStorage.getItem(ticketID)
+                    if (itenSelect != null) {
+                        const item = JSON.parse(itenSelect)
+                        const { equipo } = item
+                        if (equipo != null) {
+                            equipo.map((item, index) => {
+                                setTipo(item.tipo)
+                                setSerie(item.equ_serie)
+                                setModel(item.modelo)
+                                GuadadoOS(item)
+                                item.isChecked = "true"
+                            })
+                            setHistorial(equipo)
+                        }
+                    }
+                }
+            })()
+        }, [])
+    )
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -74,87 +118,52 @@ export default function Equipo(props) {
                 const modelos = await getModeloEquiposStorage()
                 setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
 
-                var os = JSON.parse(await AsyncStorage.getItem("OS"))
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
                     const item = JSON.parse(itenSelect)
                     const { equipo, OrdenServicioID, Accion } = item
-                    // console.log("equipo", equipo)
+                    console.log("OrdenServicioID", OrdenServicioID)
+                    setOrdenServicioID(OrdenServicioID)
                     if (Accion == "clonar") {
 
-                        let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        console.log("equipo", equiId[0])
-                        GuadadoOS(equiId[0])
-                        equiId.map((item, index) => {
-                            setTipo(item.tipo)
-                            setSerie(item.equ_serie)
-                            setModel(item.modelo)
-                        })
-                        equiId[0]['isChecked'] = 'true'
-                        setHistorial(equiId)
                         setDisableSub(true)
                         setDisable(true)
 
                     } else if (Accion == "OrdenSinTicket") {
 
                         console.log("OrdenSinTicket")
-                        console.log("OS", os)
-                        setHistorial(await isCheckedCancelaReturn(2916))
                         setDisableSub(true)
                         setDisable(true)
 
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("PENDIENTE")
-                        let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        GuadadoOS(equiId[0])
-                        equiId.map((item, index) => {
-                            setTipo(item.tipo)
-                            setSerie(item.equ_serie)
-                            setModel(item.modelo)
-                        })
-                        // equiId[0]['isChecked'] = 'true'
-                        setHistorial(equiId)
                         setDisableSub(true)
                         setDisable(true)
 
                     } else if (Accion == "FINALIZADO") {
 
-                        let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        GuadadoOS(equiId[0])
-                        equiId.map((item, index) => {
-                            setTipo(item.tipo)
-                            setSerie(item.equ_serie)
-                            setModel(item.modelo)
-                        })
-                        equiId[0]['isChecked'] = 'true'
-                        setHistorial(equiId)
                         setDisableSub(false)
                         setDisable(true)
 
                     } else if (Accion == "NUEVO OS TICKET") {
 
                         console.log("NUEVO OS TICKET")
-                        let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        console.log("equipo", equiId[0])
-                        GuadadoOS(equiId[0])
-                        setHistorial(equiId)
                         setDisableSub(true)
                         setDisable(true)
 
                     } else if (Accion == "PROCESO") {
 
                         console.log("PROCESO")
-                        console.log("OS", os)
-                        let equiId = await getHistorialEquiposStoragId(os.equipo_id)
-                        GuadadoOS(equiId[0])
-                        equiId.map((item, index) => {
-                            setTipo(item.tipo)
-                            setSerie(item.equ_serie)
-                            setModel(item.modelo)
-                        })
-                        equiId[0]['isChecked'] = 'true'
-                        setHistorial(equiId)
+                        setDisableSub(true)
+                        setDisable(true)
+
+                    } else if (Accion == "PENDIENTE DE APROBAR") {
+
+                        console.log("PENDIENTE DE APROBAR")
+                        setDisableSub(false)
+                        setDisable(true)
+
                     }
                 }
                 dispatch(loadingCargando(false))
@@ -187,61 +196,70 @@ export default function Equipo(props) {
     }
 
     const handleChange = async (equipo_id) => {
-        let temp = historial.map(async (hist) => {
-            if (equipo_id == hist.equipo_id) {
-                if (hist.isChecked == "true") {
-                    setDisable(!isdisabel)
-                    setHistorial(await isCheckedCancelaReturn(equipo_id))
-                    return { ...hist, isChecked: "false" }
-                } else {
-                    let equipo = await isChecked(equipo_id)
-                    setEquipoSelect(equipo[0])
-                    setHistorial(equipo)
-                    await GuadadoOS(equipo[0])
-                    equipo.forEach((item) => {
-                        setTipo(item.tipo)
-                        setModel(item.modelo)
-                        setSerie(item.equ_serie)
-                    })
-                    return { ...hist, isChecked: "true" }
-                }
+        var hist = []
+        historial.map((item, index) => {
+            if (item.equipo_id == equipo_id) {
+                item.isChecked = 'true'
+                GuadadoOS(item)
+                setTipo(item.tipo)
+                setSerie(item.equ_serie)
+                setModel(item.modelo)
+                isChecked(equipo_id).then((res) => {
+                    console.log("res", res)
+                })
+            } else {
+                item.isChecked = 'false'
             }
-            return hist;
-        });
-        setHistorial(temp);
+            hist.push(item)
+        })
+        setHistorial(hist)
     }
     const GuadadoOS = async (item) => {
-        // console.log(item.equipo_id)
-        try {
-            const { userId } = await getToken()
-            const { IdUsuario } = await getIngenierosStorageById(userId)
-            const os = await AsyncStorage.getItem("OS")
-            const osItem = JSON.parse(os)
-            const cliente = await GetClienteClienteName(empty(osItem.ClienteNombre) ? item.con_ClienteNombre : osItem.ClienteNombre)
-            console.log("cliente-->", cliente[0].CustomerID)
-            console.log("controtal-->", osItem.contrato_id)
-            osItem.equipo_id = item.equipo_id,//#
-            osItem.contrato_id = item.id_contrato //#
-            osItem.Serie = item.equ_serie,//#
-            osItem.Marca = item.marca //#
-            osItem.ClienteID = empty(cliente) ? "" : cliente[0].CustomerID//#
-            osItem.ClienteNombre = empty(osItem.ClienteNombre) ? item.con_ClienteNombre : osItem.ClienteNombre //#
-            osItem.ObservacionCliente = "" //#
-            osItem.IdEquipoContrato = Number(item.id_equipoContrato) //#
-            osItem.EstadoEqPrevio = item.equ_estado //#
-            osItem.EstadoEquipo = item.equ_estado //#
-            osItem.TipoEquipo = item.equ_tipoEquipo //#
-            osItem.ModeloEquipo = item.equ_modeloEquipo //#
-            osItem.IngenieroID = IdUsuario//#
-            osItem.empresa_id = 1 //#
-            osItem.UsuarioCreacion = userId //#
-            osItem.UsuarioModificacion = userId //#
-            await AsyncStorage.setItem("OS", JSON.stringify(osItem))
-            console.log("Equipo OS", osItem)
-        } catch (error) {
-            console.log("GuadadoOS en EQUIPO", error)
+        console.log("item", item)
+        // try {
+        dispatch(loadingCargando(true))
+        const { userId } = await getToken()
+        const { IdUsuario } = await getIngenierosStorageById(userId)
+        const cliente = await GetClienteClienteName(item.con_ClienteNombre)
+        const itenSelect = await AsyncStorage.getItem(ticketID)
+        if (itenSelect != null) {
+            const itemOS = JSON.parse(itenSelect)
+            const { OrdenServicioID } = itemOS
+            console.log("OrdenServicioID", OrdenServicioID)
+            let equipo = {
+                OrdenServicioID: OrdenServicioID,
+                equipo_id: item.equipo_id, //#
+                contrato_id: item.id_contrato, //#
+                Serie: item.equ_serie, //#
+                Marca: item.marca, //#
+                ClienteID: empty(cliente) ? "" : cliente[0].CustomerID, //#
+                ClienteNombre: item.con_ClienteNombre, //#
+                ObservacionCliente: "", //#
+                IdEquipoContrato: Number(item.id_equipoContrato), //#
+                EstadoEqPrevio: item.equ_estado, //#
+                EstadoEquipo: item.equ_estado, //#
+                TipoEquipo: item.equ_tipoEquipo, //#
+                ModeloEquipo: item.equ_modeloEquipo, //#
+                IngenieroID: IdUsuario, //#
+                UsuarioCreacion: userId, //#
+                UsuarioModificacion: userId,
+            }
+            console.log("equipo ok", equipo)
+            dispatch(setEquipoTool(equipo))
+            dispatch(actualizarClienteTool({
+                name: 'ClienteID',
+                value: equipo.ClienteID
+            }))
+            dispatch(actualizarClienteTool({
+                name: 'ClienteNombre',
+                value: item.con_ClienteNombre
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'EstadoEquipo',
+                value: item.equ_estado
+            }))
+            dispatch(loadingCargando(false))
         }
-        // }
     }
 
     const showSelect = (index, item) => {
@@ -301,13 +319,24 @@ export default function Equipo(props) {
                     <View>
                         {
                             isdisabelsub ?
-                                <Pressable onPress={() => handleChange(item.equipo_id)}>
-                                    <MaterialCommunityIcons
-                                        name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
-                                        size={24}
-                                        color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
-                                    />
-                                </Pressable>
+                                (
+                                    item.disable == 'true' ?
+                                        <Pressable>
+                                            <MaterialCommunityIcons
+                                                name="checkbox-marked-circle"
+                                                size={24}
+                                                color={item.isChecked == "true" ? "#FF6B00" : "#323232"}
+                                            />
+                                        </Pressable>
+                                        :
+                                        <Pressable onPress={() => handleChange(item.equipo_id)}>
+                                            <MaterialCommunityIcons
+                                                name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                                size={24}
+                                                color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
+                                            />
+                                        </Pressable>
+                                )
                                 :
                                 <Pressable >
                                     <MaterialCommunityIcons
@@ -365,29 +394,19 @@ export default function Equipo(props) {
 
     async function CancelarEvento() {
         dispatch(loadingCargando(true))
-        await AsyncStorage.removeItem("OS_PartesRepuestos")
-        await AsyncStorage.removeItem("OS_CheckList")
-        await AsyncStorage.removeItem("OS_Firmas")
-        await AsyncStorage.removeItem("OS_Anexos")
-        await AsyncStorage.removeItem("OS")
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
-        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
-        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
-        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
-        await AsyncStorage.setItem("OS", JSON.stringify(OS))
         await isCheckedCancelar()
         setTipo("Tipo")
         setModel("Modelo")
         setSerie("")
         setModeloSub([])
         setHistorial([])
+        dispatch(resetFormularioTool())
         dispatch(loadingCargando(false))
         navigation.goBack()
     }
 
     return (
         <View style={styles.container}>
-            {/* <ActivityIndicador size={100} color="#FF6B00" /> */}
             <Modal
                 transparent={true}
                 visible={modalCreateEquip}

@@ -9,7 +9,7 @@ import {
   View,
   Alert
 } from "react-native";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AntDesign } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import BannerOrderServi from "../../components/BannerOrdenServ";
@@ -19,12 +19,16 @@ import moment from 'moment/moment';
 import { getToken } from '../../service/usuario';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSelector, useDispatch } from 'react-redux';
+import { setAdjuntosTool } from '../../redux/formulario';
+import isEmpty from 'just-is-empty';
 
 export default function Adjuntos(props) {
   const { navigation } = props;
   const [isEnabled, setIsEnabled] = useState(false)
 
   const [listAdjuntos, setListAdjuntos] = useState([])
+  const [OrdenServicioID, setOrdenServicioID] = useState(0)
 
 
   const [fini, setFini] = useState(true)
@@ -46,6 +50,13 @@ export default function Adjuntos(props) {
 
   const toggleSwitch = () => setIsEnabled((previousState) => !previousState)
 
+  const AdjuntoStor = useSelector(s => s.formulario)
+  const dispatch = useDispatch()
+
+  // useEffect(() => {
+  //   setAdjuntos(AdjuntoStor.adjuntos)
+  // }, [AdjuntoStor.adjuntos])
+
   const limpia = () => {
     setAdjuntos({
       OS_OrdenServicio: null,
@@ -62,7 +73,7 @@ export default function Adjuntos(props) {
       archivo: null,
     })
   }
-  
+
   const pickDocument = async () => {
     const result = await DocumentPicker.getDocumentAsync({})
     const file = await ImageManipulator.manipulateAsync(result.uri, [
@@ -81,58 +92,47 @@ export default function Adjuntos(props) {
 
   useFocusEffect(
     useCallback(() => {
-      (async () => {
+      limpia()
+      if (typeof AdjuntoStor.adjuntos !== "undefined") {
+        if (AdjuntoStor.adjuntos.length > 0) {
+          let filter = AdjuntoStor.adjuntos.filter((item) => item.Estado == "ACTI")
+          setListAdjuntos(filter)
+        }
+      }
+    }, [AdjuntoStor.adjuntos])
+  )
 
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
         try {
           const itenSelect = await AsyncStorage.getItem(ticketID)
           if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
-            const { OSClone, Accion } = item
-            // console.log("OSClone", OSClone)
+            const { Accion, OrdenServicioID } = item
+            setOrdenServicioID(OrdenServicioID)
             if (Accion == "FINALIZADO") {
 
-              console.log("Accion", Accion)
               setFini(false)
-              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
-              setListAdjuntos(filter)
-
 
             } else if (Accion == "PENDIENTE") {
 
-              console.log("PENDIENTE")
-              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
-              await AsyncStorage.setItem("OS_Anexos", JSON.stringify(filter))
-              setListAdjuntos(filter)
+              setListAdjuntos([])
 
             } else if (Accion == "OrdenSinTicket") {
 
-              await AsyncStorage.setItem("OS_Anexos", JSON.stringify([]))
-              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
-              await AsyncStorage.setItem("OS_Anexos", JSON.stringify(filter))
-              setListAdjuntos(filter)
+              setListAdjuntos([])
 
             } else if (Accion == "NUEVO OS TICKET") {
 
-              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              let adjunto = OS_Anexos.map((item, index) => {
-                return {
-                  ...item,
-                  idLocal: index + 1,
-                  OrdenServicioID: 0
-                }
-              })
-              let filter = adjunto.filter((item) => item.Estado == "ACTI")
-              await AsyncStorage.setItem("OS_Anexos", JSON.stringify(filter))
-              setListAdjuntos(filter)
+              setListAdjuntos([])
 
             } else if (Accion == "PROCESO") {
 
-              const OS_Anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-              let filter = OS_Anexos.filter((item) => item.Estado == "ACTI")
-              setListAdjuntos(filter)
+
+            } else if (Accion == "clonar") {
+
+              setListAdjuntos([])
 
             }
           }
@@ -146,30 +146,25 @@ export default function Adjuntos(props) {
   const saveAdjunto = async () => {
     const { userId } = await getToken()
     if (adjuntos.Ruta != null && adjuntos.archivo != null && adjuntos.Descripcion != null) {
-      const itenSelect = await AsyncStorage.getItem(ticketID)
-      if (itenSelect != null) {
-        const item = JSON.parse(itenSelect)
-        const { Accion } = item
-
-        const os = await AsyncStorage.getItem("OS_Anexos")
-        var OS_Anexos = JSON.parse(os)
-
-        anexos.archivo = adjuntos.archivo
-        anexos.Ruta = adjuntos.Ruta
-        anexos.Descripcion = adjuntos.Descripcion
-        anexos.Estado = "ACTI"
-        anexos.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        anexos.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
-        anexos.IdAnexo = 0
-        anexos.OS_OrdenServicio = null
-        anexos.OrdenServicioID = 0
-        anexos.UsuarioCreacion = userId
-        anexos.UsuarioModificacion = userId
-        OS_Anexos.push(anexos)
-        setListAdjuntos(OS_Anexos)
-        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
-        limpia()
-      }
+      var adjuntostore = AdjuntoStor.adjuntos
+      anexos.archivo = adjuntos.archivo
+      anexos.Ruta = adjuntos.Ruta
+      anexos.Descripcion = adjuntos.Descripcion
+      anexos.Estado = "ACTI"
+      anexos.FechaCreacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      anexos.FechaModificacion = `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}Z`
+      anexos.IdAnexo = 0
+      anexos.OS_OrdenServicio = null
+      anexos.OrdenServicioID = OrdenServicioID
+      anexos.UsuarioCreacion = userId
+      anexos.UsuarioModificacion = userId
+      adjuntostore = [...adjuntostore, anexos]
+      let filter = adjuntostore.filter((item) => item.Estado == "ACTI")
+      dispatch(setAdjuntosTool(filter))
+      setListAdjuntos(filter)
+      limpia()
+    } else {
+      Alert.alert("Error", "Debe ingresar todos los campos")
     }
   }
 
@@ -190,8 +185,7 @@ export default function Adjuntos(props) {
   }
 
   const EliminAdjunto = async (item) => {
-    const os_anexos = JSON.parse(await AsyncStorage.getItem("OS_Anexos"))
-
+    var os_anexos = AdjuntoStor.adjuntos
     var p = os_anexos.map((part) => {
       if (part.FechaCreacion == item.FechaCreacion) {
         return {
@@ -202,10 +196,8 @@ export default function Adjuntos(props) {
         return part
       }
     })
-    await AsyncStorage.setItem("OS_Anexos", JSON.stringify(p))
-    console.log("p", await AsyncStorage.getItem("OS_Anexos"))
     let filter = p.filter((item) => item.Estado == "ACTI")
-    console.log("filter", filter)
+    dispatch(setAdjuntosTool(filter))
     setListAdjuntos(filter)
   }
 
@@ -246,7 +238,7 @@ export default function Adjuntos(props) {
               <Text style={{ ...styles.textInfo, color: "#EA0029" }}>
                 Seleccionar archivo
               </Text>
-              <Text>{adjuntos.name != null ? adjuntos.name : null}</Text>
+              <Text>{!isEmpty(adjuntos) ? adjuntos.name : ''}</Text>
             </TouchableOpacity>
           </View>
 

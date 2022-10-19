@@ -1,29 +1,27 @@
-import { StyleSheet, Text, TextInput, View, Switch, ScrollView, TouchableOpacity, FlatList, SafeAreaView, Alert } from "react-native";
+import { StyleSheet, Text, TextInput, View, Switch, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Picker } from '@react-native-picker/picker';
 import { AntDesign } from '@expo/vector-icons'
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import BannerOrderServi from "../../components/BannerOrdenServ";
-import { CambieEstadoSwitch, EstadoSwitch, ListaComponentes } from "../../service/config";
+import { ListaComponentes } from "../../service/config";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { COMPONENTE_, ParteRespuestos, ticketID } from "../../utils/constantes";
-import moment from "moment";
+import { ticketID } from "../../utils/constantes";
 import { getToken } from "../../service/usuario";
+import { useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
+import { loadingCargando } from "../../redux/sincronizacion";
+import LoadingActi from "../../components/LoadingActi";
+import { setComponenteTool } from "../../redux/formulario";
+import isEmpty from "just-is-empty";
 
 
 export default function Componentes(props) {
     const { navigation } = props
     const [Component, setComponent] = useState([])
-    const [compo, setCompo] = useState("")
     const [incidente, setIncidente] = useState([]);
 
     const [fini, setFini] = useState(true)
-
-    const [isEnabled, setIsEnabled] = useState(false);
-
-    const [isGarantia, setIsGarantia] = useState(false);
-    const [isDoa, setIsDoa] = useState(false);
-    const [isExchange, setIsExchange] = useState(false);
     const [ParteOrdenServicioID, setOrdenServicioID] = useState(0)
 
     const [componente, setComponente] = useState({
@@ -89,33 +87,29 @@ export default function Componentes(props) {
             release: ""
         })
     }
+    const Events = useSelector(s => s.sincronizacion)
+    const ComponenteStor = useSelector(s => s.formulario)
+    const dispatch = useDispatch()
 
-    const toggleSwitchGarantia = () => {
-        setIsGarantia(!isGarantia)
-        componente({
-            ...componente,
-            garantia: !isGarantia
-        })
-    }
-    const toggleSwitchDoa = () => {
-        setIsDoa(!isDoa)
-        componente({
-            ...componente,
-            doa: !isDoa
-        })
-    }
-    const toggleSwitchExchange = () => {
-        setIsExchange(!isExchange);
-        componente({
-            ...componente,
-            exchange: !isExchange
-        })
-    }
+
+    useFocusEffect(
+        useCallback(() => {
+            limpia()
+            if (typeof ComponenteStor.componente !== "undefined") {
+                if (ComponenteStor.componente.length > 0) {
+                    let filter = ComponenteStor.componente.filter((item) => item.Estado == "ACTI")
+                    setComponent(filter)
+                    console.log("ComponenteStor", ComponenteStor.componente)
+                }
+            }
+        }, [ComponenteStor.componente])
+    )
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
                 try {
+                    dispatch(loadingCargando(true))
                     const inci = await ListaComponentes()
                     setIncidente(inci)
                     const itenSelect = await AsyncStorage.getItem(ticketID)
@@ -125,89 +119,40 @@ export default function Componentes(props) {
                         setOrdenServicioID(OrdenServicioID == null ? 0 : OrdenServicioID)
                         console.log("Accion-->", OrdenServicioID)
                         if (Accion == "FINALIZADO") {
+                            
+                            setComponent([])
                             setFini(false)
-
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            let filter = parte.filter((item) => item.Estado == "ACTI")
-                            setComponent(filter)
-                            // setOrdenServicioID(parte[0].OrdenServicioID)
 
                         } else if (Accion == "PENDIENTE") {
 
                             console.log("PENDIENTE")
-                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                             setComponent([])
-                            console.log("OrdenSinTicket-->", parte)
                             setFini(true)
 
                         } else if (Accion == "OrdenSinTicket") {
 
                             console.log("OrdenSinTicket")
-                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                             setComponent([])
-                            console.log("OrdenSinTicket-->", parte)
                             setFini(true)
 
                         } else if (Accion == "clonar") {
 
-                            // let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            // console.log("clonar-->", parte)
-                            // if (parte.length > 0) {
-                            //     var part = parte.map((item) => {
-                            //         return {
-                            //             ...item,
-                            //             OrdenServicioID: 0
-                            //         }
-                            //     })
-                            //     let filter = part.filter((item) => item.Estado == "ACTI")
-                            //     setComponent(filter)
-                            //     await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(filter))
-                            // }
-                            // setFini(true)
-                            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
                             setComponent([])
-                            console.log("OrdenSinTicket-->", parte)
                             setFini(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {
 
                             console.log("NUEVO OS TICKET")
-                            let parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            if (parte.length > 0) {
-                                var part = parte.map((item) => {
-                                    return {
-                                        ...item,
-                                        OrdenServicioID: 0
-                                    }
-                                })
-                                let filter = part.filter((item) => item.Estado == "ACTI")
-                                await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(filter))
-                                setComponent(filter)
-                            }
+                            setComponent([])
                             setFini(true)
 
                         } else if (Accion == "PROCESO") {
 
                             console.log("PROCESO")
-                            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-                            if (parte.length > 0) {
-                                console.log("PROCESO-->", parte)
-                                var p = parte.map((item, index) => {
-                                    return {
-                                        idLocal: index + 1,
-                                        ...item,
-                                    }
-                                })
-                                let filter = p.filter((item) => item.Estado == "ACTI")
-                                setComponent(filter)
-                                await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(p))
-                            }
                             setFini(true)
                         }
                     }
+                    dispatch(loadingCargando(false))
                 } catch (error) {
                     console.log("error", error)
                 }
@@ -216,29 +161,45 @@ export default function Componentes(props) {
     )
 
     const AgregarComponet = async () => {
-        if (componente.Codigo == null && componente.Descripcion == null && componente.Cantidad == null && componente.Tipo == null) {
+        if (isEmpty(componente.Codigo) || isEmpty(componente.Descripcion) || isEmpty(componente.Cantidad) || isEmpty(componente.Tipo)) {
             Alert.alert("Error", "Debe llenar todos los campos")
         } else {
             const { userId } = await getToken()
-            const parte = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
-            ParteRespuestos.Tipo = componente.Tipo
-            ParteRespuestos.Codigo = componente.Codigo
-            ParteRespuestos.Descripcion = componente.Descripcion
-            ParteRespuestos.Cantidad = Number(componente.Cantidad)
-            ParteRespuestos.OrdenServicioID = ParteOrdenServicioID
-            ParteRespuestos.Doa = componente.Doa
-            ParteRespuestos.Exchange = componente.Exchange
-            ParteRespuestos.FechaCreacion = new Date()
-            ParteRespuestos.UsuarioCreacion = userId
-            ParteRespuestos.FechaModificacion = new Date()
-            ParteRespuestos.UsuarioModificacion = userId
-            ParteRespuestos.Estado = "ACTI"
-            ParteRespuestos.Garantia = componente.Garantia
-            ParteRespuestos.componente_id = null
-            ParteRespuestos.idLocal = moment().format("YYYYMMDDHHmmss")
-            parte.push(ParteRespuestos)
-            await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(parte))
+            var parte = ComponenteStor.componente
+            let partes = {
+                Cantidad: Number(componente.Cantidad),
+                Codigo: componente.Codigo,
+                Descripcion: componente.Descripcion,
+                Doa: componente.Doa,
+                Estado: "ACTI",
+                Exchange: componente.Exchange,
+                FechaCreacion: new Date(),
+                FechaModificacion: new Date(),
+                Garantia: componente.Garantia,
+                IdParte: 0,
+                OS_OrdenServicio: null,
+                OrdenServicioID: ParteOrdenServicioID,
+                Tipo: componente.Tipo,
+                UsuarioCreacion: userId,
+                UsuarioModificacion: userId,
+                componente_id: null,
+                fabricante: "",
+                fechaFabricacion: "",
+                fechaInstalacion: "",
+                modelo: "",
+                numero: "",
+                potencia: "",
+                release: "",
+                serie: "",
+                sistemaOperativo: "",
+                tamano: "",
+                ubicacion: "",
+                voltaje: "",
+            }
+            parte = [...parte, partes]
+            console.log("parte", parte)
             let p = parte.filter((item) => item.Estado == "ACTI")
+            dispatch(setComponenteTool(p))
             setComponent(p)
             limpia()
         }
@@ -260,7 +221,7 @@ export default function Componentes(props) {
     }
 
     const EliminarComponente = async (item, index) => {
-        var os_partesRepuestos = JSON.parse(await AsyncStorage.getItem("OS_PartesRepuestos"))
+        var os_partesRepuestos = ComponenteStor.componente
         var p = os_partesRepuestos.map((part) => {
             if (part.FechaCreacion == item.FechaCreacion) {
                 return {
@@ -271,10 +232,8 @@ export default function Componentes(props) {
                 return part
             }
         })
-        console.log("p", p)
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(p))
         let filter = p.filter((item) => item.Estado == "ACTI")
-        console.log("filter", filter)
+        dispatch(setComponenteTool(filter))
         setComponent(filter)
     }
 
@@ -288,6 +247,7 @@ export default function Componentes(props) {
                 showsHorizontalScrollIndicator={false}
             >
                 <View style={styles.ContenedorCliente}>
+                    <LoadingActi loading={Events.loading} />
                     <Text style={{
                         fontSize: 20,
                         fontWeight: "bold",
@@ -382,7 +342,7 @@ export default function Componentes(props) {
                         flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        marginBottom: '6%'
+                        marginBottom: '10%'
                     }}>
                         <View style={{
                             ...styles.wFull,
@@ -471,7 +431,18 @@ export default function Componentes(props) {
                         }
                     </View>
 
-                    <View>
+                    <View
+                        style={{
+                            // ...styles.wFull,
+                            height: 'auto',
+                            width: '100%',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            // marginTop: '5%',
+                            marginBottom: '10%'
+                        }}>
+
                         {
                             Component.length > 0 ?
                                 Component.map((item, index) => {
@@ -486,6 +457,7 @@ export default function Componentes(props) {
                                                 padding: 10,
                                                 borderBottomWidth: 0.5,
                                                 borderRadius: 0,
+                                                width: '100%',
                                             }}>
                                             <View>
                                                 <Text style={{
@@ -510,7 +482,7 @@ export default function Componentes(props) {
                         }
 
                     </View>
-                    <View style={{ paddingBottom: 50 }} ></View>
+                    <View style={{ paddingBottom: '20%' }} ></View>
                 </View>
             </ScrollView>
             <BannerOrderServi
@@ -533,8 +505,10 @@ const styles = StyleSheet.create({
         marginTop: 30,
         flex: 1,
         width: "100%",
+        height: "100%",
         backgroundColor: '#FFFFFF',
         padding: 20,
+        paddingBottom: "20%",
     },
     ContainerInputs: {
         flexDirection: "column",

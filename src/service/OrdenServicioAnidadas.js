@@ -31,6 +31,7 @@ export const OrdenServicioAnidadas = async (idEvento) => {
 }
 
 async function InsertOrdenServicioAnidadas(data) {
+    // await DeleteAnidada(data.OrdenServicioID)
     const existe = await selectOrdenServicioAnidadas(data.OrdenServicioID)
     if (!existe) {
         console.log("OSOrdenServicioID", data.OrdenServicioID)
@@ -108,6 +109,18 @@ async function InsertOrdenServicioAnidadas(data) {
     } else {
         return true
     }
+}
+async function DeleteAnidada(OrdenServicioID) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `DELETE FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
+                [OrdenServicioID],
+                (tx, results) => {
+                    resolve(true)
+                })
+        })
+    })
 }
 
 async function selectOrdenServicioAnidadas(OrdenServicioID) {

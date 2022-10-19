@@ -24,16 +24,16 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID, os_firma } from "../utils/constantes";
 import { FinalizarOS_ } from "../service/OS";
 import VisualizadorPDF from "../components/VisualizadorPDF";
-import { PDFVisializar, getRucCliente, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
+import { PDFVisializar, getRucCliente, UpdateOSOrdenServicioID, EstadoOSLOCAL } from "../service/OS_OrdenServicio";
 import { getToken } from "../service/usuario";
 import ModalGenerico from "../components/ModalGenerico";
-import { NavigationActions } from 'react-navigation';
 import { useDispatch } from "react-redux";
 import moment from "moment";
 import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando } from "../redux/sincronizacion";
 import { EditareventoLocal } from "../service/ServicioLoca";
 import { getIngenierosStorageById } from "../service/ingenieros";
 import axios from "axios";
+import { useIsConnected } from "react-native-offline";
 
 
 const Drawer = createDrawerNavigator();
@@ -94,19 +94,32 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
     const [estado, setEstado] = useState(null)
     const [orderID, setOrderID] = useState(null)
 
-    const FinalizarOS = async () => {
-        var os = JSON.parse(await AsyncStorage.getItem("OS"))
-        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-        const { OrdenServicioID, Accion } = itenSelect
+    const isConnected = useIsConnected();
 
-        if (OrdenServicioID != null) {
-            dispatch(loadingCargando(true))
-            let respuesta = await FinalizarOS_(OrdenServicioID, os)
-            await UpdateOSOrdenServicioID([OrdenServicioID])
-            await EditareventoLocal("FINALIZADO", OrdenServicioID)
-            await Dispatcher()
-            dispatch(loadingCargando(false))
-            console.log("FinalizarOS", respuesta)
+    const FinalizarOS = async () => {
+        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
+        const { OrdenServicioID } = itenSelect
+        if (OrdenServicioID != null && OrdenServicioID != 0) {
+            let estadoLocal = await EstadoOSLOCAL(OrdenServicioID)
+            if (estadoLocal == "UPDATE") {
+                await EditareventoLocal("FINALIZADO", OrdenServicioID)
+                Dispatcher()
+                alert("Se actualizo el estado de la OS en local asta que se sincronice")
+            }else{
+                if(isConnected){
+                    dispatch(loadingCargando(true))
+                    let respuesta = await FinalizarOS_(OrdenServicioID)
+                    await UpdateOSOrdenServicioID([OrdenServicioID])
+                    await EditareventoLocal("FINALIZADO", OrdenServicioID)
+                    await Dispatcher()
+                    dispatch(loadingCargando(false))
+                    console.log("FinalizarOS", respuesta)
+                }else{
+                    await EditareventoLocal("FINALIZADO", OrdenServicioID)
+                    Dispatcher()
+                    alert("Se actualizo el estado de la OS en local asta que se sincronice")
+                }
+            }
         }
     }
 
@@ -296,8 +309,12 @@ function NavigatioGotBack2() {
 
     async function VisualizarPdf(item) {
         const base64 = await PDFVisializar(item)
-        setPdfurl(base64)
-        setPdfview(true)
+        if(base64 != null){
+            setPdfurl(base64)
+            setPdfview(true)
+        }else{
+            alert("No se pudo generar el PDF")
+        }
     }
 
     return (

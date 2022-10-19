@@ -398,7 +398,7 @@ function InitDB() {
                         OS_CheckList TEXT NULL,
                         OS_Encuesta TEXT NULL,
                         OS_Firmas TEXT NULL,
-                        OS_PartesRepuestos TEXT NULL,
+                        OS_PartesRepuestos ARRAY NULL,
                         OS_Anexos TEXT NULL,
                         OS_Tiempos TEXT NULL,
                         OS_Colaboradores TEXT NULL,

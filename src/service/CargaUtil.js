@@ -9,8 +9,8 @@ import db from "./Database/model";
 import { getTPTCKStorage } from "./catalogos";
 import { EquipoTicket } from "./equipoTicketID";
 import { OrdenServicioAnidadas } from "./OrdenServicioAnidadas";
-import { OSOrdenServicioID } from "./OS_OrdenServicio";
 import moment from "moment";
+import { useIsConnected } from "react-native-offline";
 
 
 export const CardaUtil = async () => {
@@ -202,10 +202,10 @@ export const Restablecer = async () => {
             enviado TEXT NULL,
             codOS TEXT NULL
             );`,
-            args: []
-        }], false, (tx, results) => {
-            console.log("resultado tx", tx);
-            console.log("resultado al crear la tabla OS_OrdenServicio", results);
+        args: []
+    }], false, (tx, results) => {
+        console.log("resultado tx", tx);
+        console.log("resultado al crear la tabla OS_OrdenServicio", results);
 
     })
     db.transaction(tx => {
@@ -362,6 +362,23 @@ export const Restablecer = async () => {
         tck_tipoTicketCod TEXT NULL
     );`)
     })
+}
 
-
+export async function SincronizaDor() {
+    return new Promise((resolve, reject) => {
+        (async () => {
+            await TrucateUpdate()
+            await HistorialEquipoIngeniero()
+            await GetEventosDelDia()
+            var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+            var hoy = moment().format('YYYY-MM-DD');
+            var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+            const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+            ticket_id.map(async (r) => {
+                await EquipoTicket(r.ticket_id)
+                await OrdenServicioAnidadas(r.evento_id)
+            })
+            resolve(true)
+        })()
+    })
 }
