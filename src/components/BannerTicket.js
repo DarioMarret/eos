@@ -1,17 +1,47 @@
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Fontisto } from '@expo/vector-icons';
-import { GetEventosDelDia } from "../service/OSevento";
+import { GetEventosByTicketHoy, GetEventosDelDia } from "../service/OSevento";
+import moment from "moment";
+import { DeleteAnidada, OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
+import { ticketID } from "../utils/constantes";
+import { getAnidacionesTicket, listarTicket } from "../redux/sincronizacion";
+import { useDispatch } from "react-redux";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function BannerTicket(props) {
     const { navigation } = props
 
     const [update, setupdate] = useState(false)
 
+
+    const dispatch = useDispatch()
+
     async function ActualizarEventos() {
-        setupdate(true)
-        await GetEventosDelDia()
-        setupdate(false)
+        var hoy = moment().format('YYYY-MM-DD');
+        const ticket = await GetEventosByTicketHoy(hoy)
+        // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+        let evento_id = []
+        for (let index = 0; index < ticket.length; index++) {
+            let item = ticket[index];
+            evento_id.push(item.evento_id)
+        }
+
+        await DeleteAnidada(evento_id)
+        //Para buscar eventos anidadas a la orden
+        for (let index = 0; index < evento_id.length; index++) {
+            let item = evento_id[index];
+            await OrdenServicioAnidadas(item)
+        }
+
+        const { ticket_id } = JSON.parse(await AsyncStorage.getItem(ticketID))
+        const promisa_anidacion = dispatch(getAnidacionesTicket(ticket_id))
+        promisa_anidacion.then((res) => {
+            if (res.payload.length > 0) {
+                dispatch(listarTicket(res.payload))
+            }
+        })
+
     }
 
     return (

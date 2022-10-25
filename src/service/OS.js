@@ -63,7 +63,8 @@ export const PutOS = async (datos) => {
 export const FinalizarOS = async (OrdenServicioID) => {
     console.log("FinalizarOS", OrdenServicioID)
     const { token } = await getToken()
-    OrdenServicioID.map(async (item) => {
+    for (let index = 0; index < OrdenServicioID.length; index++) {
+        let item = OrdenServicioID[index];
         const os = await SelectOSOrdenServicioID(item)
         const OS_PartesRepuestos = JSON.parse(os[0].OS_PartesRepuestos)
         const OS_CheckList = JSON.parse(os[0].OS_CheckList)
@@ -93,10 +94,12 @@ export const FinalizarOS = async (OrdenServicioID) => {
             console.log("PutOS Status", status)
         } catch (error) {
             console.log("PutOS ERROR", error)
-            return false
+            return 300
         }
-    })
-    OrdenServicioID.map(async (item) => {
+    }
+    for (let index = 0; index < OrdenServicioID.length; index++) {
+        const item = OrdenServicioID[index];
+        console.log("item actualizar fina", item)
         const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${item}`, {}, {
             headers: {
                 "Content-Type": "application/json",
@@ -104,7 +107,7 @@ export const FinalizarOS = async (OrdenServicioID) => {
             }
         })
         console.log("status", status)
-    })
+    }
     return 200
 }
 

@@ -33,25 +33,6 @@ export default function Equipo(props) {
 
     const [isdisabel, setDisable] = useState(true)
     const [isdisabelsub, setDisableSub] = useState(true)
-    const [equipoSelect, setEquipoSelect] = useState({
-        Modalidad: "",
-        con_ClienteNombre: "",
-        equ_SitioInstalado: "",
-        equ_areaInstalado: "",
-        equ_canton: "",
-        equ_estado: "",
-        equ_marca: "",
-        equ_modalidad: "",
-        equ_modeloEquipo: "",
-        equ_provincia: "",
-        equ_serie: "",
-        equ_tipoEquipo: "",
-        equipo_id: "",
-        id_equipoContrato: "",
-        marca: "",
-        modelo: "",
-        tipo: "",
-    })
 
     const [tipo, setTipo] = useState("Tipo")
     const [model, setModel] = useState("Modelo")
@@ -247,8 +228,8 @@ export default function Equipo(props) {
                 contrato_id: item.id_contrato, //#
                 Serie: item.equ_serie, //#
                 Marca: item.marca, //#
-                ClienteID: empty(cliente) ? "" : cliente[0].CustomerID, //#
-                ClienteNombre: item.con_ClienteNombre, //#
+                ClienteID: !empty(EquipoStor.cliente.ClienteID) ? EquipoStor.cliente.ClienteID : cliente[0].CustomerID, //#
+                ClienteNombre: !empty(EquipoStor.cliente.ClienteNombre) ? EquipoStor.cliente.ClienteNombre : item.con_ClienteNombre, //#
                 ObservacionCliente: "", //#
                 IdEquipoContrato: Number(item.id_equipoContrato), //#
                 EstadoEqPrevio: item.equ_estado, //#

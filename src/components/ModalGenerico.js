@@ -14,6 +14,8 @@ import { getToken } from '../service/usuario';
 import { ticketID } from '../utils/constantes';
 import LoadingActi from './LoadingActi';
 
+
+var DatosEmail = []
 export default function ModalGenerico(props) {
 
     const { modalVisible, setModalVisible,
@@ -46,30 +48,36 @@ export default function ModalGenerico(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                if (isConnected) {
-                    dispatch(loadingCargando(true))
-                    const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-                    const { OrdenServicioID } = itenSelect
-                    const { ClienteID, UsuarioCreacion } = await getRucCliente(OrdenServicioID)
-                    const { token } = await getToken()
-                    const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&ordServ=${OrdenServicioID}`, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json',
-                            'Authorization': `Bearer ${token}`
+                try {
+                    if (isConnected) {
+                        dispatch(loadingCargando(true))
+                        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
+                        const { OrdenServicioID } = itenSelect
+                        const { ClienteID } = await getRucCliente(OrdenServicioID)
+                        const { token } = await getToken()
+                        const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&ordServ=${OrdenServicioID}`, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        })
+                        if (data.length > 0) {
+                            setlistadoEmails(data)
+                            DatosEmail = data.filter(listC => listC.Correo != "" && listC.Correo != null)
+                            dispatch(loadingCargando(false))
                         }
-                    })
-                    if (data.length > 0) {
-                        setlistadoEmails(data)
+                        if (contenflex.length > 0) {
+                            setCorreosEmail(contenflex)
+                        }
                         dispatch(loadingCargando(false))
                     }
-                    if (contenflex.length > 0) {
-                        setCorreosEmail(contenflex)
-                    }
+                } catch (error) {
                     dispatch(loadingCargando(false))
+                    console.log(error)                    
                 }
             })()
-        }, [])
+        }, [modalVisible])
     );
 
     const handleEnviarCorreo = async () => {
@@ -134,13 +142,22 @@ export default function ModalGenerico(props) {
     }
 
     const BuscarCorreoLocal = (text) => {
-        var correos = contenflex.filter(listC => listC.Correo != "" && listC.Correo != null)
-        setCorreosEmail(correos)
+        var correos = CorreosEmail.filter(listC => listC.Correo != "" && listC.Correo != null)
+        // setCorreosEmail(correos)
         if (text.length != 0) {
             let texto = text.toLowerCase()
-            let temp = correos.filter((items, index) => items.Correo.includes(texto))
+            // let temp = correos.filter((items, index) => items.Correo.includes(texto))
+            let temp = correos.sort((a, b) => {
+                if (a.Correo.toLowerCase().includes(texto)) {
+                    return -1
+                } else if (b.Correo.toLowerCase().includes(texto)) {
+                    return 1
+                } else {
+                    return 0
+                }
+            })
             console.log("temp", temp)
-            setCorreosEmail(temp.slice(0, 10))
+            setCorreosEmail(temp)
         } else {
             setCorreosEmail(correos)
         }
@@ -203,30 +220,28 @@ export default function ModalGenerico(props) {
                             {
                                 CorreosEmail.length > 0 ?
                                     CorreosEmail.map((item, index) => {
-                                        if (item.Correo != "" && item.Correo != null) {
-                                            return (
-                                                <View key={index}
-                                                    style={{
-                                                        width: '100%',
-                                                        height: 50,
-                                                        flexDirection: 'row',
-                                                        justifyContent: 'space-between',
-                                                        alignItems: 'flex-start',
-                                                        borderBottomWidth: 0.3,
-                                                        borderBottomColor: '#B2B2AF',
-                                                        marginBottom: 15
-                                                    }}>
-                                                    <Text style={{ ...styles.modalText, fontSize: 14, width: "90%", textAlign: "left" }}>{item.Correo}</Text>
-                                                    <TouchableOpacity onPress={() => handleChangelocal(item.id_correoCliente)}>
-                                                        <MaterialCommunityIcons
-                                                            name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
-                                                            size={24}
-                                                            color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
-                                                        />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            )
-                                        }
+                                        return (
+                                            <View key={index}
+                                                style={{
+                                                    width: '100%',
+                                                    height: 50,
+                                                    flexDirection: 'row',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'flex-start',
+                                                    borderBottomWidth: 0.3,
+                                                    borderBottomColor: '#B2B2AF',
+                                                    marginBottom: 15
+                                                }}>
+                                                <Text style={{ ...styles.modalText, fontSize: 14, width: "90%", textAlign: "left" }}>{item.Correo}</Text>
+                                                <TouchableOpacity onPress={() => handleChangelocal(item.id_correoCliente)}>
+                                                    <MaterialCommunityIcons
+                                                        name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                                        size={24}
+                                                        color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
+                                                    />
+                                                </TouchableOpacity>
+                                            </View>
+                                        )
                                     })
                                     :
                                     <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 }}>

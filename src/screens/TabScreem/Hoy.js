@@ -123,9 +123,9 @@ export default function Hoy(props) {
             // const equipo = await getEquipoTicketStorage(ticket_id)
             // console.log("equipo", equipo)
             db.transaction(tx => {
-                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                tx.executeSql(`SELECT * FROM equipoTicket WHERE ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
-                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                        tx.executeSql(`SELECT * FROM historialEquipo WHERE equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
                             console.log("equipo selecionado hoy row", rows._array)
                             Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_direccion, tipoIncidencia, tck_tipoTicketCod)
                         })
@@ -161,28 +161,6 @@ export default function Hoy(props) {
                 console.log("parse--->",parse)
                 if (OrdenServicioID != 0) {
                     if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
-                        // parse[0].ticket_id = ticket_id
-                        // parse[0].evento_id = evento_id
-                        // parse[0].tipoIncidencia = tipoIncidencia
-                        // parse[0].TipoVisita = tck_tipoTicketCod
-                        // parse[0].OrdenServicioID = OrdenServicioID
-                        // dispatch(setOrdenServicioID(OrdenServicioID))
-                        // dispatch(setEquipoTool(parse[0]))
-                        // dispatch(setClienteTool(parse[0]))
-                        // dispatch(setdatosTool(parse[0]))
-                        // dispatch(setComponenteTool(JSON.parse(parse[0].OS_PartesRepuestos)))
-                        // dispatch(setAdjuntosTool(JSON.parse(parse[0].OS_Anexos)))
-                        // dispatch(setTiemposTool(JSON.parse(parse[0].OS_Tiempos)))
-                        // dispatch(setFirmasTool(JSON.parse(parse[0].OS_Firmas)))
-                        // dispatch(setChecklistTool(JSON.parse(parse[0].OS_CheckList)))
-                        // dispatch(actualizarDatosTool({
-                        //     name: 'tipoIncidencia',
-                        //     value: tipoIncidencia
-                        // }))
-                        // dispatch(actualizarDatosTool({
-                        //     name: 'TipoVisita',
-                        //     value: tck_tipoTicketCod
-                        // }))
                         await AsyncStorage.removeItem(ticketID)
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
                             ClienteID: parse[0].ClienteID,

@@ -104,17 +104,21 @@ async function InsertOrdenServicioAnidadas(data) {
         resolve(true)
     })
 }
-async function DeleteAnidada(OrdenServicioID) {
-    return new Promise((resolve, reject) => {
-        db.transaction((tx) => {
-            tx.executeSql(
-                `DELETE FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
-                [OrdenServicioID],
-                (tx, results) => {
-                    resolve(true)
-                })
+
+export async function DeleteAnidada(evento_id) {
+    evento_id.map(async (id) => {
+        db.exec([{
+            sql: `DELETE FROM ordenesAnidadas WHERE evento_id = ?`,
+            args: [id],
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                console.log("delete results ordenesAnidadas-->", results);
+            }
         })
     })
+    return true
 }
 
 async function selectOrdenServicioAnidadas(OrdenServicioID) {

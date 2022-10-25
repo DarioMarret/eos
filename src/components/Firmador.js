@@ -11,7 +11,7 @@ import { useSelector, useDispatch } from "react-redux"
 import { useIsConnected } from 'react-native-offline';
 import LoadingActi from "./LoadingActi";
 import { loadingCargando } from "../redux/sincronizacion";
-import { actualizarDatosTool, PuTFirmaFormularioTool, resetFormMessageTool, setFirmasTool } from "../redux/formulario";
+import { actualizarDatosTool, actualizarEquipoTool, PuTFirmaFormularioTool, resetFormMessageTool, setFirmasTool } from "../redux/formulario";
 import isEmpty from "just-is-empty";
 import { GetCorreos } from "../service/getCorreos";
 import { ticketID } from "../utils/constantes";
@@ -53,10 +53,10 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 const listCorreos = await GetCorreos(ClienteID, formulario.OrdenServicioID)
                 setCorreos(listCorreos)
                 console.log("listCorreos-->", listCorreos)
-            }else{
+            } else {
                 const listCorreos = await GetCorreos(formulario.datos.ClienteID, formulario.OrdenServicioID)
                 setCorreos(listCorreos)
-                console.log("listCorreos-->", listCorreos) 
+                console.log("listCorreos-->", listCorreos)
             }
 
             const ObservacioCliente = await SelectObservacionClienteID(formulario.OrdenServicioID)
@@ -79,22 +79,24 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                console.log("formulario.firmas.length-->", formulario.firmas.length)
                 if (typeof formulario.firmas !== "undefined") {
                     if (formulario.firmas.length > 0) {
                         setOrdenServicioID(formulario.OrdenServicioID)
                         let firmas = JSON.parse(await ListarFirmas(formulario.OrdenServicioID))
                         if (firmas.length > 0) {
                             let firm = firmas.filter((item) => item.Estado == "ACTI")
+                            console.log("firmas-->", firm.length)
                             setListF(firm)
-
                         } else {
                             let firmfil = formulario.firmas.filter((item) => item.Estado == "ACTI")
+                            console.log("firmas-->", firmfil.length)
                             setListF(firmfil)
                         }
                     }
                 }
             })()
-        }, [formulario.firmas || formulario.OrdenServicioID])
+        }, [formulario.firmas])
     )
 
 
@@ -128,7 +130,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 archivo: datauser.archivo.split(",")[1]
             }
             OS_Firm = [...OS_Firm, firmas]
-            setListF(OS_Firm)
+            // setListF(OS_Firm)
             dispatch(setFirmasTool(OS_Firm))
             handleClear()
             setUserData({
@@ -201,13 +203,24 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
 
     const CerrarAndActualizar = async () => {
         dispatch(loadingCargando(true))
+        dispatch(actualizarEquipoTool({
+            name: "Estado",
+            value: "FINA"
+        }))
+        
         if (isConnected) {
             try {
+
                 const { token } = await getToken()
+                var info = {
+                    ...formulario.ordenServicio,
+                    Estado: "FINA",
+                }
+                console.log("rest[0] OrdenServicioID", info)
                 console.log("rest[0] OrdenServicioID", formulario.OrdenServicioID)
                 const { status } = await axios.put(
                     `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${formulario.OrdenServicioID}`,
-                    formulario.ordenServicio, {
+                    info, {
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${token}`
@@ -220,6 +233,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                     "Se ha guardado la firma exitosamente", [
                     {
                         text: "OK", onPress: () => {
+                            dispatch(setFirmasTool([]))
                             setModalSignature(false)
                         }
                     }
@@ -232,6 +246,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                     [
                         {
                             text: "OK", onPress: () => {
+                                dispatch(setFirmasTool([]))
                                 setModalSignature(false)
                                 dispatch(loadingCargando(false))
                             }
@@ -256,21 +271,21 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     }
     const handleBuscarCorreo = () => {
         const text = datauser.Correo
-        if(!isEmpty(text)){
+        if (!isEmpty(text)) {
             var cor = correos.filter(listC => listC.Correo != "" && listC.Correo != null)
             let texto = text.toLowerCase()
             let temp = cor.filter((items) => items.Correo.includes(texto))
-            if(temp.length > 0){
+            if (temp.length > 0) {
                 setUserData({
                     ...datauser,
                     Nombre: temp[0].nombre,
                     Cargo: temp[0].cargo,
                     Correo: temp[0].Correo,
                 })
-            }else{
+            } else {
                 Alert.alert("Informacion", "No se ha encontrado el correo")
             }
-        }else{
+        } else {
             Alert.alert("Informacion", "Ingrese un correo para la busqueda")
         }
         console.log("temp", datauser.Correo)
@@ -344,20 +359,19 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             <ScrollView
                                 showsHorizontalScrollIndicator={false}
                                 showsVerticalScrollIndicator={false}
-                                style={{ width: "100%", height: 60 }}
+                                style={{ width: "100%" }}
                             >
                                 {
-                                    listF.map((item, index) => {
-                                        return (
-                                            <View key={index} style={styles.headerTitle}>
-                                                <Text>{item.Nombre}</Text>
-                                                <Text>{item.Cargo}</Text>
-                                                <TouchableOpacity onPress={() => { EliminarFirma(item) }}>
-                                                    <AntDesign name="delete" size={24} color="red" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        )
-                                    })
+                                    listF.map((item, index) => (
+                                        console.log("item", item.Cargo),
+                                        <View key={index} style={styles.headerTitle}>
+                                            <Text>{item.Nombre}</Text>
+                                            <Text>{item.Cargo}</Text>
+                                            <TouchableOpacity onPress={() => { EliminarFirma(item) }}>
+                                                <AntDesign name="delete" size={24} color="red" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    ))
                                 }
                             </ScrollView>
                         </View>
@@ -413,7 +427,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                                 name='search1'
                                 size={24}
                                 color='#000000'
-                                style={{ 
+                                style={{
                                     display: "flex",
                                     position: "absolute",
                                     right: 0,
@@ -535,7 +549,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         width: "100%",
-        height: 100,
+        height: 80,
     },
     Inputs: {
         flexDirection: "column",

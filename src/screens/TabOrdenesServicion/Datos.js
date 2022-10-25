@@ -94,23 +94,28 @@ export default function Datos(props) {
     async function ActivarChecklist(equipo_id) {
         var checklist = DatosStor.checklist
         if (checklist.length > 0) {
-            const list = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
+            console.log("checklist")
+            dispatch(loadingCargando(true))
+            var list_ = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
             var listCheck = []
-            for (let index = 0; index < list.length; index++) {
-                var lis = list[index].check_id;
-                for (let i = 0; i < checklist.length; i++) {
-                    if (lis == checklist[i].IdCheckList) {
-                        checklist[i].check_actividad = list[index].check_actividad
-                        listCheck.push(checklist[i])
-                    }
+
+            checklist.map((item, index) => {
+                let obj = {
+                    ...item,
+                    check_actividad: list_[index].check_actividad
                 }
-            }
+                listCheck.push(obj)
+            })
+
+            console.log("list",listCheck)
             setListCheck(listCheck)
             setOfCheck(true)
+            dispatch(loadingCargando(false))
         } else {
+            console.log("no hay checklist")
             let lista = await getHistorialEquiposStorageChecklist(equipo_id)
             const list = JSON.parse(lista)
-            console.log("LISTA",list)
+            // console.log("LISTA",list)
             if (list != null && list.length > 0) {
                 const { userId } = await getToken()
                 var l = list.map(item => {
@@ -233,10 +238,10 @@ export default function Datos(props) {
                         
                     } else if (Accion == "PENDIENTE DE APROBAR") {
                             
-                            console.log("Estamos PENDIENTE DE APROBAR")
-                            setSelect(false)
-                            setIsEnabled(true)
-                            setDisableSub(true)
+                        console.log("Estamos PENDIENTE DE APROBAR")
+                        setSelect(false)
+                        setIsEnabled(true)
+                        setDisableSub(true)
                     }
                 }
                 dispatch(loadingCargando(false))
@@ -265,11 +270,13 @@ export default function Datos(props) {
         newlistcheck[index].Observacion = text
         console.log("newlistcheck", newlistcheck[index])
         setListCheck(newlistcheck)
+        // dispatch(setChecklistTool(newlistcheck))
     }
     const checkedCheckList = (check, index) => {
         const newlistcheck = [...listCheck]
         newlistcheck[index].Checked = !check
         setListCheck(newlistcheck)
+        // dispatch(setChecklistTool(newlistcheck))
     }
     const handleConfirmTime = async (time) => {
         let fec = new Date(time)
@@ -295,7 +302,6 @@ export default function Datos(props) {
                         ...styles.inputActivity
                     }}>
                         <TextInput
-                            editable
                             value={item.Observacion}
                             placeholder="Observación actividad"
                             onChangeText={text => {
@@ -338,7 +344,6 @@ export default function Datos(props) {
                                 renderItem={_renderItem}
                                 keyExtractor={(item, index) => index.toString()}
                             />
-
                             <View style={{ width: "100%", flexDirection: "row", justifyContent: "flex-end" }}>
                                 <Pressable
                                     style={styles.button}

@@ -285,6 +285,21 @@ export const ConsultaOSOrdenServicioID = async (OrdenServicioID) => {
     });
 }
 
+export async function SelectOSOrdenServicioIDEquipo(OrdenServicioID) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT equipo_id FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        console.log("existe OS_OrdenServicioID-->", _array)
+                        resolve(_array[0].equipo_id)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        })
+    })
+}
 
 export async function SelectOSOrdenServicioID(OrdenServicioID) {
     return new Promise((resolve, reject) => {

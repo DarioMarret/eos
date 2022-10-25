@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { getOrdenServicioAnidadasTicket_id } from "../service/OrdenServicioAnidadas";
 import { GetEventos } from "../service/OSevento";
 
 
@@ -12,6 +13,15 @@ export const getEventosByDate = createAsyncThunk(
         return response
     }
 )
+
+export const getAnidacionesTicket = createAsyncThunk(
+    'sincronizacion',
+    async (date) => {
+        const response = await getOrdenServicioAnidadasTicket_id(date)
+        return response
+    }
+)
+
 export const sincronizacionSlice = createSlice({
 
     name: "sincronizacion",
@@ -19,6 +29,7 @@ export const sincronizacionSlice = createSlice({
         eventos_hoy: [],
         eventos_ayer: [],
         eventos_mnn: [],
+        anidaciones: [],
         loading: false,
         sincronizador: false,
     },
@@ -31,6 +42,9 @@ export const sincronizacionSlice = createSlice({
         },
         listarEventoMnn: (state, action) => {
             state.eventos_mnn = action.payload
+        },
+        listarTicket: (state, action) => {
+            state.anidaciones = action.payload
         },
         loadingCargando: (state, action) => {
             console.log("loadingCargando", action.payload)
@@ -50,6 +64,7 @@ export const {
     listarEventoMnn,
     loadingCargando,
     loadingProcesando,
+    listarTicket,
  } = sincronizacionSlice.actions;
 
 export default sincronizacionSlice.reducer;

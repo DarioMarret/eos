@@ -5,7 +5,7 @@ import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { os_firma, ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
-import { getOrdenServicioAnidadasTicket_id, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
+import { DeleteAnidada, getOrdenServicioAnidadasTicket_id, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import db from "../../service/Database/model";
 import {
     Menu,
@@ -14,7 +14,7 @@ import {
     MenuTrigger,
 } from 'react-native-popup-menu';
 import VisualizadorPDF from "../../components/VisualizadorPDF";
-import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID, SelectOSOrdenServicioIDEquipo } from "../../service/OS_OrdenServicio";
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
@@ -22,7 +22,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { getEquipoID, HistorialEquipoIngeniero, isChecked } from "../../service/historiaEquipo";
 import { FinalizarOS, FinalizarOS_, ParseOS } from "../../service/OS";
 import moment from "moment";
-import { GetEventosByTicket, GetEventosDelDia } from "../../service/OSevento";
+import { GetEventosByTicket, GetEventosByTicketHoy, GetEventosDelDia } from "../../service/OSevento";
 import { EquipoTicket, SelectTicket } from "../../service/equipoTicketID";
 import { time, TrucateUpdate } from "../../service/CargaUtil";
 import LoadingActi from "../../components/LoadingActi";
@@ -32,10 +32,18 @@ import { useIsConnected } from 'react-native-offline';
 import { FinalizarOSLocal } from "../../service/ServicioLoca";
 import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion";
-import { actualizarClienteTool, actualizarDatosTool, setAdjuntosTool, 
-    SetByOrdenServicioID, 
-    setChecklistTool, setClienteTool, setComponenteTool, 
-    setdatosTool, setEquipoTool, setFirmasTool, setTiemposTool } from "../../redux/formulario";
+import {
+    actualizarClienteTool, actualizarDatosTool, setAdjuntosTool,
+    SetByOrdenServicioID,
+    setChecklistTool, setClienteTool, setComponenteTool,
+    setdatosTool, setEquipoTool, setFirmasTool, setTiemposTool
+} from "../../redux/formulario";
+
+const isConnection = axios.create({
+    baseURL: 'https://google.com',
+    timeout: 10000,
+})
+
 
 export default function TicketsOS(props) {
     const { navigation } = props
@@ -62,8 +70,6 @@ export default function TicketsOS(props) {
     const [pdfview, setPdfview] = useState(true)
     const [pdfurl, setPdfurl] = useState("")
 
-    const [tin, setTin] = useState(false)
-
     const Events = useSelector(s => s.sincronizacion)
     const formulario = useSelector(s => s.formulario)
     const dispatch = useDispatch()
@@ -71,6 +77,7 @@ export default function TicketsOS(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                console.log("useFocusEffect", Events.anidaciones)
                 seteventosAnidados([])
                 setticket("")
                 dispatch(loadingCargando(true))
@@ -86,7 +93,7 @@ export default function TicketsOS(props) {
                 }
                 dispatch(loadingCargando(false))
             })()
-        }, [])
+        }, [Events.anidaciones])
     )
 
     const functionColor = (type) => {
@@ -106,14 +113,11 @@ export default function TicketsOS(props) {
         console.log("estado", estado)
         dispatch(loadingCargando(true))
         try {
+            const ordenservicio_equipo = await SelectOSOrdenServicioIDEquipo(OrdenServicioID)
+            console.log("ordenservicio", ordenservicio_equipo)
             db.transaction(tx => {
-                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                    console.log("equipoTicket", rows._array.length)
-                    db.transaction(tx => {
-                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
-                        })
-                    })
+                tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [ordenservicio_equipo], (_, { rows }) => {
+                    Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
                 })
             })
         } catch (error) {
@@ -300,14 +304,14 @@ export default function TicketsOS(props) {
                 idOrden.push(item.OrdenServicioID)
             })
             var id_equipos = []
-            if(eventosAnidados.length > 0){
+            if (eventosAnidados.length > 0) {
                 for (let index = 0; index < idOrden.length; index++) {
                     let OSID = idOrden[index];
                     console.log("OSID", OSID)
                     let clon = await SelectOSOrdenServicioID(OSID)
                     id_equipos.push(clon.equipo_id)
                 }
-            }else{
+            } else {
                 let clon = await SelectOSOrdenServicioID(eventosAnidados[0].OrdenServicioID)
                 id_equipos.push(clon[0].equipo_id)
             }
@@ -337,6 +341,14 @@ export default function TicketsOS(props) {
             dispatch(actualizarClienteTool({
                 name: 'evento_id',
                 value: evento_id
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'tipoIncidencia',
+                value: eventosAnidados[0].tipoIncidencia
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'TipoVisita',
+                value: eventosAnidados[0].tck_tipoTicketCod
             }))
             await AsyncStorage.setItem("SCREMS", "Ticket")
             dispatch(loadingCargando(false))
@@ -391,24 +403,17 @@ export default function TicketsOS(props) {
     async function Finalizar() {
         dispatch(loadingCargando(true))
         var OrdenServicioI = []
-        eventosAnidados.map((item, index) => {
+        for (let index = 0; index < eventosAnidados.length; index++) {
+            const item = eventosAnidados[index];
             if (item.check == true) {
                 OrdenServicioI.push(item.OrdenServicioID)
             }
-        })
-
-        if (isConnected) {
-            var os = JSON.parse(await AsyncStorage.getItem("OS"))
-            const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-            const { OrdenServicioID } = itenSelect
-            if (OrdenServicioID != null) {
-                let respuesta = await FinalizarOS_(OrdenServicioID, os)
-                console.log("FinalizarOS", respuesta)
-            }
-            const respuesta = await FinalizarOS(OrdenServicioI)
-            if (respuesta == 200) {
-                const re = await Sincronizar()
-                if (re) {
+        }
+        try {
+            const { data } = await isConnection.get()
+            if (data) {
+                const respuesta = await FinalizarOS(OrdenServicioI)
+                if (respuesta == 200) {
                     setFini(false)
                     let event = eventosAnidados.map((item, index) => {
                         if (item.OrdenServicioID == OrdenServicioI[index]) {
@@ -420,13 +425,54 @@ export default function TicketsOS(props) {
                             return item
                         }
                     })
+                    var hoy = moment().format('YYYY-MM-DD');
+                    const ticket = await GetEventosByTicketHoy(hoy)
+                    // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+                    let evento_id = []
+                    for (let index = 0; index < ticket.length; index++) {
+                        let item = ticket[index];
+                        evento_id.push(item.evento_id)
+                    }
+            
+                    await DeleteAnidada(evento_id)
+                    //Para buscar eventos anidadas a la orden
+                    for (let index = 0; index < evento_id.length; index++) {
+                        let item = evento_id[index];
+                        await OrdenServicioAnidadas(item)
+                    }
+
+                    const { ticket_id } = JSON.parse(await AsyncStorage.getItem(ticketID))
+                    const promisa_anidacion = dispatch(getAnidacionesTicket(ticket_id))
+                    promisa_anidacion.then((res) => {
+                        if (res.payload.length > 0) {
+                            dispatch(listarTicket(res.payload))
+                        }
+                    })
+
                     seteventosAnidados(event)
-                    setTin(!tin)
+                    dispatch(loadingCargando(false))
+                } else {
+                    alert("Error al finalizar uno o mas OS")
                     dispatch(loadingCargando(false))
                 }
-            }
-        } else {
+            } else {
 
+                await FinalizarOSLocal(OrdenServicioI)
+                setFini(false)
+                let event = eventosAnidados.map((item, index) => {
+                    if (item.OrdenServicioID == OrdenServicioI[index]) {
+                        return {
+                            ...item,
+                            ev_estado: "FINALIZADO"
+                        }
+                    } else {
+                        return item
+                    }
+                })
+                seteventosAnidados(event)
+                dispatch(loadingCargando(false))
+            }
+        } catch (error) {
             await FinalizarOSLocal(OrdenServicioI)
             setFini(false)
             let event = eventosAnidados.map((item, index) => {
@@ -441,25 +487,6 @@ export default function TicketsOS(props) {
             })
             seteventosAnidados(event)
             dispatch(loadingCargando(false))
-        }
-    }
-
-    async function Sincronizar() {
-        if (isConnected) {
-            await TrucateUpdate()
-            await HistorialEquipoIngeniero()
-            await GetEventosDelDia()
-            var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-            var hoy = moment().format('YYYY-MM-DD');
-            var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-            const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-            ticket_id.map(async (r) => {
-                await EquipoTicket(r.ticket_id)
-                await OrdenServicioAnidadas(r.evento_id)
-            })
-            return true
-        } else {
-            return false
         }
     }
 
@@ -609,7 +636,7 @@ export default function TicketsOS(props) {
                                                                             }} /> : null
                                                                 }
                                                                 {
-                                                                   item.ev_estado == "PROCESO" || item.ev_estado == "FINALIZADO" || item.ev_estado == "PENDIENTE DE APROBACION" ?
+                                                                    item.ev_estado == "PROCESO" || item.ev_estado == "FINALIZADO" || item.ev_estado == "PENDIENTE DE APROBAR" ?
                                                                         <MenuOption
                                                                             onSelect={() => {
                                                                                 console.log(item);
@@ -635,7 +662,7 @@ export default function TicketsOS(props) {
                                                                 }
 
                                                                 {
-                                                                    item.ev_estado !== "PENDIENTE" || item.ev_estado !== "PENDIENTE DE APROBACION" ?
+                                                                    item.ev_estado !== "PENDIENTE" && item.ev_estado !== "PROCESO" && item.ev_estado !== "PENDIENTE DE APROBAR" ?
                                                                         <MenuOption
                                                                             onSelect={() => EnviarOS(item.OrdenServicioID)}
                                                                             text='Enviar OS'

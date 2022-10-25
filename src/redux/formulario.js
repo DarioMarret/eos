@@ -121,6 +121,10 @@ export const formularioOrdenServicio = createSlice({
             state.equipo.UsuarioCreacion = action.payload.UsuarioCreacion
             state.equipo.UsuarioModificacion = action.payload.UsuarioModificacion
         },
+        actualizarEquipoTool: (state, action) => {
+            const { name, value } = action.payload
+            state.equipo[name] = value
+        },
         setClienteTool: (state, action) => {
             state.cliente.codOS = action.payload.codOS
             state.cliente.contrato_id = action.payload.contrato_id
@@ -420,6 +424,7 @@ export const {
     PostLocalFormularioTool,
     PutaLocalctualizarFormularioTool,
     PuTFirmaFormularioTool,
+    actualizarEquipoTool,
 } = formularioOrdenServicio.actions;
 
 export default formularioOrdenServicio.reducer;

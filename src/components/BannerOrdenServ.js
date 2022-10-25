@@ -11,7 +11,7 @@ import { ticketID, evento } from "../utils/constantes";
 import { DeleteEventesDiaHoy, GetEventosByTicket, GetEventosByTicketHoy, GetEventosDelDia, GetEventosDelDiaHoy } from "../service/OSevento";
 import { SincronizaDor, time, TrucateUpdate } from "../service/CargaUtil";
 import { deleteEquipoIDTicketArray, EquipoTicket } from "../service/equipoTicketID";
-import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
+import { DeleteAnidada, OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 import { useFocusEffect } from "@react-navigation/native";
 import { InsertEventosLocales } from "../service/OSevento";
 import { InserOSOrdenServicioIDLocal, OSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
@@ -339,6 +339,7 @@ export default function BannerOrderServi(props) {
                 await EquipoTicket(item)
             }
 
+            await DeleteAnidada(evento_id)
             //Para buscar eventos anidadas a la orden
             for (let index = 0; index < evento_id.length; index++) {
                 let item = evento_id[index];
