@@ -34,7 +34,6 @@ export const PutOS = async (datos) => {
     console.log(typeof datos)
     const { token } = await getToken()
     console.log("PutOS", datos.OrdenServicioID)
-
     // console.log("PutOS", datos)
     console.log("\n")
 

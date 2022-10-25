@@ -8,7 +8,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS historialEquipo 
         (
-            equipo_id INTEGER NULL,
+            equipo_id INTEGER UNIQUE NOT NULL,
             equ_tipoEquipo INTEGER,
             tipo TEXT NULL,
             equ_modeloEquipo INTEGER,
@@ -109,18 +109,18 @@ function InitDB() {
         db.exec([{
             sql: `CREATE TABLE IF NOT EXISTS OS_OrdenServicio 
             (
-                OS_CheckList TEXT NULL,
+                OS_CheckList BLOB NULL,
                 OS_Encuesta TEXT NULL,
-                OS_Firmas TEXT NULL,
-                OS_PartesRepuestos TEXT NULL,
-                OS_Anexos TEXT NULL,
+                OS_Firmas BLOB NULL,
+                OS_PartesRepuestos BLOB NULL,
+                OS_Anexos BLOB NULL,
                 OS_Tiempos TEXT NULL,
                 OS_Colaboradores TEXT NULL,
                 provinciaId INTEGER NULL,
                 cantonId INTEGER NULL,
                 localidad TEXT NULL,
                 tipoIncidencia TEXT NULL,
-                OrdenServicioID INTEGER NULL,
+                OrdenServicioID INTEGER UNIQUE NOT NULL,
                 TipoVisita TEXT NULL,
                 Fecha TEXT NULL,
                 Estado TEXT NULL,
@@ -166,7 +166,7 @@ function InitDB() {
                 nuevaVisita INTEGER NULL,
                 incidencia TEXT NULL,
                 release TEXT NULL,
-                OS_ASUNTO TEXT NULL,
+                OS_ASUNTO BLOB NULL,
                 OS_FINALIZADA TEXT NULL,
                 enviado TEXT NULL,
                 codOS TEXT NULL,
@@ -240,7 +240,7 @@ function InitDB() {
             evento_id INTEGER NULL,
             ticket_id INTEGER NULL,
             codOS TEXT NULL,
-            codTicket INTEGER,
+            codTicket TEXT UNIQUE NOT NULL,
             tck_cliente TEXT NULL,
             tck_tipoTicket TEXT NULL,
             tck_tipoTicketDesc TEXT NULL,

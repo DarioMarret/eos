@@ -15,20 +15,19 @@ export const getClientes = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
-        return new Promise((resolve, reject) => {
-            Response.map(async (r, i) => {
-                await InserCliente(r)
-            })
-            resolve(true);
-        })
+        for (let index = 0; index < Response.length; index++) {
+            let item = Response[index];
+            await InserCliente(item)
+        }
+        return true
     } catch (error) {
         console.log(error);
     }
 }
- 
+
 async function InserCliente(r) {
     const existe = await SelectCliente(r.CustomerID)
-    if (!existe) {
+    if (existe == false) {
         return new Promise((resolve, reject) => {
             db.exec([{
                 sql: `INSERT INTO cliente (
@@ -56,10 +55,11 @@ async function InserCliente(r) {
             })
             resolve(true);
         })
-    }else{
+    } else {
         return true
     }
 }
+
 export async function SelectCliente(CustomerID) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -75,7 +75,8 @@ export async function SelectCliente(CustomerID) {
                 })
         })
     })
-}    
+}
+
 export const getClientesStorage = async (cedulaRuc) => {
     try {
         if (cedulaRuc === "") {
@@ -86,7 +87,7 @@ export const getClientesStorage = async (cedulaRuc) => {
                     });
                 })
             })
-        }else if(cedulaRuc !== ""){
+        } else if (cedulaRuc !== "") {
             return new Promise((resolve, reject) => {
                 db.transaction(tx => {
                     tx.executeSql(`select * from cliente where CustomerID like '%${cedulaRuc}%'`, [], (_, { rows }) => {

@@ -1,5 +1,5 @@
+import isEmpty from "is-empty";
 import db from "./Database/model";
-import { OSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 
@@ -16,12 +16,13 @@ export const OrdenServicioAnidadas = async (idEvento) => {
         const data = await response.json();
 
         const { Response } = data;
-        if (Response.length > 0) {
-            return new Promise((resolve, reject) => {
-                Response.map(async (item) => {
-                    await InsertOrdenServicioAnidadas(item)
-                })
-            })
+        if (!isEmpty(Response)) {
+            for (let index = 0; index < Response.length; index++) {
+                let item = Response[index];
+                console.log("anidacion-->", item)
+                await InsertOrdenServicioAnidadas(item)
+            }
+            return true
         }
 
     } catch (error) {
@@ -31,15 +32,11 @@ export const OrdenServicioAnidadas = async (idEvento) => {
 }
 
 async function InsertOrdenServicioAnidadas(data) {
-    // await DeleteAnidada(data.OrdenServicioID)
-    const existe = await selectOrdenServicioAnidadas(data.OrdenServicioID)
-    if (!existe) {
-        console.log("OSOrdenServicioID", data.OrdenServicioID)
-        await OSOrdenServicioID(data.OrdenServicioID)
-        return new Promise((resolve, reject) => {
-            db.exec([{
-                sql:
-                    `INSERT INTO ordenesAnidadas (
+    console.log("OSOrdenServicioID", data.OrdenServicioID)
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql:
+                `INSERT INTO ordenesAnidadas (
                     evento_id,
                     ticket_id,
                     codOS,
@@ -68,47 +65,44 @@ async function InsertOrdenServicioAnidadas(data) {
                     OrdenServicioID,
                     tck_tipoTicketCod
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                args: [
-                    data.evento_id,
-                    data.ticket_id,
-                    data.codOS,
-                    data.codeTicket,
-                    data.tck_cliente,
-                    data.tck_tipoTicket,
-                    data.tck_tipoTicketDesc,
-                    data.tck_descripcionProblema,
-                    data.ev_fechaAsignadaDesde,
-                    data.ev_fechaAsignadaHasta,
-                    data.ev_horaAsignadaDesde,
-                    data.ev_horaAsignadaHasta,
-                    data.ev_estado,
-                    data.tck_direccion,
-                    data.tck_canton,
-                    data.tck_provincia,
-                    data.tck_reporta,
-                    data.tck_telefonoReporta,
-                    data.tck_usuario_creacion,
-                    data.tck_estadoTicket,
-                    data.ev_descripcion,
-                    data.id_contrato,
-                    data.ingenieroId,
-                    data.ingeniero,
-                    data.tipoIncidencia,
-                    data.OrdenServicioID,
-                    data.tck_tipoTicketCod
-                ],
-            }], false, (err, results) => {
-                if (err) {
-                    console.log("InsertOrdenServicioAnidadas", err);
-                } else {
-                    console.log("insert ordenesAnidadas", results);
-                }
-            })
-            resolve(true)
+            args: [
+                data.evento_id,
+                data.ticket_id,
+                data.codOS,
+                data.codeTicket,
+                data.tck_cliente,
+                data.tck_tipoTicket,
+                data.tck_tipoTicketDesc,
+                data.tck_descripcionProblema,
+                data.ev_fechaAsignadaDesde,
+                data.ev_fechaAsignadaHasta,
+                data.ev_horaAsignadaDesde,
+                data.ev_horaAsignadaHasta,
+                data.ev_estado,
+                data.tck_direccion,
+                data.tck_canton,
+                data.tck_provincia,
+                data.tck_reporta,
+                data.tck_telefonoReporta,
+                data.tck_usuario_creacion,
+                data.tck_estadoTicket,
+                data.ev_descripcion,
+                data.id_contrato,
+                data.ingenieroId,
+                data.ingeniero,
+                data.tipoIncidencia,
+                data.OrdenServicioID,
+                data.tck_tipoTicketCod
+            ],
+        }], false, (err, results) => {
+            if (err) {
+                console.log("InsertOrdenServicioAnidadas", err);
+            } else {
+                console.log("insert ordenesAnidadas", results);
+            }
         })
-    } else {
-        return true
-    }
+        resolve(true)
+    })
 }
 async function DeleteAnidada(OrdenServicioID) {
     return new Promise((resolve, reject) => {
@@ -136,6 +130,24 @@ async function selectOrdenServicioAnidadas(OrdenServicioID) {
                         resolve(false)
                     }
                 })
+        })
+    })
+}
+
+export const ExisteAnidacion = async (evento_id) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(
+                `SELECT * FROM ordenesAnidadas WHERE evento_id = ?`,
+                [evento_id],
+                (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                }
+            );
         })
     })
 }

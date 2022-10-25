@@ -15,12 +15,11 @@ export const getModeloEquipos = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
-        return new Promise((resolve, reject) => {
-            Response.map(async (r, i) => {
-                await InserModeloEquipo(r)
-            })
-            resolve(true);
-        });
+        for (let index = 0; index < Response.length; index++) {
+            let item = Response[index];
+            await InserModeloEquipo(item)
+        }
+        return true
     } catch (error) {
         console.log(error);
     }

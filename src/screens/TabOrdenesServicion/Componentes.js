@@ -100,6 +100,8 @@ export default function Componentes(props) {
                     let filter = ComponenteStor.componente.filter((item) => item.Estado == "ACTI")
                     setComponent(filter)
                     console.log("ComponenteStor", ComponenteStor.componente)
+                }else{
+                    setComponent([])
                 }
             }
         }, [ComponenteStor.componente])
@@ -120,30 +122,30 @@ export default function Componentes(props) {
                         console.log("Accion-->", OrdenServicioID)
                         if (Accion == "FINALIZADO") {
                             
-                            setComponent([])
+                            // setComponent([])
                             setFini(false)
 
                         } else if (Accion == "PENDIENTE") {
 
                             console.log("PENDIENTE")
-                            setComponent([])
+                            // setComponent([])
                             setFini(true)
 
                         } else if (Accion == "OrdenSinTicket") {
 
                             console.log("OrdenSinTicket")
-                            setComponent([])
+                            // setComponent([])
                             setFini(true)
 
                         } else if (Accion == "clonar") {
 
-                            setComponent([])
+                            // setComponent([])
                             setFini(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {
 
                             console.log("NUEVO OS TICKET")
-                            setComponent([])
+                            // setComponent([])
                             setFini(true)
 
                         } else if (Accion == "PROCESO") {

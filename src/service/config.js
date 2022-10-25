@@ -5,19 +5,8 @@ import moment from "moment"
 
 export const ConfiiguracionBasicas = async () => {
     try {
-        return new Promise((resolve, reject) => {
-            estadoSwitch.map((item) => {
-                db.exec([{
-                    sql: `INSERT INTO switch (id, descripcion, estado) VALUES (?, ?, ?)`,
-                    args: [item.id, item.description, item.estado]
-                }], false, (err, results) => {
-                    if (err) {
-                        console.log("error", err);
-                    } else {
-                        console.log("insert switch", results);
-                    }
-                })
-            })
+        const tipoComponente = await estadoTabla('tipoComponente')
+        if (tipoComponente === false) {
             componente.map((item) => {
                 db.exec([{
                     sql: `INSERT INTO tipoComponente (id, descripcion) VALUES (?, ?)`,
@@ -30,32 +19,35 @@ export const ConfiiguracionBasicas = async () => {
                     }
                 })
             })
-            diagnoctico.map((item) => {
-                db.exec([{
-                    sql: `INSERT INTO estadoEquipo (id, descripcion) VALUES (?, ?)`,
-                    args: [item.id, item.description]
-                }], false, (err, results) => {
-                    if (err) {
-                        console.log("error", err);
-                    } else {
-                        console.log("insert estadoEquipo", results);
-                    }
-                })
-            })
+        }
+        // diagnoctico.map((item) => {
+        //     db.exec([{
+        //         sql: `INSERT INTO estadoEquipo (id, descripcion) VALUES (?, ?)`,
+        //         args: [item.id, item.description]
+        //     }], false, (err, results) => {
+        //         if (err) {
+        //             console.log("error", err);
+        //         } else {
+        //             console.log("insert estadoEquipo", results);
+        //         }
+        //     })
+        // })
 
-            let fechaUltimaActualizacion = moment().format('YYYY-MM-DD HH:mm:ss')
-            db.exec([{
-                sql: `INSERT INTO actualizacion (id, fechaUltimaActualizacion) VALUES (?, ?)`,
-                args: [1, fechaUltimaActualizacion]
-            }], false, (err, results) => {
-                if (err) {
-                    console.log("error", err);
-                } else {
-                    console.log("insert config", results);
-                }
+        let fechaUltimaActualizacion = moment().format('YYYY-MM-DD HH:mm:ss')
+        db.exec([{
+            sql: `INSERT INTO actualizacion (id, fechaUltimaActualizacion) VALUES (?, ?)`,
+            args: [1, fechaUltimaActualizacion]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                console.log("insert config", results);
+            }
 
-            })
+        })
 
+        const provincia = await estadoTabla('provincias')
+        if (provincia === false) {
             Provincia.map((r) => {
                 db.exec([{
                     sql: `INSERT INTO provincias (id,descripcion) VALUES (?,?)`,
@@ -67,9 +59,10 @@ export const ConfiiguracionBasicas = async () => {
                         console.log("results provincias", results);
                     }
                 })
-
             })
-
+        }
+        const canton = await estadoTabla('cantones')
+        if (canton === false) {
             Canton.map((r) => {
                 db.exec([{
                     sql: `INSERT INTO cantones (id,descripcion) VALUES (?,?)`,
@@ -82,14 +75,30 @@ export const ConfiiguracionBasicas = async () => {
                     }
                 })
             })
+        }
 
-            resolve(true)
-        })
     } catch (error) {
         console.log("ConfiiguracionBasicas-->", error)
         return false
     }
 }
+
+export async function estadoTabla(tabla) {
+    return new Promise((resolve, reject) => {
+        db.transaction(tx => {
+            tx.executeSql(`SELECT * FROM ${tabla}`, [], (_, { rows }) => {
+                console.log("estadoTabla", rows._array.length);
+                if (rows._array.length > 0) {
+                    resolve(true)
+                } else {
+                    resolve(false)
+                }
+            });
+        })
+    })
+}
+
+
 
 export const EstadoSwitch = async (id) => {
     return new Promise((resolve, reject) => {

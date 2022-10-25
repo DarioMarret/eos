@@ -22,6 +22,7 @@ export default function Cliente(props) {
     const { navigation } = props
     const [isEnabled, setIsEnabled] = useState(false)
     const [isdisabelsub, setDisableSub] = useState(true)
+    const [ estado, setEstado ] = useState('')
 
     const [modalVisible, setModalVisible] = useState(false)
 
@@ -115,17 +116,17 @@ export default function Cliente(props) {
                         setOrdenServicioID(OrdenServicioID)
                         console.log("item", Accion)
                         if (Accion == "FINALIZADO") {//para ver sin editar
-
+                            setEstado("FINA")
                             setDisableSub(false)
                             setIsEnabled(false)
                             // await getCliente()
 
                         } else if (Accion == "clonar") {// para ver y poder edidar una orden de servicio clone
-
+                            setEstado("PROC")
                             // await getCliente()
 
                         } else if (Accion == "OrdenSinTicket") {
-
+                            setEstado("ACTI")
                             // console.log("os", os)
                             // await getCliente()
                             setIsEnabled(true)
@@ -133,25 +134,25 @@ export default function Cliente(props) {
                             
 
                         } else if (Accion == "PENDIENTE") {
-
+                            setEstado("ACTI")
                             // await getCliente()
                             setIsEnabled(true)
                             setDisableSub(true)
 
                         } else if (Accion == "NUEVO OS TICKET") {
-
+                            setEstado("ACTI")
                             // await getCliente()
                             setIsEnabled(true)
                             setDisableSub(true)
 
                         } else if (Accion == "PROCESO") {
-
+                            setEstado("PROC")
                             setIsEnabled(true)
                             setDisableSub(true)
                             // await getCliente()
 
                         }else if (Accion == "PENDIENTE DE APROBAR") {
-
+                            setEstado("PROC")
                             setIsEnabled(true)
                             setDisableSub(true)
                             // await getCliente()
@@ -168,7 +169,7 @@ export default function Cliente(props) {
     )
 
     const GuardarCliente = async (name, value) => {
-        let direccion = value.split(":")
+        let direccion = value.split("*:*")
         dispatch(actualizarClienteTool({
             name,
             value:direccion[0]
@@ -210,7 +211,7 @@ export default function Cliente(props) {
                         <View>
                             <Text style={styles.text}>OS: {cliente.codOS}</Text>
                             <Text style={styles.text}>Ticket: {cliente.ticket_id}</Text>
-                            <Text style={styles.text}>Estado: {cliente.Estado}</Text>
+                            <Text style={styles.text}>Estado: {estado}</Text>
                         </View>
                         <View>
                             <Text style={styles.text}>Contrato: {!isEmpty(ClienteStor.equipo) ? ClienteStor.equipo.contrato_id : ''}</Text>
@@ -308,7 +309,7 @@ export default function Cliente(props) {
                                                 value={item.Direccion}
                                                 selected={true}
                                             />
-                                            : <Picker.Item key={index} label={item.Direccion} value={item.Direccion+":"+item.CantonID} />
+                                            : <Picker.Item key={index} label={item.Direccion} value={item.Direccion+"*:*"+item.CantonID} />
                                     ))
                                 }
                             </Picker>

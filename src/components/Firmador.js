@@ -5,15 +5,17 @@ import { getToken } from "../service/usuario";
 import moment from "moment";
 import { useFocusEffect } from "@react-navigation/native";
 import React, { useCallback, useEffect, useRef, useState } from "react"
-import { ActualizarOrdenServicioFirmas, ListarFirmas, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
+import { ActualizarOrdenServicioFirmas, ConsultaOSOrdenServicioID, getRucCliente, ListarFirmas, SelectObservacionClienteID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
 import axios from "axios";
 import { useSelector, useDispatch } from "react-redux"
 import { useIsConnected } from 'react-native-offline';
 import LoadingActi from "./LoadingActi";
 import { loadingCargando } from "../redux/sincronizacion";
-import { actualizarDatosTool, setFirmasTool } from "../redux/formulario";
-import { ActualizarFirmaLocal } from "../service/ServicioLoca";
+import { actualizarDatosTool, PuTFirmaFormularioTool, resetFormMessageTool, setFirmasTool } from "../redux/formulario";
 import isEmpty from "just-is-empty";
+import { GetCorreos } from "../service/getCorreos";
+import { ticketID } from "../utils/constantes";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 
 export default function Firmador({ onOK, datauser, setModalSignature, setUserData }) {
@@ -21,8 +23,9 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
     const [listF, setListF] = useState([])
     const [OrdenServicioID, setOrdenServicioID] = useState(0)
     const [obs, setObs] = useState(false)
+    const [correos, setCorreos] = useState([])
+
     const isConnected = useIsConnected()
-    const [f_actual, setF_actual] = useState(0)
 
     const Events = useSelector(s => s.sincronizacion)
     const formulario = useSelector(s => s.formulario)
@@ -41,6 +44,37 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
         }))
         setUserData({ ...datauser, Observacion: value })
     }
+    useEffect(() => {
+        (async () => {
+            const itenSelect = await AsyncStorage.getItem(ticketID)
+            if (itenSelect != null) {
+                const item = JSON.parse(itenSelect)
+                const { ClienteID } = item
+                const listCorreos = await GetCorreos(ClienteID, formulario.OrdenServicioID)
+                setCorreos(listCorreos)
+                console.log("listCorreos-->", listCorreos)
+            }else{
+                const listCorreos = await GetCorreos(formulario.datos.ClienteID, formulario.OrdenServicioID)
+                setCorreos(listCorreos)
+                console.log("listCorreos-->", listCorreos) 
+            }
+
+            const ObservacioCliente = await SelectObservacionClienteID(formulario.OrdenServicioID)
+            if (isEmpty(ObservacioCliente)) {
+                setObs(false)
+            } else {
+                dispatch(actualizarDatosTool({
+                    name: "ObservacionCliente",
+                    value: ObservacioCliente
+                }))
+                setObs(true)
+            }
+            console.log("ObservacioCliente-->", ObservacioCliente)
+        })()
+        return () => {
+            setCorreos([])
+        };
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
@@ -52,21 +86,18 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                         if (firmas.length > 0) {
                             let firm = firmas.filter((item) => item.Estado == "ACTI")
                             setListF(firm)
-                            
+
                         } else {
                             let firmfil = formulario.firmas.filter((item) => item.Estado == "ACTI")
                             setListF(firmfil)
                         }
                     }
                 }
-                if(isEmpty(formulario.datos.ObservacionCliente)){
-                    setObs(false)
-                }else{
-                    setObs(true)
-                }
             })()
-        }, [formulario.firmas])
+        }, [formulario.firmas || formulario.OrdenServicioID])
     )
+
+
 
     const Grabar = async () => {
         if (isEmpty(datauser.Nombre) || isEmpty(datauser.Cargo) || isEmpty(datauser.Correo) || isEmpty(datauser.archivo)) {
@@ -81,16 +112,16 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
             let firmas = {
                 OS_OrdenServicio: null,
                 IdFirma: 0,
-                OrdenServicioID: OrdenServicioID,
+                OrdenServicioID: formulario.OrdenServicioID,
                 Ruta: null,
-                FechaCreacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
-                FechaModificacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
+                FechaCreacion: `${moment().format("YYYY-MM-DD")}T00:00:00`,
+                FechaModificacion: `${moment().format("YYYY-MM-DD")}T00:00:00`,
                 UsuarioCreacion: userId,
                 UsuarioModificacion: userId,
                 Estado: "ACTI",
                 Cargo: datauser.Cargo,
                 Nombre: datauser.Nombre,
-                Cedula: "",
+                Cedula: null,
                 Longitud: null,
                 Latitud: null,
                 Correo: datauser.Correo,
@@ -156,29 +187,27 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
             console.log(error);
         }
     }
+
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                if (formulario.status == 400) {
+                    dispatch(resetFormMessageTool())
+                    await CerrarAndActualizar()
+                }
+            })()
+        }, [formulario.status])
+    )
+
     const CerrarAndActualizar = async () => {
-        const OS_Firmas = formulario.firmas
         dispatch(loadingCargando(true))
-        const rest = await SelectOSOrdenServicioID(OrdenServicioID)
-        const OS_PartesRepuestos = JSON.parse(rest[0].OS_PartesRepuestos)
-        const OS_CheckList = JSON.parse(rest[0].OS_CheckList)
-        const OS_Tiempos = JSON.parse(rest[0].OS_Tiempos)
-        const OS_Anexos = JSON.parse(rest[0].OS_Anexos)
-        delete rest[0].OS_Colaboradores
-        delete rest[0].OS_Encuesta
-        rest[0].OS_PartesRepuestos = OS_PartesRepuestos
-        rest[0].OS_CheckList = OS_CheckList
-        rest[0].OS_Tiempos = OS_Tiempos
-        rest[0].OS_Firmas = OS_Firmas
-        rest[0].OS_FINALIZADA = ""
-        rest[0].OS_ASUNTO = ""
-        rest[0].OS_Anexos = OS_Anexos
         if (isConnected) {
             try {
                 const { token } = await getToken()
+                console.log("rest[0] OrdenServicioID", formulario.OrdenServicioID)
                 const { status } = await axios.put(
-                    `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${OrdenServicioID}`,
-                    rest[0], {
+                    `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${formulario.OrdenServicioID}`,
+                    formulario.ordenServicio, {
                     headers: {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${token}`
@@ -198,7 +227,16 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
 
             } catch (error) {
                 console.log("PutOS", error)
-                return false
+                Alert.alert("Informacion",
+                    "No se ha podido guardar la firma",
+                    [
+                        {
+                            text: "OK", onPress: () => {
+                                setModalSignature(false)
+                                dispatch(loadingCargando(false))
+                            }
+                        }
+                    ]);
             }
         } else {
             await ActualizarOrdenServicioFirmas(OS_Firmas, OrdenServicioID)
@@ -216,23 +254,32 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 ]);
         }
     }
-
+    const handleBuscarCorreo = () => {
+        const text = datauser.Correo
+        if(!isEmpty(text)){
+            var cor = correos.filter(listC => listC.Correo != "" && listC.Correo != null)
+            let texto = text.toLowerCase()
+            let temp = cor.filter((items) => items.Correo.includes(texto))
+            if(temp.length > 0){
+                setUserData({
+                    ...datauser,
+                    Nombre: temp[0].nombre,
+                    Cargo: temp[0].cargo,
+                    Correo: temp[0].Correo,
+                })
+            }else{
+                Alert.alert("Informacion", "No se ha encontrado el correo")
+            }
+        }else{
+            Alert.alert("Informacion", "Ingrese un correo para la busqueda")
+        }
+        console.log("temp", datauser.Correo)
+    }
 
 
     // Called after end of stroke
     const handleEnd = () => {
         console.log("End");
-        ref.current.readSignature();
-    };
-
-    // Called after ref.current.getData()
-    const handleData = (data) => {
-        console.log(data);
-    };
-
-    const handleConfirm = () => {
-        console.log(ref.current.getData());
-        console.log("end");
         ref.current.readSignature();
     };
 
@@ -285,7 +332,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                 <ScrollView
                     showsHorizontalScrollIndicator={false}
                     showsVerticalScrollIndicator={false}
-                    style={{ width: "100%", height: 100 }}>
+                    style={{ width: "100%" }}>
                     <View style={styles.header}>
                         <Text style={{ fontWeight: 'bold', paddingBottom: 10 }}>Agregar firma</Text>
                         <View style={styles.headerTitle}>
@@ -297,7 +344,7 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             <ScrollView
                                 showsHorizontalScrollIndicator={false}
                                 showsVerticalScrollIndicator={false}
-                                style={{ width: "100%", height: 80 }}
+                                style={{ width: "100%", height: 60 }}
                             >
                                 {
                                     listF.map((item, index) => {
@@ -341,12 +388,50 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                             value={datauser.Cargo}
                             onChangeText={(text) => setUserData({ ...datauser, Cargo: text })}
                         />
-                        <TextInput
+                        <View style={{
+                            ...styles.input,
+                            borderWidth: 1,
+                            borderColor: "#CECECA",
+                            width: "100%",
+                            height: 50,
+                            borderRadius: 5,
+                            padding: 5,
+                            flexDirection: "row",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            marginBottom: 20,
+                        }}>
+                            <TextInput
+                                style={{ width: "90%", height: "100%" }}
+                                placeholder="Escriba el correo"
+                                value={datauser.Correo}
+                                onChangeText={(text) => setUserData({ ...datauser, Correo: text })}
+                            // editable={false}
+                            />
+                            <AntDesign
+                                onPress={() => handleBuscarCorreo()}
+                                name='search1'
+                                size={24}
+                                color='#000000'
+                                style={{ 
+                                    display: "flex",
+                                    position: "absolute",
+                                    right: 0,
+                                    borderTopRightRadius: 5,
+                                    borderBottomRightRadius: 5,
+                                    backgroundColor: "#FF6B00",
+                                    height: 50,
+                                    padding: 10,
+                                    borderTopEndRadius: 15,
+                                }}
+                            />
+                        </View>
+                        {/* <TextInput
                             style={styles.input}
                             placeholder="Correo"
                             value={datauser.Correo}
                             onChangeText={(text) => setUserData({ ...datauser, Correo: text })}
-                        />
+                        /> */}
                         {
                             !obs ? (
                                 <TextInput
@@ -372,7 +457,11 @@ export default function Firmador({ onOK, datauser, setModalSignature, setUserDat
                         </TouchableOpacity>
                         <TouchableOpacity
 
-                            onPress={() => CerrarAndActualizar()}>
+                            onPress={() => {
+                                // CerrarAndActualizar()
+                                dispatch(PuTFirmaFormularioTool())
+                            }}
+                        >
                             <Text style={{
                                 color: '#FF6B00',
                                 fontWeight: 'bold',

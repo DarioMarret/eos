@@ -85,7 +85,7 @@ export default function IngresoHoras(props) {
       } else {
         dispatch(actualizarTiempoTool({
           name: 'TiempoViaje',
-          value: diff
+          value: 0
         }))
       }
     } else if (name == "HoraInicioTrabajo") {
@@ -104,7 +104,7 @@ export default function IngresoHoras(props) {
       } else {
         dispatch(actualizarTiempoTool({
           name: 'TiempoTrabajo',
-          value: diff
+          value: 0
         }))
       }
 
@@ -262,7 +262,7 @@ export default function IngresoHoras(props) {
         </Text>
         <ScrollView showsVerticalScrollIndicator={false} >
           <View style={styles.ContainerInputs}>
-            <LoadingActi loading={Events.loading} />
+          <LoadingActi loading={Events.loading} top={250} />
             <Text>Fecha</Text>
             <TouchableOpacity
               disabled={fini}

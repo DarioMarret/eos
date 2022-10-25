@@ -15,12 +15,11 @@ export const getIngenieros = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
-        return new Promise((resolve, reject) => {
-            Response.map(async (r, i) => {
-                await InserIngenieros(r)
-            })
-            resolve(true);
-        });
+        for (let index = 0; index < Response.length; index++) {
+            let item = Response[index];
+            await InserIngenieros(item)
+        }
+        return true
     } catch (error) {
         console.log(error);
     }
@@ -28,7 +27,7 @@ export const getIngenieros = async () => {
 
 async function InserIngenieros(r) {
     const existe = await SelectIngenieros(r.IdUsuario)
-    if (!existe) {
+    if (existe == false) {
         return new Promise((resolve, reject) => {
             try {
                 db.exec([{

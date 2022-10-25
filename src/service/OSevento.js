@@ -7,9 +7,8 @@ export const GetEventosDelDia = async () => {
 
     try {
         const { token, userId } = await getToken()
-        // console.log("----> ", token, "\n", userId)
-        let fechaInic = moment().add(-1,'days').format('YYYY-MM-DD')
-        let fechaFini = moment().add(1,'days').format('YYYY-MM-DD')
+        let fechaInic = moment().add(-1, 'days').format('YYYY-MM-DD')
+        let fechaFini = moment().add(1, 'days').format('YYYY-MM-DD')
         const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}&fechaInicio=${fechaInic}&fechaFin=${fechaFini}`;
         const response = await fetch(url, {
             method: "GET",
@@ -19,15 +18,39 @@ export const GetEventosDelDia = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
-        return new Promise((resolve, reject) => {
-            Response.map(async (r) => {
-                await InserEventosDiarios(r)
-            })
-            resolve(true);
-        })
+        for (let index = 0; index < Response.length; index++) {
+            const item = Response[index];
+            await InserEventosDiarios(item)
+        }
+        return true
     } catch (error) {
         console.log("errores GetEventosDelDia--->", error);
-        return false
+        return true
+    }
+}
+
+export const GetEventosDelDiaHoy = async () => {
+
+    try {
+        const { token, userId } = await getToken()
+        let fechaFini = moment().format('YYYY-MM-DD')
+        const url = `${host}MSOrdenServicio/api/OS_OrdenServicio?idUsuario=${userId}&fechaInicio=${fechaFini}&fechaFin=${fechaFini}`;
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        const resultado = await response.json()
+        const { Response } = resultado
+        for (let index = 0; index < Response.length; index++) {
+            const item = Response[index];
+            await InserEventosDiarios(item)
+        }
+        return true
+    } catch (error) {
+        console.log("errores GetEventosDelDia--->", error);
+        return true
     }
 }
 
@@ -42,42 +65,39 @@ export async function DeleteEventes(ticket_id) {
     })
 }
 async function InserEventosDiarios(r) {
-    // await DeleteEventes(r.evento_id)
-    // const existe = await SelectTicket(r.ticket_id)
-    const existe = await SelectTicket(r.evento_id)
-    if (!existe) {
+    try {
         return new Promise((resolve, reject) => {
             db.exec([{
                 sql: `INSERT INTO OrdenesServicio (
-                    evento_id,
-                    ticket_id,
-                    codOS,
-                    codTicket,
-                    tck_cliente,
-                    tck_tipoTicket,
-                    tck_tipoTicketDesc,
-                    tck_descripcionProblema,
-                    ev_fechaAsignadaDesde,
-                    ev_fechaAsignadaHasta,
-                    ev_horaAsignadaDesde,
-                    ev_horaAsignadaHasta,
-                    ev_estado,
-                    tck_direccion,
-                    tck_canton,
-                    tck_provincia,
-                    tck_reporta,
-                    tck_telefonoReporta,
-                    tck_usuario_creacion,
-                    tck_estadoTicket,
-                    ev_descripcion,
-                    id_contrato,
-                    ingenieroId,
-                    ingeniero,
-                    tipoIncidencia,
-                    OrdenServicioID,
-                    tck_tipoTicketCod,
-                    estado_local
-                        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+                        evento_id,
+                        ticket_id,
+                        codOS,
+                        codTicket,
+                        tck_cliente,
+                        tck_tipoTicket,
+                        tck_tipoTicketDesc,
+                        tck_descripcionProblema,
+                        ev_fechaAsignadaDesde,
+                        ev_fechaAsignadaHasta,
+                        ev_horaAsignadaDesde,
+                        ev_horaAsignadaHasta,
+                        ev_estado,
+                        tck_direccion,
+                        tck_canton,
+                        tck_provincia,
+                        tck_reporta,
+                        tck_telefonoReporta,
+                        tck_usuario_creacion,
+                        tck_estadoTicket,
+                        ev_descripcion,
+                        id_contrato,
+                        ingenieroId,
+                        ingeniero,
+                        tipoIncidencia,
+                        OrdenServicioID,
+                        tck_tipoTicketCod,
+                        estado_local
+                            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
                 args: [
                     r.evento_id,
                     r.ticket_id,
@@ -110,14 +130,15 @@ async function InserEventosDiarios(r) {
             }], false, (err, results) => {
                 if (err) {
                     console.log("error", err);
+                    resolve(true)
                 } else {
                     console.log("sincronizacion results GetEventosDelDia-->", results);
+                    resolve(true);
                 }
 
             })
-            resolve(true);
         })
-    } else {
+    } catch (error) {
         return true
     }
 }
@@ -187,12 +208,12 @@ export const InsertEventosLocales = async (r) => {
         }], false, (err, results) => {
             if (err) {
                 console.log("error", err);
+                resolve(true);
             } else {
                 console.log("aqui results GetEventosDelDia-->", results);
+                resolve(true);
             }
-
         })
-        resolve(true);
     })
 }
 
@@ -209,6 +230,23 @@ export const AactualizarEventos = async (estado, OrdenServicioID, evento_id) => 
         db.exec([{
             sql: `UPDATE OrdenesServicio SET ev_estado = ? WHERE OrdenServicioID = ? AND evento_id = ?`,
             args: [estado, OrdenServicioID, evento_id]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("error", err);
+            } else {
+                console.log("aqui results GetEventosDelDia-->", results);
+            }
+        })
+        resolve(true);
+    })
+}
+
+
+export const DeleteEventesDiaHoy = async () => {
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `DELETE FROM OrdenesServicio WHERE ev_fechaAsignadaDesde = ?`,
+            args: [`${moment().format("YYYY-MM-DD")}T00:00:00`]
         }], false, (err, results) => {
             if (err) {
                 console.log("error", err);
@@ -275,8 +313,24 @@ export const GetEventosByTicket = async (ayer, hoy, manana) => {
     try {
         return new Promise((resolve, reject) => {
             db.transaction(tx => {
-                tx.executeSql('select ticket_id, evento_id, OrdenServicioID from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
+                tx.executeSql('select ticket_id, evento_id, OrdenServicioID, tck_cliente from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
                     [`${ayer}T00:00:00`, `${hoy}T00:00:00`, `${manana}T00:00:00`], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}
+
+export const GetEventosByTicketHoy = async (hoy) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('select ticket_id, evento_id, OrdenServicioID, tck_cliente from OrdenesServicio where ev_fechaAsignadaHasta = ?',
+                    [`${hoy}T00:00:00`], (_, { rows }) => {
                         resolve(rows._array)
                     });
             })

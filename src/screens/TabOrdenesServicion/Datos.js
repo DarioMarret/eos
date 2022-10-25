@@ -212,7 +212,7 @@ export default function Datos(props) {
                     } else if (Accion == "PENDIENTE") {
 
                         console.log("Estamos PENDIENTE")
-                        setSelect(true)
+                        setSelect(false)
                         setIsEnabled(true)
                         setDisableSub(true)
 

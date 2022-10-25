@@ -14,11 +14,8 @@ import { ticketID } from "../../utils/constantes";
 import db from "../../service/Database/model";
 import LoadingActi from "../../components/LoadingActi";
 import { isChecked } from "../../service/historiaEquipo";
-import { time } from "../../service/CargaUtil";
-
 import { useSelector, useDispatch } from "react-redux"
-import { ParseOS } from "../../service/OS";
-import { SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { ConsultaOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import { getEventosByDate, listarEventoAyer, loadingCargando } from "../../redux/sincronizacion";
 import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, setAdjuntosTool, setChecklistTool, setClienteTool, setComponenteTool, setdatosTool, setEquipoTool, setFirmasTool, setOrdenServicioID, setTiemposTool } from "../../redux/formulario";
 
@@ -42,11 +39,12 @@ export default function Ayer(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                await AsyncStorage.setItem("SCREMS", "Ayer")
                 dispatch(loadingCargando(true))
                 var date = moment().add(-1, 'days').format('YYYY-MM-DD');
                 const promisa = dispatch(getEventosByDate(`${date}T00:00:00`))
                 promisa.then((res) => {
-                    console.log(res.payload)
+                    // console.log(res.payload)
                     res.payload.length > 0 ?
                         dispatch(listarEventoAyer(res.payload))
                         : null
@@ -86,158 +84,166 @@ export default function Ayer(props) {
                 })
             })
         } catch (error) {
+            dispatch(loadingCargando(false))
+            alert("Error al cargar los datos por favor intente nuevamente o sincronice")
             console.log("error", error)
         }
     }
 
     async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
-        console.log("equipo", equipo)
-        console.log("estado", estado)
-        console.log("ticket_id", ticket_id)
-        console.log("evento_id", evento_id)
-        console.log("OrdenServicioID", OrdenServicioID)
-        console.log("tck_tipoTicket", tck_tipoTicket)
-        try {
-            dispatch(resetFormularioTool())
-            const parse = await SelectOSOrdenServicioID(OrdenServicioID)
-            if (OrdenServicioID != 0) {
-                if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
-                    await AsyncStorage.removeItem(ticketID)
-                    await AsyncStorage.setItem(ticketID, JSON.stringify({
-                        evento_id,
-                        ticket_id,
-                        equipo,
-                        OrdenServicioID: OrdenServicioID,
-                        OSClone: null,
-                        Accion: estado
-                    }))
-                    dispatch(actualizarClienteTool({
-                        name: 'ticket_id',
-                        value: ticket_id
-                    }))
-                    dispatch(actualizarClienteTool({
-                        name: 'evento_id',
-                        value: evento_id
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'tipoIncidencia',
-                        value: tipoIncidencia
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'TipoVisita',
-                        value: tck_tipoTicketCod
-                    }))
+        if (equipo.length > 0) {
+            console.log("equipo", equipo)
+            console.log("estado", estado)
+            console.log("ticket_id", ticket_id)
+            console.log("evento_id", evento_id)
+            console.log("OrdenServicioID", OrdenServicioID)
+            console.log("tck_tipoTicket", tck_tipoTicket)
+            try {
+                dispatch(resetFormularioTool())
+                const parse = await ConsultaOSOrdenServicioID(OrdenServicioID)
+                if (OrdenServicioID != 0) {
+                    if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
+                        await AsyncStorage.removeItem(ticketID)
+                        await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            evento_id,
+                            ticket_id,
+                            equipo,
+                            OrdenServicioID: OrdenServicioID,
+                            OSClone: null,
+                            Accion: estado
+                        }))
+                        dispatch(actualizarClienteTool({
+                            name: 'ticket_id',
+                            value: ticket_id
+                        }))
+                        dispatch(actualizarClienteTool({
+                            name: 'evento_id',
+                            value: evento_id
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'tipoIncidencia',
+                            value: tipoIncidencia
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'TipoVisita',
+                            value: tck_tipoTicketCod
+                        }))
 
-                    dispatch(loadingCargando(false))
-                    navigation.navigate("Ticket")
+                        dispatch(loadingCargando(false))
+                        navigation.navigate("Ticket")
+                    } else {
+                        await AsyncStorage.removeItem(ticketID)
+                        console.log("parse", parse[0])
+                        parse[0].ticket_id = ticket_id
+                        parse[0].evento_id = evento_id
+                        parse[0].tipoIncidencia = tipoIncidencia
+                        parse[0].TipoVisita = tck_tipoTicketCod
+                        parse[0].OrdenServicioID = OrdenServicioID
+                        dispatch(setOrdenServicioID(OrdenServicioID))
+                        dispatch(setEquipoTool(parse[0]))
+                        dispatch(setClienteTool(parse[0]))
+                        dispatch(setdatosTool(parse[0]))
+                        dispatch(setComponenteTool(JSON.parse(parse[0].OS_PartesRepuestos)))
+                        dispatch(setAdjuntosTool(JSON.parse(parse[0].OS_Anexos)))
+                        dispatch(setTiemposTool(JSON.parse(parse[0].OS_Tiempos)))
+                        dispatch(setFirmasTool(JSON.parse(parse[0].OS_Firmas)))
+                        dispatch(setChecklistTool(JSON.parse(parse[0].OS_CheckList)))
+                        dispatch(actualizarClienteTool({
+                            name: 'ticket_id',
+                            value: ticket_id
+                        }))
+                        dispatch(actualizarClienteTool({
+                            name: 'evento_id',
+                            value: evento_id
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'tipoIncidencia',
+                            value: tipoIncidencia
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'TipoVisita',
+                            value: tck_tipoTicketCod
+                        }))
+                        await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            ticket_id,
+                            equipo,
+                            OrdenServicioID: OrdenServicioID,
+                            OSClone: null,
+                            Accion: estado
+                        }))
+                        await isChecked(equipo[0].equipo_id)
+                        dispatch(loadingCargando(false))
+                        navigation.navigate("Ordenes")
+                    }
                 } else {
-                    await AsyncStorage.removeItem(ticketID)
-                    console.log("parse", parse[0])
-                    parse[0].ticket_id = ticket_id
-                    parse[0].evento_id = evento_id
-                    parse[0].tipoIncidencia = tipoIncidencia
-                    parse[0].TipoVisita = tck_tipoTicketCod
-                    parse[0].OrdenServicioID = OrdenServicioID
-                    dispatch(setOrdenServicioID(OrdenServicioID))
-                    dispatch(setEquipoTool(parse[0]))
-                    dispatch(setClienteTool(parse[0]))
-                    dispatch(setdatosTool(parse[0]))
-                    dispatch(setComponenteTool(JSON.parse(parse[0].OS_PartesRepuestos)))
-                    dispatch(setAdjuntosTool(JSON.parse(parse[0].OS_Anexos)))
-                    dispatch(setTiemposTool(JSON.parse(parse[0].OS_Tiempos)))
-                    dispatch(setFirmasTool(JSON.parse(parse[0].OS_Firmas)))
-                    dispatch(setChecklistTool(JSON.parse(parse[0].OS_CheckList)))
-                    dispatch(actualizarClienteTool({
-                        name: 'ticket_id',
-                        value: ticket_id
-                    }))
-                    dispatch(actualizarClienteTool({
-                        name: 'evento_id',
-                        value: evento_id
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'tipoIncidencia',
-                        value: tipoIncidencia
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'TipoVisita',
-                        value: tck_tipoTicketCod
-                    }))
-                    await AsyncStorage.setItem(ticketID, JSON.stringify({
-                        ticket_id,
-                        equipo,
-                        OrdenServicioID: OrdenServicioID,
-                        OSClone: null,
-                        Accion: estado
-                    }))
-                    await isChecked(equipo[0].equipo_id)
-                    dispatch(loadingCargando(false))
-                    navigation.navigate("Ordenes")
-                }
-            } else {
-                if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
-                    await AsyncStorage.removeItem(ticketID)
-                    await AsyncStorage.setItem(ticketID, JSON.stringify({
-                        evento_id,
-                        ticket_id,
-                        equipo,
-                        OrdenServicioID: OrdenServicioID,
-                        OSClone: null,
-                        Accion: estado
-                    }))
-                    dispatch(actualizarClienteTool({
-                        name: 'ticket_id',
-                        value: ticket_id
-                    }))
-                    dispatch(actualizarClienteTool({
-                        name: 'evento_id',
-                        value: evento_id
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'tipoIncidencia',
-                        value: tipoIncidencia
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'TipoVisita',
-                        value: tck_tipoTicketCod
-                    }))
-                    dispatch(setOrdenServicioID(OrdenServicioID))
-                    dispatch(loadingCargando(false))
-                    navigation.navigate("Ticket")
-                } else {
-                    await AsyncStorage.removeItem(ticketID)
-                    dispatch(actualizarClienteTool({
-                        name: 'ticket_id',
-                        value: ticket_id
-                    }))
-                    dispatch(actualizarClienteTool({
-                        name: 'evento_id',
-                        value: evento_id
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'tipoIncidencia',
-                        value: tipoIncidencia
-                    }))
-                    dispatch(actualizarDatosTool({
-                        name: 'TipoVisita',
-                        value: tck_tipoTicketCod
-                    }))
-                    dispatch(setOrdenServicioID(OrdenServicioID))
+                    if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
+                        await AsyncStorage.removeItem(ticketID)
+                        await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            evento_id,
+                            ticket_id,
+                            equipo,
+                            OrdenServicioID: OrdenServicioID,
+                            OSClone: null,
+                            Accion: estado
+                        }))
+                        dispatch(actualizarClienteTool({
+                            name: 'ticket_id',
+                            value: ticket_id
+                        }))
+                        dispatch(actualizarClienteTool({
+                            name: 'evento_id',
+                            value: evento_id
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'tipoIncidencia',
+                            value: tipoIncidencia
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'TipoVisita',
+                            value: tck_tipoTicketCod
+                        }))
+                        dispatch(setOrdenServicioID(OrdenServicioID))
+                        dispatch(loadingCargando(false))
+                        navigation.navigate("Ticket")
+                    } else {
+                        await AsyncStorage.removeItem(ticketID)
+                        dispatch(actualizarClienteTool({
+                            name: 'ticket_id',
+                            value: ticket_id
+                        }))
+                        dispatch(actualizarClienteTool({
+                            name: 'evento_id',
+                            value: evento_id
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'tipoIncidencia',
+                            value: tipoIncidencia
+                        }))
+                        dispatch(actualizarDatosTool({
+                            name: 'TipoVisita',
+                            value: tck_tipoTicketCod
+                        }))
+                        dispatch(setOrdenServicioID(OrdenServicioID))
 
-                    await AsyncStorage.setItem(ticketID, JSON.stringify({
-                        ticket_id,
-                        equipo,
-                        OrdenServicioID: OrdenServicioID,
-                        OSClone: null,
-                        Accion: estado
-                    }))
-                    await isChecked(equipo[0].equipo_id)
-                    dispatch(loadingCargando(false))
-                    navigation.navigate("Ordenes")
+                        await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            ticket_id,
+                            equipo,
+                            OrdenServicioID: OrdenServicioID,
+                            OSClone: null,
+                            Accion: estado
+                        }))
+                        await isChecked(equipo[0].equipo_id)
+                        dispatch(loadingCargando(false))
+                        navigation.navigate("Ordenes")
+                    }
                 }
+            } catch (error) {
+                dispatch(loadingCargando(false))
+                console.log("error", error)
             }
-        } catch (error) {
-            console.log("error", error)
+        } else {
+            alert("Equipo no se encuentra detro de su base instalada Sincrónice nuevamente, si el problema persiste comuniquese con el administrador")
+            dispatch(loadingCargando(false))
         }
     }
 

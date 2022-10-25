@@ -20,6 +20,7 @@ export const sincronizacionSlice = createSlice({
         eventos_ayer: [],
         eventos_mnn: [],
         loading: false,
+        sincronizador: false,
     },
     reducers: {
         listarEventoHoy: (state, action) => {
@@ -34,6 +35,10 @@ export const sincronizacionSlice = createSlice({
         loadingCargando: (state, action) => {
             console.log("loadingCargando", action.payload)
             state.loading = action.payload
+        },
+        loadingProcesando: (state, action) => {
+            console.log("loadingProcesando", action.payload)
+            state.sincronizador = action.payload
         }
     },
 
@@ -44,6 +49,7 @@ export const {
     listarEventoAyer, 
     listarEventoMnn,
     loadingCargando,
+    loadingProcesando,
  } = sincronizacionSlice.actions;
 
 export default sincronizacionSlice.reducer;

@@ -2,24 +2,26 @@ import { ActivityIndicator, Alert, Modal, StyleSheet, Text, TouchableOpacity, Vi
 import { Fontisto } from '@expo/vector-icons';
 import { AntDesign } from '@expo/vector-icons';
 import tabNavigation from "../hook/tabNavigation";
-import { getHistorialEquiposStorageChecked, HistorialEquipoIngeniero } from "../service/historiaEquipo";
+import { ExisteHistorialEquipoClienteNombre, getHistorialEquiposStorageChecked, HistorialEquipoIngeniero, HistorialEquipoPorCliente, isCheckedCancelar } from "../service/historiaEquipo";
 import { PostOS, PutOS } from "../service/OS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import moment from "moment";
 import React, { useCallback, useState } from "react"
 import { ticketID, evento } from "../utils/constantes";
-import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
-import { time, TrucateUpdate } from "../service/CargaUtil";
-import { EquipoTicket } from "../service/equipoTicketID";
+import { DeleteEventesDiaHoy, GetEventosByTicket, GetEventosByTicketHoy, GetEventosDelDia, GetEventosDelDiaHoy } from "../service/OSevento";
+import { SincronizaDor, time, TrucateUpdate } from "../service/CargaUtil";
+import { deleteEquipoIDTicketArray, EquipoTicket } from "../service/equipoTicketID";
 import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 import { useFocusEffect } from "@react-navigation/native";
 import { InsertEventosLocales } from "../service/OSevento";
-import { InserOSOrdenServicioIDLocal, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
-import { ActualizarOrdenServicioLocal, EditareventoLocal, registartEquipoTicket} from "../service/ServicioLoca";
+import { InserOSOrdenServicioIDLocal, OSOrdenServicioID, UpdateOSOrdenServicioID } from "../service/OS_OrdenServicio";
+import { ActualizarOrdenServicioLocal, EditareventoLocal, registartEquipoTicket } from "../service/ServicioLoca";
 import { useIsConnected } from 'react-native-offline';
 import { actualizarMessageTool, PostEnviarFormularioTool, PostLocalFormularioTool, PutactualizarFormularioTool, PutaLocalctualizarFormularioTool, resetFormMessageTool, resetFormularioTool, resetStatusTool, Sincronizador } from "../redux/formulario";
 import { useDispatch, useSelector } from "react-redux";
-import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn } from "../redux/sincronizacion";
+import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando, loadingProcesando } from "../redux/sincronizacion";
+import { GetClienteClienteName } from "../service/clientes";
+import isEmpty from "is-empty";
 
 export default function BannerOrderServi(props) {
     const { navigation, route, screen } = props
@@ -79,10 +81,13 @@ export default function BannerOrderServi(props) {
             }
         }
     }
-    function resetTab() {
+    async function resetTab() {
         TabTitle(tab[0])
-        navigation.navigate(tab[0])
-        navigation.navigate("Consultas")
+        // navigation.navigate(tab[0])
+        const screen = await AsyncStorage.getItem("SCREMS")
+        console.log("screen", screen)
+        navigation.navigate(screen)
+        // navigation.navigate("Consultas")
     }
     async function PasarACliente() {
         const respuesta = await getHistorialEquiposStorageChecked()
@@ -92,7 +97,6 @@ export default function BannerOrderServi(props) {
             return false
         }
     }
-
 
     async function Dispatcher() {
         var hoy = moment().format('YYYY-MM-DD')
@@ -118,12 +122,12 @@ export default function BannerOrderServi(props) {
         })
     }
 
-    function changeStatus() {
+    async function changeStatus() {
         dispatch(resetFormMessageTool())
         dispatch(resetFormularioTool())
         dispatch(resetFormularioTool())
-        resetTab()
-        return null
+        await resetTab()
+        return true
     }
 
     useFocusEffect(
@@ -132,9 +136,9 @@ export default function BannerOrderServi(props) {
                 if (form.status == 204) {
                     dispatch(resetStatusTool())
                     await ActualizarPut()
-                    await Dispatcher()
+                    // await Dispatcher()
                     setModalVisible(false)
-                    changeStatus()
+                    await changeStatus()
                     console.log("204")
                 }
                 if (form.status == 200) {
@@ -143,7 +147,7 @@ export default function BannerOrderServi(props) {
                     await time(1000)
                     await Dispatcher()
                     setModalVisible(false)
-                    changeStatus()
+                    await changeStatus()
                     console.log("200")
                 }
             })()
@@ -162,9 +166,13 @@ export default function BannerOrderServi(props) {
     async function ActualizarPut() {
         let P = await PutOS(form.ordenServicio)
         if (P == 204) {
+            dispatch(loadingCargando(true))
             dispatch(actualizarMessageTool("Orden de servicio actualizada correctamente"))
             await UpdateOSOrdenServicioID([form.ordenServicio.OrdenServicioID])
-            resetTab()
+            await isCheckedCancelar()
+            await Sincronizar()
+            dispatch(loadingCargando(false))
+            await resetTab()
         } else {
             dispatch(actualizarMessageTool("Error al actualizar la orden de servicio"))
             setModalVisible(false)
@@ -172,17 +180,23 @@ export default function BannerOrderServi(props) {
     }
 
     async function CrearOrdenPost() {
+        dispatch(loadingCargando(true))
         let P = await PostOS(form.ordenServicio)
         if (P == "200") {
             dispatch(actualizarMessageTool("Orden de Servicio Creada"))
             dispatch(resetFormMessageTool())
+            await isCheckedCancelar()
             await Sincronizar()
+            // await SincronizaDor()
             await Dispatcher()
-            resetTab()
+            dispatch(loadingCargando(false))
+            await resetTab()
         } else {
+            await isCheckedCancelar()
             dispatch(actualizarMessageTool("Error al crear la orden de servicio"))
             dispatch(resetFormMessageTool())
             setModalVisible(false)
+            dispatch(loadingCargando(false))
         }
     }
 
@@ -209,8 +223,11 @@ export default function BannerOrderServi(props) {
             })()
         }, [form.status == 304 || form.status == 300])
     )
+
     const CrearOrdenLocal = async () => {
         const { OrdenServicioID, equipo_id, contrato_id } = form.ordenServicio
+        dispatch(loadingCargando(true))
+        await isCheckedCancelar()
         console.log("OrdenServicioID", OrdenServicioID)
         console.log("equipo_id", equipo_id)
         console.log("contrato_id", contrato_id)
@@ -218,18 +235,20 @@ export default function BannerOrderServi(props) {
         await InserOSOrdenServicioIDLocal(form.ordenServicio, OrdenServicioID)
         await InsertEventosLocalesUpadte(form.ordenServicio, OrdenServicioID)
         await registartEquipoTicket(equipo_id, contrato_id, OrdenServicioID)
-        TabTitle(tab[0])
-        navigation.navigate(tab[0])
+        await resetTab()
         dispatch(resetFormMessageTool())
+        dispatch(loadingCargando(false))
         Alerta("Información", "Orden de servicio creado localmente cuando tenga conexion sincronizara para subir al servidor")
     }
     const ActualizarOrdenLocal = async () => {
         const { OrdenServicioID } = form.ordenServicio
+        dispatch(loadingCargando(true))
+        await isCheckedCancelar()
         await EditareventoLocal("PROCESO", OrdenServicioID)
         await ActualizarOrdenServicioLocal(form.ordenServicio)
-        TabTitle(tab[0])
-        navigation.navigate(tab[0])
+        await resetTab()
         dispatch(resetFormMessageTool())
+        dispatch(loadingCargando(false))
         Alerta("Información", "Orden de servicio actualizada localmente")
     }
 
@@ -284,25 +303,78 @@ export default function BannerOrderServi(props) {
     }
 
     async function Reset() {
-        resetTab()
+        await resetTab()
     }
 
 
     async function Sincronizar() {
         if (isConnected) {
-            await TrucateUpdate()
-            await HistorialEquipoIngeniero()
-            await GetEventosDelDia()
-            var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+            await DeleteEventesDiaHoy()
+            //consulta para traer los eventos del dia ayer hoy y mañana
+            await GetEventosDelDiaHoy()
             var hoy = moment().format('YYYY-MM-DD');
-            var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-            const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-            ticket_id.map(async (r) => {
-                await EquipoTicket(r.ticket_id)
-                await OrdenServicioAnidadas(r.evento_id)
-                // await OSOrdenServicioID(r.OrdenServicioID)
-            })
+            const ticket_id = await GetEventosByTicketHoy(hoy)
+            // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+            let id_ticket = []
+            let evento_id = []
+            let OrdenServicioID = []
+            let tck_cliente = []
+            for (let index = 0; index < ticket_id.length; index++) {
+                let item = ticket_id[index];
+                id_ticket.push(item.ticket_id)
+                evento_id.push(item.evento_id)
+                OrdenServicioID.push(item.OrdenServicioID)
+                tck_cliente.push(item.tck_cliente)
+            }
+
+            await deleteEquipoIDTicketArray(id_ticket)
+
+            //para guardar los equipos por ticket
+            console.log("guardar equipos por ticket", id_ticket.length)
+            for (let index = 0; index < id_ticket.length; index++) {
+                let item = id_ticket[index];
+                console.log("item", item)
+                console.log("index", index)
+                console.log("\n")
+                await EquipoTicket(item)
+            }
+
+            //Para buscar eventos anidadas a la orden
+            for (let index = 0; index < evento_id.length; index++) {
+                let item = evento_id[index];
+                await OrdenServicioAnidadas(item)
+            }
+
+            //para guardar lo que venga con OS
+            for (let index = 0; index < OrdenServicioID.length; index++) {
+                let item = OrdenServicioID[index];
+                await OSOrdenServicioID(item)
+            }
+
+            var arrayRuc = ""
+            //para verificar si hay evetos con cliente no registrado 247
+            for (let index = 0; index < tck_cliente.length; index++) {
+                let item = tck_cliente[index];
+                const existe = await ExisteHistorialEquipoClienteNombre(item)
+                if (existe) {
+                    console.log("existe", existe)
+                } else {
+                    console.log("existe", existe)
+                    const sacarRuc = await GetClienteClienteName(item)
+                    // const sacarRuc = await GetClienteClienteName("COMPAÑIA ANONIMA CLINICA GUAYAQUIL SERVICIOS MEDICOS S.A.")
+                    console.log("sacarRuc", sacarRuc[0].CustomerID)
+                    arrayRuc += sacarRuc[0].CustomerID + "|"
+                    // arrayRuc.push(item)
+                }
+            }
+
+            if (!isEmpty(arrayRuc)) {
+                console.log("arrayRuc", arrayRuc)
+                await HistorialEquipoPorCliente(arrayRuc)
+            }
         }
+        dispatch(loadingProcesando(true))
+
     }
 
 

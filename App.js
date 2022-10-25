@@ -1,18 +1,27 @@
 import DrawerNavigation from './src/navigation/Navigation'
 import Login from './src/screens/Login'
-import NetInfo from '@react-native-community/netinfo'
 import userContext from "./src/context/userContext"
 import { MD3LightTheme as DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
 import { useEffect, useMemo, useState } from 'react'
-import { desLogeo, getToken, GuardarToken } from './src/service/usuario'
-import { CardaUtil, TrucateTable } from './src/service/CargaUtil';
+
+import { desLogeo, getToken, GuardarToken, RefresLogin } from './src/service/usuario'
+import { CardaUtil, time, TrucateTable, TrucateUpdate } from './src/service/CargaUtil';
 import { StatusBar } from 'expo-status-bar';
 import { MenuProvider } from 'react-native-popup-menu';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NetworkProvider } from 'react-native-offline';
-import { OS, OS_Anexos, OS_CheckList, OS_Firmas, OS_PartesRepuestos, OS_Tiempos } from './src/utils/constantes';
 import { Provider as StoreProvider } from 'react-redux'
 import store from './src/redux/store'
+import { ExisteHistorialEquipoClienteNombre, HistorialEquipoPorCliente } from './src/service/historiaEquipo';
+import { GetEventosByTicket, GetEventosDelDia } from './src/service/OSevento';
+import moment from 'moment';
+import { EquipoTicket } from './src/service/equipoTicketID';
+import { OrdenServicioAnidadas } from './src/service/OrdenServicioAnidadas';
+import { Network } from './src/service/Network';
+import { OSOrdenServicioID } from './src/service/OS_OrdenServicio';
+import { GetClienteClienteName } from './src/service/clientes';
+import axios from 'axios';
+import isEmpty from 'is-empty';
+import LoadingActi from './src/components/LoadingActi';
 
 const theme = {
   ...DefaultTheme,
@@ -29,6 +38,7 @@ const theme = {
     size: 16,
   }
 };
+
 export default function App() {
 
 
@@ -38,29 +48,117 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
+      const isConnecter = await Network()
+      isConnecter === false ? setisOFFLINE(true) : null
+      console.log('watch', 'scanning network');
+      console.log(isConnecter)
+    })()
+  }, [])
+
+  useEffect(() => {
+    (async () => {
       const jwt = await getToken();
       if (jwt) {
+        await SincronizarInit()
         setToken(jwt)
       } else {
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify(OS_PartesRepuestos))
-        await AsyncStorage.setItem("OS_CheckList", JSON.stringify(OS_CheckList))
-        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify(OS_Tiempos))
-        await AsyncStorage.setItem("OS_Firmas", JSON.stringify(OS_Firmas))
-        await AsyncStorage.setItem("OS_Anexos", JSON.stringify(OS_Anexos))
-        await AsyncStorage.setItem("OS", JSON.stringify(OS))
         setToken(null)
       }
     })()
   }, [])
 
-  useEffect(() => {
-    const removeNetInfoSubscription = NetInfo.addEventListener((state) => {
-      console.log("\n")
-      var offline = state.isConnected
-      setisOFFLINE(offline)
-    })
-    return () => removeNetInfoSubscription()
-  }, [reloadInt])
+
+
+
+  async function SincronizarInit() {
+    try {
+      const isConnection = axios.create({
+        baseURL: 'https://google.com',
+        timeout: 10000,
+      })
+      const { data } = await isConnection.get()
+      // console.log(data)
+      if (data) {
+        const { token } = await getToken()
+        console.log ('token SincronizarInit', token)
+        if (token != null) {
+          await RefresLogin()
+          await TrucateUpdate()
+          // await HistorialEquipoIngeniero()
+          await GetEventosDelDia()
+          var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
+          var hoy = moment().format('YYYY-MM-DD');
+          var manana = moment().add(1, 'days').format('YYYY-MM-DD');
+          const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+          let id_ticket = []
+          let evento_id = []
+          let OrdenServicioID = []
+          let tck_cliente = []
+          for (let index = 0; index < ticket_id.length; index++) {
+            let item = ticket_id[index];
+            id_ticket.push(item.ticket_id)
+            evento_id.push(item.evento_id)
+            OrdenServicioID.push(item.OrdenServicioID)
+            tck_cliente.push(item.tck_cliente)
+          }
+
+          console.log("id_ticket", id_ticket)
+          console.log("evento_id", evento_id)
+          console.log("OrdenServicioID", OrdenServicioID)
+
+          //para guardar los equipos por ticket
+          console.log("guardar equipos por ticket", id_ticket.length)
+          for (let index = 0; index < id_ticket.length; index++) {
+            let item = id_ticket[index];
+            console.log("item", item)
+            console.log("index", index)
+            console.log("\n")
+            await EquipoTicket(item)
+          }
+
+          //Para buscar eventos anidadas a la orden
+          for (let index = 0; index < evento_id.length; index++) {
+            let item = evento_id[index];
+            await OrdenServicioAnidadas(item)
+          }
+
+          //para guardar lo que venga con OS
+          for (let index = 0; index < OrdenServicioID.length; index++) {
+            let item = OrdenServicioID[index];
+            await OSOrdenServicioID(item)
+          }
+
+          var arrayRuc = ""
+          //para verificar si hay evetos con cliente no registrado 247
+          for (let index = 0; index < tck_cliente.length; index++) {
+            let item = tck_cliente[index];
+            const existe = await ExisteHistorialEquipoClienteNombre(item)
+            if (existe) {
+              console.log("existe", existe)
+            } else {
+              console.log("existe", existe)
+              const sacarRuc = await GetClienteClienteName(item)
+              // const sacarRuc = await GetClienteClienteName("COMPAÑIA ANONIMA CLINICA GUAYAQUIL SERVICIOS MEDICOS S.A.")
+              console.log("sacarRuc", sacarRuc[0].CustomerID)
+              arrayRuc += sacarRuc[0].CustomerID + "|"
+            }
+          }
+          if (!isEmpty(arrayRuc)) {
+            console.log("arrayRuc", arrayRuc)
+            await HistorialEquipoPorCliente(arrayRuc)
+          }
+          setreloadInt(false)
+          return true
+        } else {
+          setreloadInt(false)
+          return true
+        }
+      }
+    } catch (error) {
+      console.log(error)
+      return true
+    }
+  }
 
   const login = async (data) => {
     return new Promise((resolve, reject) => {
@@ -91,14 +189,14 @@ export default function App() {
       reloadInt,
       Token,
       login,
-      logout
+      logout,
+      SincronizarInit,
     }), []
   )
 
   if (Token === undefined) return null;
 
   return (
-    // <Firmador/>
     <StoreProvider store={store}>
       <NetworkProvider>
         <userContext.Provider value={UserData}>

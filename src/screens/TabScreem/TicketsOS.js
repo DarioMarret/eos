@@ -32,8 +32,10 @@ import { useIsConnected } from 'react-native-offline';
 import { FinalizarOSLocal } from "../../service/ServicioLoca";
 import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion";
-import { actualizarClienteTool, actualizarDatosTool, setAdjuntosTool, SetByOrdenServicioID, setChecklistTool, setClienteTool, setComponenteTool, setdatosTool, setEquipoTool, setFirmasTool, setTiemposTool } from "../../redux/formulario";
-import isEmpty from "just-is-empty";
+import { actualizarClienteTool, actualizarDatosTool, setAdjuntosTool, 
+    SetByOrdenServicioID, 
+    setChecklistTool, setClienteTool, setComponenteTool, 
+    setdatosTool, setEquipoTool, setFirmasTool, setTiemposTool } from "../../redux/formulario";
 
 export default function TicketsOS(props) {
     const { navigation } = props
@@ -69,11 +71,15 @@ export default function TicketsOS(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                seteventosAnidados([])
+                setticket("")
                 dispatch(loadingCargando(true))
                 const { ticket_id, equipo } = JSON.parse(await AsyncStorage.getItem(ticketID))
+                console.log('ticket_id', formulario.cliente.ticket_id)
                 setticket(ticket_id)
                 setClienteNombre(equipo[0].con_ClienteNombre)
                 const response = await getOrdenServicioAnidadasTicket_id(ticket_id)
+                console.log('response', response)
                 if (response != null) {
                     console.log("anidada", response)
                     seteventosAnidados(response.map((item) => { return { ...item, check: false } }))
@@ -111,6 +117,8 @@ export default function TicketsOS(props) {
                 })
             })
         } catch (error) {
+            dispatch(loadingCargando(false))
+            alert("Error al cargar los datos por favor intente nuevamente o sincronice")
             console.log("error", error)
         }
     }
@@ -132,15 +140,21 @@ export default function TicketsOS(props) {
     }
 
     async function ClonarOS(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
-        db.transaction(tx => {
-            tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
-                db.transaction(tx => {
-                    tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                        Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, "clonar", tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
+        try {
+            dispatch(loadingCargando(true))
+            db.transaction(tx => {
+                tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
+                    db.transaction(tx => {
+                        tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, "clonar", tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
+                        })
                     })
                 })
             })
-        })
+        } catch (error) {
+            dispatch(loadingCargando(false))
+            alert("Error al cargar los datos por favor intente nuevamente o sincronice")
+        }
     }
 
     async function EnviarOS(item) {
@@ -229,6 +243,7 @@ export default function TicketsOS(props) {
                 OrdenServicioID: OrdenServicioID,
                 Accion: accion
             }))
+            await AsyncStorage.setItem("SCREMS", "Ticket")
             dispatch(loadingCargando(false))
             navigation.navigate("Ordenes")
         }
@@ -258,11 +273,11 @@ export default function TicketsOS(props) {
                 OrdenServicioID: 0,
                 Accion: accion
             }))
+            await AsyncStorage.setItem("SCREMS", "Ticket")
             await isChecked(equipo[0].equipo_id)
             dispatch(loadingCargando(false))
             navigation.navigate("Ordenes")
         }
-
     }
 
     async function ValidarEquipos() {
@@ -277,46 +292,59 @@ export default function TicketsOS(props) {
     }
 
     async function IngresarNuevoOsTicket() {
-        dispatch(loadingCargando(true))
-        var equipo = await ValidarEquipos()
-        var idOrden = []
-        eventosAnidados.forEach((item) => {
-            idOrden.push(item.OrdenServicioID)
-        })
-        var id_equipos = []
-        for (let index = 0; index < idOrden.length; index++) {
-            let OSID = idOrden[index];
-            let clon = await SelectOSOrdenServicioID(OSID)
-            id_equipos.push(clon[0].equipo_id)
-        }
-        for (let id = 0; id < id_equipos.length; id++) {
-            for (let index = 0; index < equipo.length; index++) {
-                let item = equipo[index];
-                if (item.equipo_id == id_equipos[id]) {
-                    console.log("item igual")
-                    equipo[index]['disable'] = 'true'
+        try {
+            dispatch(loadingCargando(true))
+            var equipo = await ValidarEquipos()
+            var idOrden = []
+            eventosAnidados.forEach((item) => {
+                idOrden.push(item.OrdenServicioID)
+            })
+            var id_equipos = []
+            if(eventosAnidados.length > 0){
+                for (let index = 0; index < idOrden.length; index++) {
+                    let OSID = idOrden[index];
+                    console.log("OSID", OSID)
+                    let clon = await SelectOSOrdenServicioID(OSID)
+                    id_equipos.push(clon.equipo_id)
+                }
+            }else{
+                let clon = await SelectOSOrdenServicioID(eventosAnidados[0].OrdenServicioID)
+                id_equipos.push(clon[0].equipo_id)
+            }
+
+            for (let id = 0; id < id_equipos.length; id++) {
+                for (let index = 0; index < equipo.length; index++) {
+                    let item = equipo[index];
+                    if (item.equipo_id == id_equipos[id]) {
+                        console.log("item igual")
+                        equipo[index]['disable'] = 'true'
+                    }
                 }
             }
+            console.log("equipo IngresarNuevoOsTicket_", equipo)
+            const { ticket_id, evento_id, OrdenServicioID } = JSON.parse(await AsyncStorage.getItem(ticketID))
+            await AsyncStorage.setItem(ticketID, JSON.stringify({
+                evento_id,
+                ticket_id,
+                equipo,
+                OrdenServicioID: 0,
+                Accion: "NUEVO OS TICKET"
+            }))
+            dispatch(actualizarClienteTool({
+                name: 'ticket_id',
+                value: ticket_id
+            }))
+            dispatch(actualizarClienteTool({
+                name: 'evento_id',
+                value: evento_id
+            }))
+            await AsyncStorage.setItem("SCREMS", "Ticket")
+            dispatch(loadingCargando(false))
+            navigation.navigate("Ordenes")
+        } catch (error) {
+            console.log("error", error)
+            dispatch(loadingCargando(false))
         }
-        console.log("equipo IngresarNuevoOsTicket_", equipo)
-        const { ticket_id, evento_id, OrdenServicioID } = JSON.parse(await AsyncStorage.getItem(ticketID))
-        await AsyncStorage.setItem(ticketID, JSON.stringify({
-            evento_id,
-            ticket_id,
-            equipo,
-            OrdenServicioID: 0,
-            Accion: "NUEVO OS TICKET"
-        }))
-        dispatch(actualizarClienteTool({
-            name: 'ticket_id',
-            value: ticket_id
-        }))
-        dispatch(actualizarClienteTool({
-            name: 'evento_id',
-            value: evento_id
-        }))
-        dispatch(loadingCargando(false))
-        navigation.navigate("Ordenes")
     }
 
     async function IngresarNuevoOsTicket_() {
@@ -341,6 +369,7 @@ export default function TicketsOS(props) {
             value: evento_id
         }))
         // dispatch(setOrdenServicioID(OrdenServicioID))
+        await AsyncStorage.setItem("SCREMS", "Ticket")
         dispatch(loadingCargando(false))
         navigation.navigate("Ordenes")
     }
@@ -566,7 +595,7 @@ export default function TicketsOS(props) {
                                                                 }}
                                                             >
                                                                 {
-                                                                    item.ev_estado !== "PENDIENTE" ?
+                                                                    item.ev_estado !== "PENDIENTE" && item.ev_estado !== "PROCESO" ?
                                                                         <MenuOption
                                                                             onSelect={() => AgregarFirma(item.OrdenServicioID)}
                                                                             text='Agregar Firma'
@@ -580,7 +609,7 @@ export default function TicketsOS(props) {
                                                                             }} /> : null
                                                                 }
                                                                 {
-                                                                    item.ev_estado == "FINALIZADO" ?
+                                                                   item.ev_estado == "PROCESO" || item.ev_estado == "FINALIZADO" || item.ev_estado == "PENDIENTE DE APROBACION" ?
                                                                         <MenuOption
                                                                             onSelect={() => {
                                                                                 console.log(item);
@@ -606,7 +635,7 @@ export default function TicketsOS(props) {
                                                                 }
 
                                                                 {
-                                                                    item.ev_estado !== "PENDIENTE" ?
+                                                                    item.ev_estado !== "PENDIENTE" || item.ev_estado !== "PENDIENTE DE APROBACION" ?
                                                                         <MenuOption
                                                                             onSelect={() => EnviarOS(item.OrdenServicioID)}
                                                                             text='Enviar OS'

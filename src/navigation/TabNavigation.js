@@ -17,6 +17,11 @@ const TabNavigator = () => {
     function Update() {
         console.log("Hola")
     }
+
+    
+
+
+
     return (
         <Tab.Navigator
             scenaAnimationEnabled={true}

@@ -16,7 +16,7 @@ import empty from "is-empty"
 import { GetClienteClienteName } from "../../service/clientes"
 import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion"
-import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, setEquipoTool } from "../../redux/formulario"
+import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, SetByOrdenServicioID, setEquipoTool } from "../../redux/formulario"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -71,6 +71,10 @@ export default function Equipo(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                setHistorial([])
+                setTipo("Tipo")
+                setModel("Modelo")
+                setSerie("")
                 var equipoCheck = await getHistorialEquiposStorageChecked()
                 console.log("equipoCheck", equipoCheck)
                 if (equipoCheck.length > 1) {
@@ -102,6 +106,7 @@ export default function Equipo(props) {
                                 GuadadoOS(item)
                                 item.isChecked = "true"
                             })
+                            await isChecked(equipo[0].equipo_id)
                             setHistorial(equipo)
                         }
                     }
@@ -124,6 +129,7 @@ export default function Equipo(props) {
                     const { equipo, OrdenServicioID, Accion } = item
                     console.log("OrdenServicioID", OrdenServicioID)
                     setOrdenServicioID(OrdenServicioID)
+                    dispatch(SetByOrdenServicioID(OrdenServicioID))
                     if (Accion == "clonar") {
 
                         setDisableSub(true)
@@ -175,24 +181,33 @@ export default function Equipo(props) {
     async function onChangeTipo(tipo) {
         dispatch(loadingCargando(true))
         setTipo(tipo)
-        let result = await getHistorialEquiposStorage(tipo, "", "")
-        const respuesta = modelo.filter(e => e.tipo_id === tipo)
-        setModeloSub(respuesta)
-        setHistorial(result)
+        let result = await getHistorialEquiposStorage(tipo, null, null)
+        console.log("onChangeTipo", result)
+        if (result.length > 0) {
+            const respuesta = modelo.filter(e => e.tipo_id === tipo)
+            setModeloSub(respuesta)
+            setHistorial(result)
+        }
         dispatch(loadingCargando(false))
     }
     async function onChangeModelo(model) {
         dispatch(loadingCargando(true))
         setModel(model)
-        let result = await getHistorialEquiposStorage(tipo, model, "")
-        setHistorial(result)
+        let result = await getHistorialEquiposStorage(tipo, model, null)
+        console.log("onChangeModelo", result)
+        if (result.length > 0) {
+            setHistorial(result)
+        }
         dispatch(loadingCargando(false))
     }
 
     async function onChangeSerie(text) {
         setSerie(text)
-        let result = await getHistorialEquiposStorage("", "", text)
-        setHistorial(result)
+        let result = await getHistorialEquiposStorage(null, null, text)
+        console.log("onChangeSerie", result)
+        if (result.length > 0) {
+            setHistorial(result)
+        }
     }
 
     const handleChange = async (equipo_id) => {
@@ -402,7 +417,11 @@ export default function Equipo(props) {
         setHistorial([])
         dispatch(resetFormularioTool())
         dispatch(loadingCargando(false))
-        navigation.goBack()
+        // await AsyncStorage.removeItem(ticketID)
+        const screen = await AsyncStorage.getItem("SCREMS")
+        console.log("screen", screen)
+        navigation.navigate(screen)
+        // navigation.goBack()
     }
 
     return (

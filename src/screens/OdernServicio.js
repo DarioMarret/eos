@@ -38,6 +38,7 @@ export default function OdernServicio(props) {
                 // navigation.setOptions({ title: ticket_id })
                 TabTitle(name)
             })()
+            navigation.navigate("1-EQUIPO")
         }, [])
     )
 
@@ -84,7 +85,7 @@ export default function OdernServicio(props) {
                         }
                         return (
                             <MaterialCommunityIcons name={iconName} size={0} color={color} />
-                            
+
                         );
                     }
                 }}
@@ -95,37 +96,70 @@ export default function OdernServicio(props) {
                     component={Equipo}
                     options={{
                         title: Title_name == "EQUIPO" ? Title_name : "1",
-                        headerShown: false
+                        headerShown: false,
+                    }}
+                    listeners={{
+                        tabPress: e => {
+                            // Prevent default action
+                            e.preventDefault();
+                        },
                     }}
                 />
                 <Tab.Screen name="2-CLIENTE" component={Cliente}
                     options={{
                         title: Title_name == "CLIENTE" ? Title_name : "2",
-                        headerShown: false
+                        headerShown: false,
+
+                    }}
+                    listeners={{
+                        tabPress: e => {
+                            e.preventDefault();
+                        },
                     }}
                 />
                 <Tab.Screen name="3-DATOS" component={Datos}
                     options={{
                         title: Title_name == "DATOS" ? Title_name : "3",
-                        headerShown: false
+                        headerShown: false,
                     }}
+                    listeners={{
+                        tabPress: e => {
+                            e.preventDefault();
+                        },
+                    }}
+
                 />
                 <Tab.Screen name="4-COMPONENTES" component={Componentes}
                     options={{
                         title: Title_name == "COMPONENTES" ? Title_name : "4",
                         headerShown: false,
                     }}
+                    listeners={{
+                        tabPress: e => {
+                            e.preventDefault();
+                        },
+                    }}
                 />
                 <Tab.Screen name="5-ADJUNTOS" component={Adjuntos}
                     options={{
                         title: Title_name == "ADJUNTOS" ? Title_name : "5",
-                        headerShown: false
+                        headerShown: false,
+                    }}
+                    listeners={{
+                        tabPress: e => {
+                            e.preventDefault();
+                        },
                     }}
                 />
                 <Tab.Screen name="6-INGRESO HORAS" component={IngresoHoras}
                     options={{
                         title: Title_name == "INGRESO HORAS" ? Title_name : "6",
-                        headerShown: false
+                        headerShown: false,
+                    }}
+                    listeners={{
+                        tabPress: e => {
+                            e.preventDefault();
+                        },
                     }}
                 />
             </Tab.Navigator>

@@ -8,7 +8,7 @@ var initialState = {
     equipo: {
         OrdenServicioID: 0,
         equipo_id: 0,
-        contrato_id: 0,
+        contrato_id: null,
         Serie: "",
         Marca: "",
         ClienteID: "",
@@ -22,8 +22,8 @@ var initialState = {
         empresa_id: 1,
         UsuarioCreacion: "",
         UsuarioModificacion: "",
-        Fecha: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
-        FechaModificacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
+        Fecha: `${moment().format("YYYY-MM-DD")}T00:00:00`,
+        FechaModificacion: `${moment().format("YYYY-MM-DD")}T00:00:00`,
     },
     cliente: {
         Estado: "PROC",
@@ -31,7 +31,7 @@ var initialState = {
         ClienteID: "",
         ClienteNombre: "",
         Direccion: "",
-        FechaCreacion: `${moment().format("YYYY-MM-DDTHH:mm:ss.SSS")}`,
+        FechaCreacion: `${moment().format("YYYY-MM-DD")}T00:00:00`,
         codOS: 0,
         ticket_id: 0,
         contrato_id: 0,
@@ -339,7 +339,7 @@ export const formularioOrdenServicio = createSlice({
                         ...state.datos
                     }
                     OS.Estado = "PROCESO",
-                    OS.OS_LOCAL = "UPDATE"
+                        OS.OS_LOCAL = "UPDATE"
                     state.ordenServicio = OS_OrdenServicio
                     state.status = 304
                 } else {
@@ -378,6 +378,21 @@ export const formularioOrdenServicio = createSlice({
             } else {
                 state.message = datos
             }
+        },
+        PuTFirmaFormularioTool: (state, action) => {
+            OS.OS_PartesRepuestos = state.componente
+            OS.OS_Anexos = state.adjuntos
+            OS.OS_Tiempos = state.tiempos
+            OS.OS_Firmas = state.firmas
+            OS.OS_CheckList = state.checklist
+            let OS_OrdenServicio = {
+                ...OS,
+                ...state.equipo,
+                ...state.cliente,
+                ...state.datos
+            }
+            state.ordenServicio = OS_OrdenServicio
+            state.status = 400
         }
     },
 })
@@ -404,6 +419,7 @@ export const {
     actualizarMessageTool,
     PostLocalFormularioTool,
     PutaLocalctualizarFormularioTool,
+    PuTFirmaFormularioTool,
 } = formularioOrdenServicio.actions;
 
 export default formularioOrdenServicio.reducer;

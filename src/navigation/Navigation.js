@@ -2,7 +2,7 @@ import "react-native-gesture-handler";
 import React, { useCallback, useState } from 'react';
 import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { NavigationContainer, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { CommonActions, NavigationContainer, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { AntDesign, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import Firmador from "../components/Firmador"
 
@@ -50,7 +50,7 @@ function MenuLateral(prop) {
     const handleLogout = async () => {
         await logout()
     }
-
+    
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -89,12 +89,21 @@ function MenuLateral(prop) {
     )
 }
 
+
+///TRES PUNTOS
 function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
 
     const [estado, setEstado] = useState(null)
     const [orderID, setOrderID] = useState(null)
 
-    const isConnected = useIsConnected();
+    const isConnected = useIsConnected()
+
+    const navigation = useNavigation()
+
+    const handleBack = () => {
+        // navigation.navigate("Consultas")
+        navigation.goBack()
+    }
 
     const FinalizarOS = async () => {
         const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
@@ -103,8 +112,9 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
             let estadoLocal = await EstadoOSLOCAL(OrdenServicioID)
             if (estadoLocal == "UPDATE") {
                 await EditareventoLocal("FINALIZADO", OrdenServicioID)
-                Dispatcher()
+                await Dispatcher()
                 alert("Se actualizo el estado de la OS en local asta que se sincronice")
+                handleBack()
             }else{
                 if(isConnected){
                     dispatch(loadingCargando(true))
@@ -112,12 +122,15 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
                     await UpdateOSOrdenServicioID([OrdenServicioID])
                     await EditareventoLocal("FINALIZADO", OrdenServicioID)
                     await Dispatcher()
+                    alert("Orden de Servicio Finalizada Correctamente")
+                    handleBack()
                     dispatch(loadingCargando(false))
                     console.log("FinalizarOS", respuesta)
                 }else{
                     await EditareventoLocal("FINALIZADO", OrdenServicioID)
-                    Dispatcher()
+                    await Dispatcher()
                     alert("Se actualizo el estado de la OS en local asta que se sincronice")
+                    handleBack()
                 }
             }
         }
@@ -169,6 +182,7 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
                         fontSize: 35,
                         color: '#FFFFFF',
                         fontWeight: 'bold',
+                        padding: 15,
                     },
                 }} />
             <MenuOptions
@@ -193,7 +207,7 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
                     estado == "FINALIZADO" ? <>
                         <MenuOption
                             onSelect={() => setModalSignature(true)}
-                            text='Agresar firma'
+                            text='Agregar firma'
                             customStyles={{
                                 optionText: {
                                     fontSize: 16,
@@ -257,8 +271,10 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
 function NavigatioGotBack() {
     const navigation = useNavigation()
 
-    const handleBack = () => {
-        navigation.navigate("Consultas")
+    const handleBack = async () => {
+        // const screen = await AsyncStorage.getItem("SCREMS")
+        // console.log("screen", screen)
+        // navigation.navigate(screen)
         navigation.goBack()
     }
 

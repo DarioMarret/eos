@@ -1,4 +1,3 @@
-import axios from "axios";
 import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
@@ -16,9 +15,17 @@ export const EquipoTicket = async (ticket_id) => {
         })
         const resultado = await response.json()
         const { Response } = resultado
+        console.log("Response ticket_id", ticket_id)
+        console.log("sincronizacion Response EquipoTicket-->", Response.EquipoContrato[0].id_equipo);
+        // for (let index = 0; index < Response.length; index++) {
+        //     let item = Response[index];
+        //     console.log("item", item);
+        //     await SelectEquipoTicket(item, Response.con_ClienteNombre, ticket_id, item.id_equipo)
+        // }
+        // return true
         return new Promise((resolve, reject) => {
             Response.EquipoContrato.map(async (r) => {
-                await SelectEquipoTicket(r, Response.con_ClienteNombre, ticket_id)
+                await SelectEquipoTicket(r, Response.con_ClienteNombre, ticket_id, r.id_equipo)
             })
             resolve(true);
         });
@@ -28,11 +35,13 @@ export const EquipoTicket = async (ticket_id) => {
     }
 }
 
-async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
-    // await DeleteTicket(ticket_id)
-    return new Promise((resolve, reject) => {
-        db.exec([{
-            sql: `INSERT INTO equipoTicket (
+async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id, id_equipo) {
+    // const existe = await SelectEquipoID(id_equipo)
+    // console.log("existe SelectEquipoID", existe);
+    // if (!existe) {
+        return new Promise((resolve, reject) => {
+            db.exec([{
+                sql: `INSERT INTO equipoTicket (
                         id_equipoContrato,
                         con_ClienteNombre,
                         id_equipo,
@@ -85,69 +94,91 @@ async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id) {
                         estado_local,
                         ticket_id
                                  ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-            args: [
-                r.id_equipoContrato,
-                con_ClienteNombre,
-                r.id_equipo,
-                r.id_contrato,
-                r.empresa_id,
-                r.eqc_conRepuesto,
-                r.eqc_frecuenciaVisita,
-                r.eqc_periodo,
-                r.eqc_tiempoVisita,
-                r.eqc_horarioAtencionDesde,
-                r.eqc_horarioAtencionHasta,
-                r.eqc_lunes,
-                r.eqc_martes,
-                r.eqc_miercoles,
-                r.eqc_jueves,
-                r.eqc_viernes,
-                r.eqc_sabado,
-                r.eqc_domingo,
-                r.eqc_monto,
-                r.eqc_usuarioCreacion,
-                r.eqc_UsuarioModificacion,
-                r.eqc_fechaCreacion,
-                r.eqc_fechaModificacion,
-                r.localidad_id,
-                r.eqc_estado,
-                r.eqc_tiempoServicio,
-                r.eqc_frecuenciaServicio,
-                r.eqc_manoObra,
-                r.eqc_estadoProgramado,
-                r.eqc_fechaIniGaranC,
-                r.eqc_fechaFinGaranC,
-                r.eqc_fechaServicio,
-                r.eqc_fechaServicioFin,
-                r.eqc_oldContract,
-                r.eqc_tiempoRepuestos,
-                r.eqc_tiempoManoObra,
-                r.eqc_consumibles,
-                r.eqc_tiempoConsumibles,
-                r.eqc_fungibles,
-                r.eqc_tiempoFungibles,
-                r.eqc_kitMantenimiento,
-                r.eqc_fechaKitMantenimiento,
-                r.eqc_rutaAdjunto,
-                r.eqc_rucComodato,
-                r.eqc_codComodato,
-                r.eqc_frecVisSitePlan,
-                r.eqc_periodoSitePlan,
-                r.eqc_observacion,
-                JSON.stringify(r.Equipo),
-                "SIN",
-                ticket_id
-            ],
+                args: [
+                    r.id_equipoContrato,
+                    con_ClienteNombre,
+                    r.id_equipo,
+                    r.id_contrato,
+                    r.empresa_id,
+                    r.eqc_conRepuesto,
+                    r.eqc_frecuenciaVisita,
+                    r.eqc_periodo,
+                    r.eqc_tiempoVisita,
+                    r.eqc_horarioAtencionDesde,
+                    r.eqc_horarioAtencionHasta,
+                    r.eqc_lunes,
+                    r.eqc_martes,
+                    r.eqc_miercoles,
+                    r.eqc_jueves,
+                    r.eqc_viernes,
+                    r.eqc_sabado,
+                    r.eqc_domingo,
+                    r.eqc_monto,
+                    r.eqc_usuarioCreacion,
+                    r.eqc_UsuarioModificacion,
+                    r.eqc_fechaCreacion,
+                    r.eqc_fechaModificacion,
+                    r.localidad_id,
+                    r.eqc_estado,
+                    r.eqc_tiempoServicio,
+                    r.eqc_frecuenciaServicio,
+                    r.eqc_manoObra,
+                    r.eqc_estadoProgramado,
+                    r.eqc_fechaIniGaranC,
+                    r.eqc_fechaFinGaranC,
+                    r.eqc_fechaServicio,
+                    r.eqc_fechaServicioFin,
+                    r.eqc_oldContract,
+                    r.eqc_tiempoRepuestos,
+                    r.eqc_tiempoManoObra,
+                    r.eqc_consumibles,
+                    r.eqc_tiempoConsumibles,
+                    r.eqc_fungibles,
+                    r.eqc_tiempoFungibles,
+                    r.eqc_kitMantenimiento,
+                    r.eqc_fechaKitMantenimiento,
+                    r.eqc_rutaAdjunto,
+                    r.eqc_rucComodato,
+                    r.eqc_codComodato,
+                    r.eqc_frecVisSitePlan,
+                    r.eqc_periodoSitePlan,
+                    r.eqc_observacion,
+                    JSON.stringify(r.Equipo),
+                    "SIN",
+                    ticket_id
+                ],
+            }], false, (err, results) => {
+                if (err) {
+                    console.log("error", err);
+                    resolve(true)
+                } else {
+                    console.log("sincronizacion results SelectEquipoTicket-->", results);
+                    resolve(true)
+                }
+            })
+        })
+    // } else {
+    //     await ActualizarEquipoTicketStorage(ticket_id, id_equipo)
+    //     return true
+    // }
+}
+
+export const deleteEquipoIDTicketArray = (ticket_id) => {
+    ticket_id.map(async (id) => {
+        db.exec([{
+            sql: `DELETE FROM equipoTicket WHERE ticket_id = ?`,
+            args: [id],
         }], false, (err, results) => {
             if (err) {
                 console.log("error", err);
             } else {
-                console.log("results", results);
+                console.log("sincronizacion results deleteEquipoIDTicketArray-->", results);
             }
         })
-        resolve(true)
     })
+    return true
 }
+
 
 export async function DeleteTicket(ticket_id) {
     return new Promise((resolve, reject) => {
@@ -191,14 +222,29 @@ export async function SelectTicket(ticket_id) {
     })
 }
 
+export async function SelectEquipoID(id_equipo) {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT * FROM equipoTicket WHERE id_equipo = ?`,
+                [id_equipo], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(true)
+                    } else {
+                        resolve(false)
+                    }
+                })
+        });
+    })
+}
 export const getEquipoTicketStorage = async (ticket_id) => {
     try {
         return new Promise((resolve, reject) => {
             db.transaction((tx) => {
                 tx.executeSql(
-                    `SELECT * FROM equipoTicket WHERE ticket_id = ?`,
+                    `SELECT id_equipo, ticket_id FROM equipoTicket WHERE ticket_id = ?`,
                     [ticket_id],
                     (tx, results) => {
+                        console.log(results)
                         const len = results.rows.length;
                         if (len > 0) {
                             let row = results.rows.item(0);
@@ -206,6 +252,26 @@ export const getEquipoTicketStorage = async (ticket_id) => {
                         } else {
                             resolve(null);
                         }
+                    }
+                );
+            });
+        })
+
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}
+export const ActualizarEquipoTicketStorage = async (ticket_id, id_equipo) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `UPDATE equipoTicket SET ticket_id = ? WHERE id_equipo = ?`,
+                    [ ticket_id, id_equipo],
+                    (tx, results) => {
+                        console.log(results)
+                        resolve(true)
                     }
                 );
             });

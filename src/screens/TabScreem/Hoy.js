@@ -13,14 +13,14 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import LoadingActi from "../../components/LoadingActi";
-import { RefresLogin } from "../../service/usuario";
-import { DeleteOrdenServicioID, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
+import { ConsultaOSOrdenServicioID, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import { useIsConnected } from 'react-native-offline';
 import { useSelector, useDispatch } from "react-redux"
 import { listarEventoHoy, getEventosByDate, loadingCargando } from "../../redux/sincronizacion";
 import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, setAdjuntosTool, setChecklistTool, setClienteTool, setComponenteTool, setdatosTool, setEquipoTool, setFirmasTool, setOrdenServicioID, setTiemposTool } from "../../redux/formulario";
-import { DeleteTicket } from "../../service/equipoTicketID";
-import { DeleteEventes } from "../../service/OSevento";
+import useUser from "../../hook/useUser";
+import { getEquipoTicketStorage } from "../../service/equipoTicketID";
+import axios from "axios";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -33,25 +33,47 @@ export default function Hoy(props) {
     const Events = useSelector(s => s.sincronizacion)
     const formulario = useSelector(s => s.formulario)
 
+    const { reloadInt, SincronizarInit } = useUser()
+
     const dispatch = useDispatch()
     useFocusEffect(
         useCallback(() => {
-            // if (Events.eventos_hoy.length > 0) {
+            setEventos([])
+            console.log("reloadInt", reloadInt)
+            // dispatch(loadingCargando(reloadInt))
             setEventos(Events.eventos_hoy)
-            console.log("eventos_hoy", Events.eventos_hoy)
+            // console.log("eventos_hoy", Events.eventos_hoy)
             dispatch(resetFormularioTool())
-            // }
             return () => {
                 setEventos([])
             }
+
         }, [Events.eventos_hoy])
     )
 
     useFocusEffect(
         useCallback(() => {
             (async () => {
+                await AsyncStorage.setItem("SCREMS", "Hoy")
                 dispatch(loadingCargando(true))
-
+                // try {
+                //     const isConnection = axios.create({
+                //         baseURL: 'https://google.com',
+                //         timeout: 10000,
+                //     })
+                //     const { data } = await isConnection.get()
+                //     if (data) {
+                //         const respuesta = await SincronizarInit()
+                //         console.log("respuesta", respuesta)
+                //         if (respuesta) {
+                //             dispatch(loadingCargando(false))
+                //         }
+                //     }
+                // } catch (error) {
+                //     console.log(error)
+                //     dispatch(loadingCargando(false))
+                //     return true
+                // }
                 // await DeleteOrdenServicioID([850479200])
                 // await DeleteTicket(850479200)
                 // await DeleteEventes(850479200)
@@ -64,9 +86,6 @@ export default function Hoy(props) {
                         dispatch(listarEventoHoy(res.payload))
                         : null
                 })
-                if (isConnected) {
-                    await RefresLogin()
-                }
                 dispatch(loadingCargando(false))
             })()
         }, [])
@@ -97,21 +116,25 @@ export default function Hoy(props) {
      * @param {*} estado 
      * @param {*} OrdenServicioID 
      */
-    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_direccion, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         dispatch(loadingCargando(true))
         try {
+            // const equipo = await getEquipoTicketStorage(ticket_id)
+            // console.log("equipo", equipo)
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM equipoTicket where ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
                             console.log("equipo selecionado hoy row", rows._array)
-                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_direccion, tipoIncidencia, tck_tipoTicketCod)
                         })
                     })
                 })
             })
         } catch (error) {
+            dispatch(loadingCargando(false))
+            alert("Error al cargar los datos por favor intente nuevamente o sincronice")
             console.log("error", error)
         }
     }
@@ -124,21 +147,45 @@ export default function Hoy(props) {
      * @param {*} estado 
      * @param {*} tck_tipoTicket
      */
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
-        if(equipo.length > 0){
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_direccion, tipoIncidencia, tck_tipoTicketCod) {
+        if (equipo.length > 0) {
             console.log("equipo", equipo)
             console.log("estado", estado)
             console.log("ticket_id", ticket_id)
             console.log("evento_id", evento_id)
             console.log("OrdenServicioID", OrdenServicioID)
-            console.log("tck_tipoTicket", tck_tipoTicket)
+            console.log("tck_direccion", tck_direccion)
             try {
                 dispatch(resetFormularioTool())
-                const parse = await SelectOSOrdenServicioID(OrdenServicioID)
+                const parse = await ConsultaOSOrdenServicioID(OrdenServicioID)
+                console.log("parse--->",parse)
                 if (OrdenServicioID != 0) {
                     if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
+                        // parse[0].ticket_id = ticket_id
+                        // parse[0].evento_id = evento_id
+                        // parse[0].tipoIncidencia = tipoIncidencia
+                        // parse[0].TipoVisita = tck_tipoTicketCod
+                        // parse[0].OrdenServicioID = OrdenServicioID
+                        // dispatch(setOrdenServicioID(OrdenServicioID))
+                        // dispatch(setEquipoTool(parse[0]))
+                        // dispatch(setClienteTool(parse[0]))
+                        // dispatch(setdatosTool(parse[0]))
+                        // dispatch(setComponenteTool(JSON.parse(parse[0].OS_PartesRepuestos)))
+                        // dispatch(setAdjuntosTool(JSON.parse(parse[0].OS_Anexos)))
+                        // dispatch(setTiemposTool(JSON.parse(parse[0].OS_Tiempos)))
+                        // dispatch(setFirmasTool(JSON.parse(parse[0].OS_Firmas)))
+                        // dispatch(setChecklistTool(JSON.parse(parse[0].OS_CheckList)))
+                        // dispatch(actualizarDatosTool({
+                        //     name: 'tipoIncidencia',
+                        //     value: tipoIncidencia
+                        // }))
+                        // dispatch(actualizarDatosTool({
+                        //     name: 'TipoVisita',
+                        //     value: tck_tipoTicketCod
+                        // }))
                         await AsyncStorage.removeItem(ticketID)
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            ClienteID: parse[0].ClienteID,
                             evento_id,
                             ticket_id,
                             equipo,
@@ -174,6 +221,7 @@ export default function Hoy(props) {
                             value: tck_tipoTicketCod
                         }))
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            ClienteID: parse[0].ClienteID,
                             ticket_id,
                             equipo,
                             OrdenServicioID: OrdenServicioID,
@@ -185,6 +233,7 @@ export default function Hoy(props) {
                         navigation.navigate("Ordenes")
                     }
                 } else {
+                    dispatch(resetFormularioTool())
                     if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
                         await AsyncStorage.removeItem(ticketID)
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
@@ -233,7 +282,7 @@ export default function Hoy(props) {
                             value: tck_tipoTicketCod
                         }))
                         dispatch(setOrdenServicioID(OrdenServicioID))
-    
+
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
                             ticket_id,
                             equipo,
@@ -250,8 +299,8 @@ export default function Hoy(props) {
                 console.log("error", error)
                 dispatch(loadingCargando(false))
             }
-        }else{
-            Alert.alert("Error", "Equipo no se encuentra detro de su base instalada Sincrónice nuevamente, si el problema persiste comuniquese con el administrador")
+        } else {
+            Alert.alert("Error", "Equipo no se encuentra dentro de su base instalada Sincrónice nuevamente, si el problema persiste comuniquese con el administrador")
             dispatch(loadingCargando(false))
         }
     }

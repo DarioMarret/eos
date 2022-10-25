@@ -1,21 +1,25 @@
-import { GetEventosByTicket, GetEventosDelDia } from "../service/OSevento";
-import { OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
+import { DeleteEventesDiaHoy, GetEventosByTicket, GetEventosByTicketHoy, GetEventosDelDia, GetEventosDelDiaHoy } from "../service/OSevento";
+import { ExisteAnidacion, OrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { EquipoTicket } from "../service/equipoTicketID";
+import { deleteEquipoIDTicketArray, EquipoTicket } from "../service/equipoTicketID";
 import { Fontisto } from '@expo/vector-icons';
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import moment from "moment";
-import { time, TrucateUpdate } from "../service/CargaUtil";
-import { HistorialEquipoIngeniero } from "../service/historiaEquipo";
+import { time, TrucateUpdate, TrucateUpdateHoy } from "../service/CargaUtil";
+import { ExisteHistorialEquipoClienteNombre } from "../service/historiaEquipo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { OS, ticketID } from "../utils/constantes";
 
-import { PostOS } from "../service/OS";
+import { PostOS, PutOS } from "../service/OS";
 import { useIsConnected } from 'react-native-offline';
-import { BuscarOrdenServicioLocales, RestablecerLocalStore } from "../service/ServicioLoca";
+import { BuscarOrdenServicioLocales } from "../service/ServicioLoca";
 import { useSelector, useDispatch } from "react-redux"
-import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando } from "../redux/sincronizacion";
+import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando, loadingProcesando } from "../redux/sincronizacion";
 import { resetFormularioTool } from "../redux/formulario";
+import { useFocusEffect } from "@react-navigation/native";
+import { ListarOrdenServicioOSfecha, OSOrdenServicioID } from "../service/OS_OrdenServicio";
+import isEmpty from "is-empty";
+import { GetClienteClienteName } from "../service/clientes";
 
 export default function Banner(props) {
     const { navigation, setTime, times } = props
@@ -29,8 +33,8 @@ export default function Banner(props) {
 
     async function Dispatcher() {
         var hoy = moment().format('YYYY-MM-DD')
-        var ayer = moment().add(-1,'days').format('YYYY-MM-DD')
-        var mnn = moment().add(1,'days').format('YYYY-MM-DD')
+        var ayer = moment().add(-1, 'days').format('YYYY-MM-DD')
+        var mnn = moment().add(1, 'days').format('YYYY-MM-DD')
         const promisa_hoy = dispatch(getEventosByDate(`${hoy}T00:00:00`))
         promisa_hoy.then((res) => {
             if (res.payload.length > 0) {
@@ -76,20 +80,101 @@ export default function Banner(props) {
             ])
         }
     }
-    
+
     async function UP() {
+        dispatch(loadingCargando(true))
         setupdate(true)
         const respuesta = await Sincronizar()
         await Dispatcher()
         if (respuesta) {
+            dispatch(loadingCargando(false))
             setupdate(false)
-            setTime(!times)
         } else {
-            setupdate(true)
+            dispatch(loadingCargando(false))
             setupdate(false)
         }
     }
+    const Events = useSelector(s => s.sincronizacion)
 
+
+    useFocusEffect(
+        useCallback(() => {
+            (async () => {
+                if (Events.sincronizador) {
+                    await Sincronizar()
+                    dispatch(loadingProcesando(false))
+                }
+            })()
+        }, [Events.sincronizador])
+    )
+
+    async function AsyncAwait() {
+        //eliminda los eventos del dia hoy
+        await DeleteEventesDiaHoy()
+        //consulta para traer los eventos del dia ayer hoy y mañana
+        await GetEventosDelDiaHoy()
+        var hoy = moment().format('YYYY-MM-DD');
+        const ticket_id = await GetEventosByTicketHoy(hoy)
+        // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+        let id_ticket = []
+        let evento_id = []
+        let OrdenServicioID = []
+        let tck_cliente = []
+        for (let index = 0; index < ticket_id.length; index++) {
+            let item = ticket_id[index];
+            id_ticket.push(item.ticket_id)
+            evento_id.push(item.evento_id)
+            OrdenServicioID.push(item.OrdenServicioID)
+            tck_cliente.push(item.tck_cliente)
+        }
+        //para guardar los equipos por ticket
+        await deleteEquipoIDTicketArray(id_ticket)
+        console.log("guardar equipos por ticket", id_ticket.length)
+        for (let index = 0; index < id_ticket.length; index++) {
+            let item = id_ticket[index];
+            console.log("item", item)
+            console.log("index", index)
+            console.log("\n")
+            await EquipoTicket(item)
+        }
+
+        //Para buscar eventos anidadas a la orden
+        for (let index = 0; index < evento_id.length; index++) {
+            let item = evento_id[index];
+            let existe = await ExisteAnidacion(item)
+            if (existe == false) {
+                await OrdenServicioAnidadas(item)
+            }
+        }
+
+        //para guardar lo que venga con OS
+        for (let index = 0; index < OrdenServicioID.length; index++) {
+            let item = OrdenServicioID[index];
+            await OSOrdenServicioID(item)
+        }
+
+        var arrayRuc = ""
+        //para verificar si hay evetos con cliente no registrado 247
+        for (let index = 0; index < tck_cliente.length; index++) {
+            let item = tck_cliente[index];
+            const existe = await ExisteHistorialEquipoClienteNombre(item)
+            if (existe) {
+                console.log("existe", existe)
+            } else {
+                console.log("existe", existe)
+                const sacarRuc = await GetClienteClienteName(item)
+                // const sacarRuc = await GetClienteClienteName("COMPAÑIA ANONIMA CLINICA GUAYAQUIL SERVICIOS MEDICOS S.A.")
+                console.log("sacarRuc", sacarRuc[0].CustomerID)
+                arrayRuc += sacarRuc[0].CustomerID + "|"
+                // arrayRuc.push(item)
+            }
+        }
+
+        if (!isEmpty(arrayRuc)) {
+            console.log("arrayRuc", arrayRuc)
+            await HistorialEquipoPorCliente(arrayRuc)
+        }
+    }
 
     async function Sincronizar() {
         if (isConnected) {
@@ -97,42 +182,57 @@ export default function Banner(props) {
                 dispatch(loadingCargando(true))
                 const res = await BuscarOrdenServicioLocales()
                 if (res) {
-                    Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambios")
-                    await UpdateLocal()
-                    await TrucateUpdate()
-                    await HistorialEquipoIngeniero()
-                    await GetEventosDelDia()
-                    var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                    var hoy = moment().format('YYYY-MM-DD');
-                    var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                    const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                    ticket_id.map(async (r) => {
-                        await EquipoTicket(r.ticket_id)
-                        await OrdenServicioAnidadas(r.evento_id)
-                    })
-                    dispatch(loadingCargando(false))
+                    Alert.alert("Informacion", "Se incontraron cambios locales se subiran estos cambios",
+                        [
+                            {
+                                text: "OK",
+                                onPress: async () => {
+                                    await UpdateLocal()
+                                    // await TrucateUpdateHoy()
+                                    // await HistorialEquipoIngeniero()
+                                    await AsyncAwait()
+                                    // await AsyncAwait()
+                                    dispatch(loadingCargando(false))
+                                    setupdate(false)
+                                },
+                            },
+                            {
+                                text: "Cancelar",
+                                onPress: () => {
+                                    setupdate(false) //para que no se quede cargando
+                                },
+                                style: { color: "#FF6B00" },
+                            }
+                        ]
+                    )
                 } else {
-                    await TrucateUpdate()
-                    await HistorialEquipoIngeniero()
-                    await GetEventosDelDia()
-                    var ayer = moment().add(-1, 'days').format('YYYY-MM-DD');
-                    var hoy = moment().format('YYYY-MM-DD');
-                    var manana = moment().add(1, 'days').format('YYYY-MM-DD');
-                    const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                    ticket_id.map(async (r) => {
-                        await EquipoTicket(r.ticket_id)
-                        await OrdenServicioAnidadas(r.evento_id)
-                    })
+                    // await TrucateUpdateHoy()
+                    // await HistorialEquipoIngeniero()
+                    await AsyncAwait()
                     dispatch(loadingCargando(false))
+                    return true
                 }
             } catch (error) {
                 console.log(error)
                 dispatch(loadingCargando(false))
             }
+        } else {
+            Alert.alert("Error", "No tienes conexión a internet para la Sincronizar", [
+                {
+                    text: "OK",
+                    onPress: () => console.log("hola Mundo"),
+                    style: {
+                        color: "#FF6B00",
+                        fontWeight: "bold",
+                        backgroundColor: "#FF6B00"
+                    },
+                },
+            ])
         }
     }
 
     const CrearNuevoOrdenServicioSinTiket = async () => {
+        dispatch(loadingCargando(true))
         await AsyncStorage.removeItem(ticketID)
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             ticket_id: null,
@@ -142,7 +242,11 @@ export default function Banner(props) {
             Accion: "OrdenSinTicket"
         }))
         dispatch(resetFormularioTool())
-        navigation.navigate("Ordenes")
+        await time(300)
+        dispatch(loadingCargando(false))
+        navigation.navigate({
+            name: 'Ordenes',
+        })
     }
 
     const UpdateLocal = async () => {
@@ -150,7 +254,7 @@ export default function Banner(props) {
         if (res) {
             for (let index = 0; index < res.length; index++) {
                 let el = res[index];
-                if(el.OrdenServicioID == el.evento_id){
+                if (el.OrdenServicioID == el.evento_id) {
                     var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos)
                     for (let index = 0; index < OS_PartesRepuestos.length; index++) {
                         OS_PartesRepuestos[index].OrdenServicioID = 0
@@ -173,15 +277,15 @@ export default function Banner(props) {
                     delete el.OS_Anexos
                     delete el.OS_Colaboradores
                     delete el.OS_Encuesta
-    
+
                     el.OS_PartesRepuestos = OS_PartesRepuestos
                     el.OS_Tiempos = OS_Tiempos
                     el.OS_Firmas = OS_Firmas
                     el.OS_CheckList = OS_CheckList
-    
+
                     let P = await PostOS(el)
-                    console.log("P", P)                
-                }else{
+                    console.log("P", P)
+                } else {
                     var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos)
                     var OS_Tiempos = JSON.parse(el.OS_Tiempos)
                     var OS_Firmas = JSON.parse(el.OS_Firmas)
@@ -193,8 +297,8 @@ export default function Banner(props) {
                     el.OS_Tiempos = OS_Tiempos
                     el.OS_Firmas = OS_Firmas
                     el.OS_CheckList = OS_CheckList
-                    let P = await PostOS(el)
-                    console.log("P", P) 
+                    let P = await PutOS(el)
+                    console.log("P", P)
                 }
             }
 
@@ -203,6 +307,7 @@ export default function Banner(props) {
             return true
         }
     }
+
 
 
     return (
@@ -223,7 +328,6 @@ export default function Banner(props) {
 
             <View style={{ ...styles.banner, paddingLeft: 20 }}>
                 <TouchableOpacity
-                // onPress={Dispatcher}
                     onPress={ActualizarEventos}
                 >
                     <Fontisto name="cloud-refresh" size={25} color={!update ? "#FFF" : "#099E15"} />
