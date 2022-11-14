@@ -81,11 +81,13 @@ export default function Equipo(props) {
                         const { equipo } = item
                         if (equipo != null) {
                             equipo.map((item, index) => {
-                                setTipo(item.tipo)
-                                setSerie(item.equ_serie)
-                                setModel(item.modelo)
-                                GuadadoOS(item)
-                                item.isChecked = "true"
+                                if(item.isChecked == "true"){
+                                    setTipo(item.tipo)
+                                    setSerie(item.equ_serie)
+                                    setModel(item.modelo)
+                                    GuadadoOS(item)
+                                    // item.isChecked = "true"
+                                }
                             })
                             await isChecked(equipo[0].equipo_id)
                             setHistorial(equipo)
@@ -95,6 +97,7 @@ export default function Equipo(props) {
             })()
         }, [])
     )
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -210,6 +213,7 @@ export default function Equipo(props) {
         })
         setHistorial(hist)
     }
+
     const GuadadoOS = async (item) => {
         console.log("item", item)
         // try {
@@ -240,7 +244,7 @@ export default function Equipo(props) {
                 UsuarioCreacion: userId, //#
                 UsuarioModificacion: userId,
             }
-            console.log("equipo ok", equipo)
+            // console.log("equipo ok", equipo)
             dispatch(setEquipoTool(equipo))
             dispatch(actualizarClienteTool({
                 name: 'ClienteID',

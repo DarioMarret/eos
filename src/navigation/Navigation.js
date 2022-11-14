@@ -31,6 +31,7 @@ import moment from "moment";
 import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn } from "../redux/sincronizacion";
 import { EditareventoLocal } from "../service/ServicioLoca";
 import { getIngenierosStorageById } from "../service/ingenieros";
+import { ActualizaEstadoOrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 
 
 const Drawer = createDrawerNavigator();
@@ -102,11 +103,18 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
 
     const FinalizarOS = async () => {
         const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-        const { OrdenServicioID } = itenSelect
+        const { OrdenServicioID, tck_tipoTicketCod } = itenSelect
         if (OrdenServicioID != null && OrdenServicioID != 0) {
             // let estadoLocal = await EstadoOSLOCAL(OrdenServicioID)
             // if (estadoLocal == "UPDATE") {
-                await EditareventoLocal("FINALIZADO", OrdenServicioID)
+                console.log("tck_tipoTicketCod", tck_tipoTicketCod)
+                if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "09") {
+                    //actualiza el estado del evento anidado
+                    await ActualizaEstadoOrdenServicioAnidadas("FINALIZADO", OrdenServicioID)
+                }else{
+                    //actualiza el estado del evento a finalizado
+                    await EditareventoLocal("FINALIZADO", OrdenServicioID)
+                }
 
                 await ActualizarEstadoOS(OrdenServicioID, "FINA")
                 // await UpdateOSOrdenServicioID([OrdenServicioID])

@@ -78,15 +78,15 @@ export default function Hoy(props) {
                 // await DeleteTicket(850479200)
                 // await DeleteEventes(850479200)
 
-                // db.transaction(tx => {
-                //     tx.executeSql(
-                //         `SELECT * FROM ordenesAnidadas`,
-                //         [],
-                //         (tx, results) => {
-                //             console.log("results.rows.length", results)
-                //         }
-                //     );
-                // });
+                db.transaction(tx => {
+                    tx.executeSql(
+                        `SELECT * FROM ordenesAnidadas`,
+                        [],
+                        (tx, results) => {
+                            console.log("results.rows.length", results)
+                        }
+                    );
+                });
 
                 await isCheckedCancelar()
                 var date = moment().format('YYYY-MM-DD');

@@ -354,7 +354,7 @@ export const formularioOrdenServicio = createSlice({
                 state.message = datos
             }
         },
-        PostLocalFormularioTool: (state, action) => {
+        PostLocalFormularioTool: (state, action) => {//el que se esta usando para crear orden local mente
             const datos = ValidarDatos(state)
             const tiempo = ValidarTiempos(state)
             if (datos == true) {

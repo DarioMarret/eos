@@ -108,6 +108,97 @@ export async function InsertOrdenServicioAnidadas(data) {
     })
 }
 
+export async function InsertOrdenServicioAnidadasLocal(data) {
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql:
+                `INSERT INTO ordenesAnidadas (
+                    evento_id,
+                    ticket_id,
+                    codOS,
+                    codeTicket,
+                    tck_cliente,
+                    tck_tipoTicket,
+                    tck_tipoTicketDesc,
+                    tck_descripcionProblema,
+                    ev_fechaAsignadaDesde,
+                    ev_fechaAsignadaHasta,
+                    ev_horaAsignadaDesde,
+                    ev_horaAsignadaHasta,
+                    ev_estado,
+                    tck_direccion,
+                    tck_canton,
+                    tck_provincia,
+                    tck_reporta,
+                    tck_telefonoReporta,
+                    tck_usuario_creacion,
+                    tck_estadoTicket,
+                    ev_descripcion,
+                    id_contrato,
+                    ingenieroId,
+                    ingeniero,
+                    tipoIncidencia,
+                    OrdenServicioID,
+                    tck_tipoTicketCod,
+                    estado_local
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+                data.evento_id,
+                data.ticket_id,
+                data.codOS,
+                data.codeTicket,
+                data.tck_cliente,
+                data.tck_tipoTicket,
+                data.tck_tipoTicketDesc,
+                data.tck_descripcionProblema,
+                data.ev_fechaAsignadaDesde,
+                data.ev_fechaAsignadaHasta,
+                data.ev_horaAsignadaDesde,
+                data.ev_horaAsignadaHasta,
+                data.ev_estado,
+                data.tck_direccion,
+                data.tck_canton,
+                data.tck_provincia,
+                data.tck_reporta,
+                data.tck_telefonoReporta,
+                data.tck_usuario_creacion,
+                data.tck_estadoTicket,
+                data.ev_descripcion,
+                data.id_contrato,
+                data.ingenieroId,
+                data.ingeniero,
+                data.tipoIncidencia,
+                data.OrdenServicioID,
+                data.tck_tipoTicketCod,
+                "UPDATE"
+            ],
+        }], false, (err, results) => {
+            if (err) {
+                console.log("InsertOrdenServicioAnidadas", err)
+            } else {
+                console.log("insert ordenesAnidadas", results)
+            }
+        })
+        resolve(true)
+    })
+}
+
+export const ActualizaEstadoOrdenServicioAnidadas = (estado, OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `UPDATE ordenesAnidadas SET ev_estado = ?, estado_local = ? WHERE OrdenServicioID = ?`,
+            args: [estado, "UPDATE",OrdenServicioID]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("ActualizaEstadoOrdenServicioAnidadas", err)
+            } else {
+                console.log("ActualizaEstadoOrdenServicioAnidadas", results)
+            }
+        })
+        resolve(true)
+    })
+}
+
 export async function DeleteAnidada(evento_id) {
 
     console.log("evento_id------>", evento_id)

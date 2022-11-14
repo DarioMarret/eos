@@ -156,6 +156,7 @@ async function InserEventosDiarios(r) {
 }
 
 export const InsertEventosLocales = async (r) => {
+    console.log("InsertEventosLocales-->", r);
     return new Promise((resolve, reject) => {
         db.exec([{
             sql: `INSERT INTO OrdenesServicio (
@@ -216,7 +217,7 @@ export const InsertEventosLocales = async (r) => {
                 r.tipoIncidencia,
                 r.OrdenServicioID,
                 r.tck_tipoTicketCod,
-                "SIN"]
+                "UPDATE"]
         }], false, (err, results) => {
             if (err) {
                 console.log("error", err);

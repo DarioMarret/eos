@@ -36,6 +36,8 @@ import {
 } from "../service/equipoTicketID";
 import {
   DeleteAnidada,
+  InsertOrdenServicioAnidadas,
+  InsertOrdenServicioAnidadasLocal,
   OrdenServicioAnidadas,
 } from "../service/OrdenServicioAnidadas";
 import { useFocusEffect } from "@react-navigation/native";
@@ -267,6 +269,7 @@ export default function BannerOrderServi(props) {
     }
   }
 
+  /*
   async function GUARDAR_OS() {
     setModalVisible(true);
     if (form.OrdenServicioID == 0) {
@@ -275,6 +278,7 @@ export default function BannerOrderServi(props) {
       dispatch(PutactualizarFormularioTool());
     }
   }
+  */
 
   useFocusEffect(
     useCallback(() => {
@@ -285,7 +289,7 @@ export default function BannerOrderServi(props) {
         }
         if (form.status == 300) {
           dispatch(resetStatusTool());
-          CrearOrdenLocal();
+          await CrearOrdenLocal();
         }
       })();
     }, [form.status == 304 || form.status == 300])
@@ -307,7 +311,7 @@ export default function BannerOrderServi(props) {
     dispatch(loadingCargando(false));
     Alerta(
       "Información",
-      "Orden de servicio creado localmente cuando tenga conexion sincronizara para subir al servidor"
+      "Orden de servicio creado localmente cuando sincronize se subir al servidor"
     );
   };
 
@@ -333,18 +337,19 @@ export default function BannerOrderServi(props) {
       const item = JSON.parse(itenSelect);
       const { Accion, ticket_id, evento_id, tck_tipoTicket } = item;
       var rando = getRandomInt(1000000000);
-      rando = `${rando.toString().substring(0, 5)}`
-      //Genrear todo el objeto OS para guardar localmente
-      dispatch(
-        PostLocalFormularioTool({
-          ticket_id: ticket_id,
-          OrdenServicioID: parseInt(rando),
-          evento_id: evento_id,
-        })
-      );
+      rando = `${rando.toString().substring(0, 5)}`;
+        //Genrear todo el objeto OS para guardar localmente
+        dispatch(
+          PostLocalFormularioTool({
+            ticket_id: ticket_id,
+            OrdenServicioID: parseInt(rando),
+            evento_id: evento_id,
+          })
+        );
+
       //se ejecutara solo si es una clonacion o un nuevo tike que se va a anidar al OS 01 09
       if (Accion == "clonar" || Accion == "NUEVO OS TICKET") {
-        dispatch(PostEnviarFormularioTool());
+        // dispatch(PostEnviarFormularioTool());
         let evento = {
           evento_id: evento_id,
           ticket_id: ticket_id,
@@ -370,11 +375,13 @@ export default function BannerOrderServi(props) {
           id_contrato: null,
           ingenieroId: 0,
           ingeniero: null,
-          tipoIncidencia: from.datos.tipoIncidencia,
+          tipoIncidencia: form.datos.tipoIncidencia,
           OrdenServicioID: parseInt(rando),
-          tck_tipoTicketCod: from.datos.TipoVisita,
-        }
-        await InsertEventosLocales(evento);
+          tck_tipoTicketCod: form.datos.TipoVisita,
+        };
+        console.log("evento", evento)
+        //crear un evento cuando se crea un os ticket
+        await InsertOrdenServicioAnidadasLocal(evento);
       }
     } else {
       dispatch(PutaLocalctualizarFormularioTool());
@@ -390,7 +397,7 @@ export default function BannerOrderServi(props) {
           text: "OK",
           onPress: () => {
             setModalVisible(false);
-            navigation.navigate("Consultas");
+            // navigation.navigate("Consultas");
           },
         },
       ],

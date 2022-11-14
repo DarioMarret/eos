@@ -33,10 +33,10 @@ import { FinalizarOSLocal } from "../../service/ServicioLoca";
 import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion";
 import {
-    actualizarClienteTool, actualizarDatosTool, setAdjuntosTool,
+    actualizarClienteTool, actualizarDatosTool, resetFormularioTool, setAdjuntosTool,
     SetByOrdenServicioID,
     setChecklistTool, setClienteTool, setComponenteTool,
-    setdatosTool, setEquipoTool, setFirmasTool, setTiemposTool
+    setdatosTool, setEquipoTool, setFirmasTool, setOrdenServicioID, setTiemposTool
 } from "../../redux/formulario";
 
 const isConnection = axios.create({
@@ -56,7 +56,7 @@ export default function TicketsOS(props) {
 
     const [listadoEmails, setlistadoEmails] = useState([])
 
-    const [OrdenServicioID, setOrdenServicioID] = useState(0)
+    const [OrdenServicioID, setOrdenServicio] = useState(0)
     const [ticket, setticket] = useState(null)
     const [ClienteNombre, setClienteNombre] = useState(null)
 
@@ -89,6 +89,7 @@ export default function TicketsOS(props) {
                 console.log('response', response)
                 if (response != null) {
                     console.log("anidada", response)
+                    dispatch(resetFormularioTool())
                     seteventosAnidados(response.map((item) => { return { ...item, check: false } }))
                 }
                 dispatch(loadingCargando(false))
@@ -248,10 +249,14 @@ export default function TicketsOS(props) {
             dispatch(loadingCargando(false))
             await AsyncStorage.removeItem(ticketID)
             await AsyncStorage.setItem(ticketID, JSON.stringify({
+                evento_id,
                 ticket_id,
-                equipo: equipo,
-                OrdenServicioID: OrdenServicioID,
-                Accion: accion
+                equipo,
+                OrdenServicioID,
+                Accion: accion,
+                tck_tipoTicket,
+                tipoIncidencia,
+                tck_tipoTicketCod,
             }))
             await AsyncStorage.setItem("SCREMS", "Ticket")
             dispatch(loadingCargando(false))
@@ -278,10 +283,14 @@ export default function TicketsOS(props) {
             dispatch(loadingCargando(false))
             await AsyncStorage.removeItem(ticketID)
             await AsyncStorage.setItem(ticketID, JSON.stringify({
-                ticket_id,
-                equipo: equipo_id,
                 OrdenServicioID: 0,
-                Accion: accion
+                evento_id,
+                ticket_id,
+                equipo,
+                Accion: accion,
+                tck_tipoTicket,
+                tipoIncidencia,
+                tck_tipoTicketCod,
             }))
             await AsyncStorage.setItem("SCREMS", "Ticket")
             await isChecked(equipo[0].equipo_id)
@@ -369,41 +378,47 @@ export default function TicketsOS(props) {
     }
 
     async function IngresarNuevoOsTicket_() {
-        dispatch(loadingCargando(true))
-        var equipo = await ValidarEquipos()
-        console.log("equipo IngresarNuevoOsTicket_", equipo)
-        console.log("IngresarNuevoOsTicket_", eventosAnidados)
-        const { ticket_id, evento_id, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod } = JSON.parse(await AsyncStorage.getItem(ticketID))
-        await AsyncStorage.setItem(ticketID, JSON.stringify({
-            evento_id,
-            ticket_id,
-            equipo,
-            OrdenServicioID: 0,
-            Accion: "NUEVO OS TICKET",
-            tipoIncidencia,
-            tck_tipoTicket,
-            tck_tipoTicketCod
-        }))
-        dispatch(actualizarClienteTool({
-            name: 'ticket_id',
-            value: ticket_id
-        }))
-        dispatch(actualizarClienteTool({
-            name: 'evento_id',
-            value: evento_id
-        }))
-        dispatch(actualizarDatosTool({
-            name: 'tipoIncidencia',
-            value: tipoIncidencia
-        }))
-        dispatch(actualizarDatosTool({
-            name: 'TipoVisita',
-            value: tck_tipoTicketCod
-        }))
-        dispatch(setOrdenServicioID(OrdenServicioID))
-        await AsyncStorage.setItem("SCREMS", "Ticket")
-        dispatch(loadingCargando(false))
-        navigation.navigate("Ordenes")
+        try {
+            dispatch(loadingCargando(true))
+            var equipo = await ValidarEquipos()
+            console.log("equipo IngresarNuevoOsTicket_", equipo)
+            const { ticket_id, evento_id, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod } = JSON.parse(await AsyncStorage.getItem(ticketID))
+            console.log("IngresarNuevoOsTicket_", ticket_id, evento_id, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
+           
+            await AsyncStorage.setItem(ticketID, JSON.stringify({
+                evento_id,
+                ticket_id,
+                equipo,
+                OrdenServicioID: 0,
+                Accion: "NUEVO OS TICKET",
+                tipoIncidencia,
+                tck_tipoTicket,
+                tck_tipoTicketCod
+            }))
+            dispatch(actualizarClienteTool({
+                name: 'ticket_id',
+                value: ticket_id
+            }))
+            dispatch(actualizarClienteTool({
+                name: 'evento_id',
+                value: evento_id
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'tipoIncidencia',
+                value: tipoIncidencia
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'TipoVisita',
+                value: tck_tipoTicketCod
+            }))
+            dispatch(setOrdenServicioID(0))
+            await AsyncStorage.setItem("SCREMS", "Ticket")
+            dispatch(loadingCargando(false))
+            navigation.navigate("Ordenes")
+        } catch (error) {
+            console.log("error", error)
+            dispatch(loadingCargando(false))
+        }
     }
 
 
