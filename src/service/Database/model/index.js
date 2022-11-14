@@ -121,7 +121,7 @@ function InitDB() {
                 cantonId INTEGER NULL,
                 localidad TEXT NULL,
                 tipoIncidencia TEXT NULL,
-                OrdenServicioID UNIQUE NOT NULL,
+                OrdenServicioID INTEGER UNIQUE NOT NULL,
                 TipoVisita TEXT NULL,
                 Fecha TEXT NULL,
                 Estado TEXT NULL,
@@ -171,7 +171,8 @@ function InitDB() {
                 OS_FINALIZADA TEXT NULL,
                 enviado TEXT NULL,
                 codOS TEXT NULL,
-                OS_LOCAL TEXT NULL
+                OS_LOCAL TEXT NULL,
+                es TEXT NULL
                 );`,
                 args: []
             }], false, (tx, results) => {
@@ -263,9 +264,10 @@ function InitDB() {
             ingenieroId INTEGER NULL,
             ingeniero TEXT NULL,
             tipoIncidencia TEXT NULL,
-            OrdenServicioID INTEGER NULL,
+            OrdenServicioID INTEGER NOT NULL,
             tck_tipoTicketCod TEXT NULL,
-            estado_local TEXT NULL
+            estado_local TEXT NULL,
+            es TEXT NULL
         );`)
         })
 

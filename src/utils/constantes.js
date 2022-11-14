@@ -143,7 +143,8 @@ export const OS = {
     OS_Firmas: [],
     OS_PartesRepuestos: [],
     OS_Tiempos: [],
-    OS_LOCAL: 'ENVIADO'
+    OS_LOCAL: 'ENVIADO',
+    es: "LOCAL"
 }
 console.log("constantes.js", Object.keys(OS).length);
 export const OS_CheckList = []

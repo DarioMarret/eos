@@ -577,8 +577,9 @@ export const InserOSOrdenServicioIDLocal = async (r, rando) => {
                     OS_FINALIZADA,
                     enviado,
                     codOS,
-                    OS_LOCAL
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+                    OS_LOCAL,
+                    es
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
             , args: [
                 JSON.stringify(r.OS_CheckList),
                 JSON.stringify(r.OS_Encuesta),
@@ -641,7 +642,8 @@ export const InserOSOrdenServicioIDLocal = async (r, rando) => {
                 r.OS_FINALIZADA,
                 r.enviado,
                 r.codOS,
-                "UPDATE"
+                "UPDATE",
+                r.es
             ],
         }], false, (err, results) => {
             if (err) {
@@ -928,4 +930,36 @@ export async function ActualizarEstadoOS(OrdenServicioID, Estado) {
                 })
         })
     }
+}
+
+/**
+ * 
+ * @param {*} OrdenServicioID 
+ * @param {*} EstadoEquipo 
+ * @param {*} OS_FINALIZADA 
+ * @param {*} Estado 
+ * @param {*} idorden 
+ */
+export const ActualizarOrdenServicioRespuesta = async (OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, idorden) => {
+    console.log("ActualizarOrdenServicioRespuesta", OrdenServicioID, EstadoEquipo, Estado, idorden)
+    db.transaction((tx) => {
+        tx.executeSql(
+            `UPDATE OS_OrdenServicio SET 
+            EstadoEquipo = ?, 
+            OS_FINALIZADA = ?, 
+            Estado = ?, 
+            OS_LOCAL = ?, 
+            OrdenServicioID = ? 
+            codOS = ?
+            WHERE OrdenServicioID = ?`,
+            [EstadoEquipo, OS_FINALIZADA, Estado, 'SIN', OrdenServicioID, `OSO${OrdenServicioID}`, idorden],
+            (_, { rowsAffected }) => {
+                if (rowsAffected > 0) {
+                    console.log("actualizado", rowsAffected)
+                    return true
+                } else {
+                    return false
+                }
+            })
+    })
 }

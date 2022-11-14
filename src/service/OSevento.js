@@ -18,6 +18,7 @@ export const GetEventosDelDia = async () => {
         })
         const resultado = await response.json()
         const { Response } = resultado
+        console.log("sincronizacion GetEventosDelDia-->", Response);
         for (let index = 0; index < Response.length; index++) {
             const item = Response[index];
             await InserEventosDiarios(item)

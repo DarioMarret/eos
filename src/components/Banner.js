@@ -1,6 +1,5 @@
 import {
   DeleteEventesDiaHoy,
-  GetEventosByTicket,
   GetEventosByTicketHoy,
   GetEventosDelDia,
   GetEventosDelDiaHoy,
@@ -38,14 +37,14 @@ import {
   loadingProcesando,
 } from "../redux/sincronizacion";
 import { useFocusEffect } from "@react-navigation/native";
-import { OSOrdenServicioID } from "../service/OS_OrdenServicio";
+import { OSOrdenServicioID, SacarAnexo, SacarCheckList, SacarFirmas, SacarParte, SacarTiempos } from "../service/OS_OrdenServicio";
 import isEmpty from "is-empty";
 import { GetClienteClienteName } from "../service/clientes";
 import axios from "axios";
 
 const isConnection = axios.create({
   baseURL: "https://technical.eos.med.ec/MSOrdenServicio/getVerificaLlegada",
-  timeout: 30,
+  timeout: 60,
 });
 
 export default function Banner() {
@@ -104,14 +103,15 @@ export default function Banner() {
         );
       }
     } catch (error) {
-      Alert.alert("Error", "Error al actualizar los eventos");
+      Alert.alert("Error", "Se excedió el tiempo de espera de la conexión.");
     }
   }
 
   async function UP() {
     dispatch(loadingCargando(true));
     setupdate(true);
-    const respuesta = await Sincronizar();
+    const respuesta = await UpdateLocal();
+    await AsyncAwait();
     await Dispatcher();
     if (respuesta) {
       dispatch(loadingCargando(false));
@@ -127,7 +127,6 @@ export default function Banner() {
     useCallback(() => {
       (async () => {
         if (Events.sincronizador) {
-          await Sincronizar();
           dispatch(loadingProcesando(false));
         }
       })();
@@ -136,9 +135,11 @@ export default function Banner() {
 
   async function AsyncAwait() {
     //eliminda los eventos del dia hoy
-    await DeleteEventesDiaHoy();
+    // await DeleteEventesDiaHoy();
     //consulta para traer los eventos del dia ayer hoy y mañana
-    await GetEventosDelDiaHoy();
+    // await GetEventosDelDiaHoy();
+    await GetEventosDelDia();
+
     var hoy = moment().format("YYYY-MM-DD");
     const ticket_id = await GetEventosByTicketHoy(hoy);
     // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
@@ -202,124 +203,88 @@ export default function Banner() {
     }
   }
 
-  async function Sincronizar() {
-    const { data } = await isConnection.get();
-    if (data) {
-      try {
-        dispatch(loadingCargando(true));
-        const res = await BuscarOrdenServicioLocales();
-        if (res) {
-          Alert.alert(
-            "Informacion",
-            "Se incontraron cambios locales se subiran estos cambios",
-            [
-              {
-                text: "OK",
-                onPress: async () => {
-                  await UpdateLocal();
-                  // await TrucateUpdateHoy()
-                  // await HistorialEquipoIngeniero()
-                  await AsyncAwait();
-                  // await AsyncAwait()
-                  dispatch(loadingCargando(false));
-                  setupdate(false);
-                },
-              },
-              {
-                text: "Cancelar",
-                onPress: () => {
-                  setupdate(false); //para que no se quede cargando
-                },
-                style: { color: "#FF6B00" },
-              },
-            ]
-          );
-        } else {
-          // await TrucateUpdateHoy()
-          // await HistorialEquipoIngeniero()
-          await AsyncAwait();
-          dispatch(loadingCargando(false));
-          return true;
-        }
-      } catch (error) {
-        console.log(error);
-        dispatch(loadingCargando(false));
-      }
-    } else {
-      Alert.alert(
-        "Error",
-        "No tienes conexión a internet para la Sincronizar",
-        [
-          {
-            text: "OK",
-            onPress: () => console.log("hola Mundo"),
-            style: {
-              color: "#FF6B00",
-              fontWeight: "bold",
-              backgroundColor: "#FF6B00",
-            },
-          },
-        ]
-      );
-    }
-  }
-
   const UpdateLocal = async () => {
-    const res = await BuscarOrdenServicioLocales();
-    if (res) {
-      for (let index = 0; index < res.length; index++) {
-        let el = res[index];
-        if (el.OrdenServicioID == el.evento_id) {
-          var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos);
-          for (let index = 0; index < OS_PartesRepuestos.length; index++) {
-            OS_PartesRepuestos[index].OrdenServicioID = 0;
+    try {
+      const res = await BuscarOrdenServicioLocales();
+      if (res) {
+        for (let index = 0; index < res.length; index++) {
+          let el = res[index];
+          var OrdenServicioID = el.OrdenServicioID;
+          var evento_id = el.evento_id;
+          if (el.OrdenServicioID.toString().length == 4) {
+            var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos);
+            for (let index = 0; index < OS_PartesRepuestos.length; index++) {
+              OS_PartesRepuestos[index].OrdenServicioID = 0;
+            }
+            var OS_Tiempos = JSON.parse(el.OS_Tiempos);
+            for (let index = 0; index < OS_Tiempos.length; index++) {
+              OS_Tiempos[index].OrdenServicioID = 0;
+            }
+            var OS_Firmas = JSON.parse(el.OS_Firmas);
+            for (let index = 0; index < OS_Firmas.length; index++) {
+              OS_Firmas[index].OrdenServicioID = 0;
+            }
+            var OS_CheckList = JSON.parse(el.OS_CheckList);
+            for (let index = 0; index < OS_CheckList.length; index++) {
+              OS_CheckList[index].OrdenServicioID = 0;
+            }
+            el.OrdenServicioID = 0;
+            delete el.OS_Anexos;
+            delete el.OS_Colaboradores;
+            delete el.OS_Encuesta;
+  
+            el.OS_PartesRepuestos = await SacarParte(OrdenServicioID);;
+            el.OS_Tiempos = await SacarTiempos(OrdenServicioID);
+            el.OS_Firmas = await SacarFirmas(OrdenServicioID);
+            el.OS_CheckList = await SacarCheckList(OrdenServicioID);
+  
+            let P = await PostOS(el, OrdenServicioID, evento_id, el.es);
+            // console.log("P", P);
+            if(el.Estado == "FINA"){
+              const { token } = await getToken()
+              const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+              })
+              console.log("status", status);
+            }
+          } else {
+            var OS_PartesRepuestos = await SacarParte(OrdenServicioID);
+            var OS_Tiempos = await SacarTiempos(OrdenServicioID);
+            var OS_Firmas = await SacarFirmas(OrdenServicioID);
+            var OS_CheckList = await SacarCheckList(OrdenServicioID);
+            var OS_Anexos =  await SacarAnexo(OrdenServicioID);
+            delete el.OS_Colaboradores;
+            delete el.OS_Encuesta;
+            el.OS_PartesRepuestos = OS_PartesRepuestos;
+            el.OS_Tiempos = OS_Tiempos;
+            el.OS_Firmas = OS_Firmas;
+            el.OS_CheckList = OS_CheckList;
+            el.OS_Anexos = OS_Anexos;
+            let P = await PutOS(el, OrdenServicioID, evento_id, el.es);
+            // console.log("P", P);
+            if(el.Estado == "FINA"){
+              const { token } = await getToken()
+              const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                }
+              })
+              console.log("status", status);
+            }
           }
-          var OS_Tiempos = JSON.parse(el.OS_Tiempos);
-          for (let index = 0; index < OS_Tiempos.length; index++) {
-            OS_Tiempos[index].OrdenServicioID = 0;
-          }
-          var OS_Firmas = JSON.parse(el.OS_Firmas);
-          for (let index = 0; index < OS_Firmas.length; index++) {
-            OS_Firmas[index].OrdenServicioID = 0;
-          }
-          var OS_CheckList = JSON.parse(el.OS_CheckList);
-          for (let index = 0; index < OS_CheckList.length; index++) {
-            OS_CheckList[index].OrdenServicioID = 0;
-          }
-          el.ticket_id = 0;
-          el.OrdenServicioID = 0;
-          el.evento_id = 0;
-          delete el.OS_Anexos;
-          delete el.OS_Colaboradores;
-          delete el.OS_Encuesta;
-
-          el.OS_PartesRepuestos = OS_PartesRepuestos;
-          el.OS_Tiempos = OS_Tiempos;
-          el.OS_Firmas = OS_Firmas;
-          el.OS_CheckList = OS_CheckList;
-
-          let P = await PostOS(el);
-          console.log("P", P);
-        } else {
-          var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos);
-          var OS_Tiempos = JSON.parse(el.OS_Tiempos);
-          var OS_Firmas = JSON.parse(el.OS_Firmas);
-          var OS_CheckList = JSON.parse(el.OS_CheckList);
-          delete el.OS_Anexos;
-          delete el.OS_Colaboradores;
-          delete el.OS_Encuesta;
-          el.OS_PartesRepuestos = OS_PartesRepuestos;
-          el.OS_Tiempos = OS_Tiempos;
-          el.OS_Firmas = OS_Firmas;
-          el.OS_CheckList = OS_CheckList;
-          let P = await PutOS(el);
-          console.log("P", P);
         }
+  
+        return true;
+      } else {
+        return true;
       }
-
-      return true;
-    } else {
-      return true;
+    } catch (error) {
+      console.log("error", error);
+      return false;      
     }
   };
 

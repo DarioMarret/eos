@@ -205,6 +205,35 @@ export const ActualizaEstadoOrdenServicioAnidadas = (estado, OrdenServicioID) =>
     })
 }
 
+
+/**
+ * 
+ * @param {*} estado 
+ * @param {*} estado_local //SIN, UPDATE
+ * @param {*} OrdenServicioID 
+ * @param {*} evento_id 
+ * @returns 
+ */
+export const ActualizaOrdenServicioIDOrdenServicioAnidadas = (estado, estado_local, OrdenServicioID, evento_id) => {
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `UPDATE ordenesAnidadas SET 
+            ev_estado = ?, 
+            estado_local = ? 
+            OrdenServicioID = ?
+            WHERE evento_id = ?`,
+            args: [estado, estado_local,OrdenServicioID, evento_id]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("ActualizaEstadoOrdenServicioAnidadas", err)
+            } else {
+                console.log("ActualizaEstadoOrdenServicioAnidadas", results)
+            }
+        })
+        resolve(true)
+    })
+}
+
 export async function DeleteAnidada(evento_id) {
 
     console.log("evento_id------>", evento_id)

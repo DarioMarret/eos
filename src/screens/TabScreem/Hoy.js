@@ -13,14 +13,10 @@ import calwait from '../../../assets/icons/cal-wait.png';
 import calreq from '../../../assets/icons/cal-req.png';
 import calok from '../../../assets/icons/cal-ok.png';
 import LoadingActi from "../../components/LoadingActi";
-import { ConsultaOSOrdenServicioID, SelectOSOrdenServicioID } from "../../service/OS_OrdenServicio";
-import { useIsConnected } from 'react-native-offline';
+import { ConsultaOSOrdenServicioID } from "../../service/OS_OrdenServicio";
 import { useSelector, useDispatch } from "react-redux"
 import { listarEventoHoy, getEventosByDate, loadingCargando } from "../../redux/sincronizacion";
 import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, setAdjuntosTool, setChecklistTool, setClienteTool, setComponenteTool, setdatosTool, setEquipoTool, setFirmasTool, setOrdenServicioID, setTiemposTool } from "../../redux/formulario";
-import useUser from "../../hook/useUser";
-import { getEquipoTicketStorage } from "../../service/equipoTicketID";
-import axios from "axios";
 
 export default function Hoy(props) {
     const [eventos, setEventos] = useState([]);
@@ -29,18 +25,12 @@ export default function Hoy(props) {
     const [times, setTime] = useState(false)
     const { navigation } = props
 
-    const isConnected = useIsConnected();
     const Events = useSelector(s => s.sincronizacion)
-    const formulario = useSelector(s => s.formulario)
-
-    const { reloadInt, SincronizarInit } = useUser()
 
     const dispatch = useDispatch()
     useFocusEffect(
         useCallback(() => {
             setEventos([])
-            console.log("reloadInt", reloadInt)
-            // dispatch(loadingCargando(reloadInt))
             setEventos(Events.eventos_hoy)
             // console.log("eventos_hoy", Events.eventos_hoy)
             dispatch(resetFormularioTool())
@@ -54,49 +44,33 @@ export default function Hoy(props) {
     useFocusEffect(
         useCallback(() => {
             (async () => {
-                await AsyncStorage.setItem("SCREMS", "Hoy")
-                dispatch(loadingCargando(true))
-                // try {
-                //     const isConnection = axios.create({
-                //         baseURL: 'https://google.com',
-                //         timeout: 10000,
-                //     })
-                //     const { data } = await isConnection.get()
-                //     if (data) {
-                //         const respuesta = await SincronizarInit()
-                //         console.log("respuesta", respuesta)
-                //         if (respuesta) {
-                //             dispatch(loadingCargando(false))
-                //         }
-                //     }
-                // } catch (error) {
-                //     console.log(error)
-                //     dispatch(loadingCargando(false))
-                //     return true
-                // }
-                // await DeleteOrdenServicioID([850479200])
-                // await DeleteTicket(850479200)
-                // await DeleteEventes(850479200)
-
-                db.transaction(tx => {
-                    tx.executeSql(
-                        `SELECT * FROM ordenesAnidadas`,
-                        [],
-                        (tx, results) => {
-                            console.log("results.rows.length", results)
-                        }
-                    );
-                });
-
-                await isCheckedCancelar()
-                var date = moment().format('YYYY-MM-DD');
-                const promisa = dispatch(getEventosByDate(`${date}T00:00:00`))
-                promisa.then((res) => {
-                    res.payload.length > 0 ?
-                        dispatch(listarEventoHoy(res.payload))
-                        : null
-                })
-                dispatch(loadingCargando(false))
+                try {
+                    await AsyncStorage.setItem("SCREMS", "Hoy")
+                    dispatch(loadingCargando(true))
+    
+                    db.transaction(tx => {
+                        tx.executeSql(
+                            `SELECT * FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                            [10200],
+                            (tx, results) => {
+                                console.log("results.rows.length", results.rows._array)
+                            }
+                        );
+                    });
+    
+                    await isCheckedCancelar()
+                    var date = moment().format('YYYY-MM-DD');
+                    const promisa = dispatch(getEventosByDate(`${date}T00:00:00`))
+                    promisa.then((res) => {
+                        res.payload.length > 0 ?
+                            dispatch(listarEventoHoy(res.payload))
+                            : null
+                    })
+                    dispatch(loadingCargando(false))
+                } catch (error) {
+                    console.log("error", error)
+                    dispatch(loadingCargando(false))              
+                }
             })()
         }, [])
     )

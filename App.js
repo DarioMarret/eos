@@ -32,17 +32,16 @@ import {
 import { GetEventosByTicket, GetEventosDelDia } from "./src/service/OSevento";
 import moment from "moment";
 import { deleteEquipoIDTicketArray, EquipoTicket } from "./src/service/equipoTicketID";
-import { DeleteAnidada, OrdenServicioAnidadas } from "./src/service/OrdenServicioAnidadas";
+import {  OrdenServicioAnidadas } from "./src/service/OrdenServicioAnidadas";
 import { DeleteOrdenServicioID, OSOrdenServicioID } from "./src/service/OS_OrdenServicio";
 import { GetClienteClienteName } from "./src/service/clientes";
 import axios from "axios";
 import isEmpty from "is-empty";
-import { Alert } from "react-native";
 
 const isConnection = axios.create({
   baseURL:
     "https://technical.eos.med.ec/MSOrdenServicio/getVerificaLlegada",
-  timeout: 30,
+  timeout: 60,
 });
 
 const theme = {
@@ -94,6 +93,7 @@ export default function App() {
           var hoy = moment().format("YYYY-MM-DD");
           var manana = moment().add(1, "days").format("YYYY-MM-DD");
           const ticket_id = await GetEventosByTicket(ayer, hoy, manana);
+          console.log("ticket_id", ticket_id);
           let id_ticket = [];
           let evento_id = [];
           let OrdenServicioID = [];

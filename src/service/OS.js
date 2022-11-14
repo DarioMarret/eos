@@ -1,15 +1,31 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { OS } from "../utils/constantes";
+import { ActualizaOrdenServicioIDOrdenServicioAnidadas } from "./OrdenServicioAnidadas";
 import { AactualizarEventos } from "./OSevento";
-import { InserOSOrdenServicioID, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
+import { ActualizarOrdenServicioRespuesta, InserOSOrdenServicioID, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
-export const PostOS = async (data) => {
+const isConnectionPOST = axios.create({
+    baseURL:
+      "https://technical.eos.med.ec/MSOrdenServicio/getVerificaLlegada",
+    timeout: 100,
+  });
+
+  /**
+   * 
+   * @param {*} data 
+   * @param {*} idorden 
+   * @param {*} evento_id 
+   * @param {*} es 
+   * @returns 
+   */
+export const PostOS = async (data, idorden, evento_id, es) => {
     try {
         console.log("data", data)
         const { token } = await getToken()
-        const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio`;
+        // const url = `https://technical.eos.med.ec/MSOrdenServicio/ordenServicio`;
+        const url = `https://technical.eos.med.ec/MSOrdenServicio/OrdenServicioAppM `;
         const params = {
             method: "POST",
             headers: {
@@ -17,37 +33,63 @@ export const PostOS = async (data) => {
                 "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify(data),
+            timeout: 100,
         }
         let response = await fetch(url, params);
         let result = await response.json()
         if (result.Code == "200") {
-            await InserOSOrdenServicioID(result.Response)//inserta el id de la orden de servicio
-            await AactualizarEventos("PROCESO", result.Response.OrdenServicioID, result.Response.evento_id)//actualiza el id de la orden de servicio en los eventos
-            return result.Code
+            const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado } = result.Response
+            var estado = Estado == "FINA" ? "FINALIZADO" : "PROCESO"
+            //inserta el id de la orden de servicio
+            await ActualizarOrdenServicioRespuesta(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, idorden)
+            if(es == "ANI"){
+                //acualizar el vento de la orden de servicio anidada
+                await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, evento_id)
+            }else{
+                //actualiza el id de la orden de servicio en los eventos
+                await AactualizarEventos(estado, OrdenServicioID, evento_id)
+            }
+
+            return OrdenServicioID
         }
     } catch (error) {
         console.log("error en el post", error)
+        return false
     }
 }
 
-export const PutOS = async (datos) => {
-    console.log(typeof datos)
+export const PutOS = async (datos, OrdenServicioID) => {
     const { token } = await getToken()
-    console.log("PutOS", datos.OrdenServicioID)
-    // console.log("PutOS", datos)
     console.log("\n")
-
     try {
         const { data, status } = await axios.put(
-            `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
+            // `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
+            `https://technical.eos.med.ec/MSOrdenServicio/OrdenServicioAppM?id=${OrdenServicioID}`,
             datos, {
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
-            }
+            },
+            timeout: 100,
         })
-        console.log("PutOS", data)
-        console.log("PutOS Status", status)
+        if (data.Code == "200") {
+            const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado } = data.Response
+            var estado = Estado == "FINA" ? "FINALIZADO" : "PROCESO"
+            //inserta el id de la orden de servicio
+            await ActualizarOrdenServicioRespuesta(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, idorden)
+            if(es == "ANI"){
+                //acualizar el vento de la orden de servicio anidada
+                await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, evento_id)
+            }else{
+                //actualiza el id de la orden de servicio en los eventos
+                await AactualizarEventos(estado, OrdenServicioID, evento_id)
+            }
+
+            return OrdenServicioID
+        }
+
+
+
         return status
     } catch (error) {
         console.log("PutOS", error)
@@ -192,150 +234,5 @@ export const FinalizarOSmasivo = async (OrdenServicioID) => {
     } catch (error) {
         console.log("PutOS ERROR", error)
         return false
-    }
-}
-
-// Language: javascript
-
-
-// Path: src/service/OS_OrdenServicio.js
-
-
-
-export const ParseOS = async (data, accion) => {
-    if (accion == "NUEVO OS TICKET") {
-
-        await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)
-        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
-        await AsyncStorage.setItem("OS_Anexos", data[0].OS_Anexos)
-        await AsyncStorage.setItem("OS_Firmas", data[0].OS_Firmas)
-
-        data[0].OS_PartesRepuestos = []
-        data[0].OS_CheckList = []
-        data[0].OS_Tiempos = []
-        data[0].OS_Firmas = []
-        data[0].OS_Colaboradores = []
-        data[0].OrdenServicioID = 0
-        data[0].OS_Encuesta = []
-        data[0].OS_Anexos = []
-        data[0].OS_FINALIZADA = ""
-        data[0].OS_ASUNTO = ""
-        data[0].Estado = "ACTI"
-        data[0].codOS = ""
-        return data[0]
-
-    } else if (accion == "PENDIENTE") {
-
-        // console.log("ParseOS PENDIENTE", data[0])
-        await AsyncStorage.setItem("OS_PartesRepuestos", JSON.stringify([]))
-        await AsyncStorage.setItem("OS_CheckList", JSON.stringify([]))
-        await AsyncStorage.setItem("OS_Tiempos", JSON.stringify([]))
-        await AsyncStorage.setItem("OS_Anexos", JSON.stringify([]))
-        await AsyncStorage.setItem("OS_Firmas", JSON.stringify([]))
-        OS.OS_PartesRepuestos = []
-        OS.OS_CheckList = []
-        OS.OS_Tiempos = []
-        OS.OS_Firmas = []
-        OS.OS_Anexos = []
-        OS.equipo_id = data.equipo_id
-        OS.EstadoEquipo = data.equ_estado
-        OS.EstadoEqPrevio = data.equ_estado
-        OS.ClienteNombre = data.con_ClienteNombre
-        OS.OrdenServicioID = 0
-        OS.OS_Colaboradores = []
-        OS.OS_Encuesta = []
-        OS.Estado = "ACTI"
-        return OS
-
-    } else if (accion == "FINALIZADO") {
-
-        await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)
-        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
-        await AsyncStorage.setItem("OS_Anexos", data[0].OS_Anexos)
-        await AsyncStorage.setItem("OS_Firmas", data[0].OS_Firmas)
-        data[0].OS_PartesRepuestos = []
-        data[0].OS_CheckList = []
-        data[0].OS_Tiempos = []
-        data[0].OS_Firmas = []
-        data[0].OS_Colaboradores = []
-        data[0].OS_Encuesta = []
-        data[0].OS_Anexos = []
-        return data[0]
-
-    } else if (accion == "clonar") {
-        console.log("ParseOS clonar", data[0].OS_Tiempos)
-        data[0].OS_Tiempos[0].IdTiempo = 0
-        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
-        data[0].OS_Tiempos = []
-        data[0].OS_PartesRepuestos = []
-        data[0].OS_Colaboradores = []
-        data[0].OrdenServicioID = 0
-        data[0].OS_CheckList = []
-        data[0].OS_Encuesta = []
-        data[0].OS_Firmas = []
-        data[0].OS_Anexos = []
-        delete data[0].OS_FINALIZADA
-        // delete data[0].OS_ASUNTO
-        data[0].Estado = "ACTI"
-        delete data[0].codOS
-        return data[0]
-
-    } else if (accion == "FIRMAR") {
-
-        await AsyncStorage.setItem("FIRMADOR", JSON.stringify([]))
-        await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)
-        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
-        await AsyncStorage.setItem("OS_Anexos", data[0].OS_Anexos)
-        await AsyncStorage.setItem("OS_Firmas", data[0].OS_Firmas)
-
-        data[0].OS_PartesRepuestos = []
-        data[0].OS_Colaboradores = []
-        data[0].OS_CheckList = []
-        data[0].OS_Encuesta = []
-        data[0].OS_Tiempos = []
-        data[0].OS_Firmas = []
-        data[0].OS_Anexos = []
-        return data[0]
-
-    } else if (accion == "PROCESO") {
-
-        // await AsyncStorage.removeItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        console.log("ParseOS PROCESO", data)
-
-        await AsyncStorage.setItem("OS_PartesRepuestos", data[0].OS_PartesRepuestos)
-        await AsyncStorage.setItem("OS_CheckList", data[0].OS_CheckList)
-        await AsyncStorage.setItem("OS_Tiempos", data[0].OS_Tiempos)
-        await AsyncStorage.setItem("OS_Anexos", data[0].OS_Anexos)
-        await AsyncStorage.setItem("OS_Firmas", data[0].OS_Firmas)
-
-        data[0].OS_PartesRepuestos = []
-        data[0].OS_Colaboradores = []
-        data[0].OS_CheckList = []
-        data[0].OS_Encuesta = []
-        data[0].OS_Tiempos = []
-        data[0].OS_Firmas = []
-        data[0].OS_Anexos = []
-        delete data[0].OS_ASUNTO
-        delete data[0].OS_FINALIZADA
-        console.log("ParseOS PROCESO", data[0])
-        return data[0]
-    }
-}
-
-export const ESTADO = (accion) => {
-    switch (accion) {
-        case "clonar":
-            return "ACTI"
-        case "NUEVO OS TICKET":
-            return "ACTI"
-        case "PENDIENTE":
-            return "ACTI"
-        case "OrdenSinTicket":
-            return "ACTI"
-        default:
-            break;
     }
 }

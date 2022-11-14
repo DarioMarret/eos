@@ -359,13 +359,14 @@ export const formularioOrdenServicio = createSlice({
             const tiempo = ValidarTiempos(state)
             if (datos == true) {
                 if (tiempo == true) {
-                    const { ticket_id, OrdenServicioID, evento_id } = action.payload
+                    const { ticket_id, OrdenServicioID, evento_id, es } = action.payload
                     OS.OS_PartesRepuestos = state.componente
                     OS.OS_Anexos = state.adjuntos
                     OS.OS_Tiempos = state.tiempos
                     OS.OS_Firmas = state.firmas
                     OS.OS_CheckList = state.checklist
                     OS.OS_LOCAL = "UPDATE"
+                    OS.es = es
                     let OS_OrdenServicio = {
                         ...OS,
                         ...state.equipo,
