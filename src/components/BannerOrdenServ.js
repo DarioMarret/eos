@@ -23,6 +23,7 @@ import moment from "moment";
 import React, { useCallback, useState } from "react";
 import { ticketID, evento } from "../utils/constantes";
 import {
+  AactualizarEventos,
   DeleteEventesDiaHoy,
   GetEventosByTicket,
   GetEventosByTicketHoy,
@@ -146,14 +147,13 @@ export default function BannerOrderServi(props) {
       }
     }
   }
+  
   async function resetTab() {
     TabTitle(tab[0]);
-    // navigation.navigate(tab[0])
     const screen = await AsyncStorage.getItem("SCREMS");
-    console.log("screen", screen);
     navigation.navigate(screen);
-    // navigation.navigate("Consultas")
   }
+
   async function PasarACliente() {
     const respuesta = await getHistorialEquiposStorageChecked();
     if (respuesta.length > 0) {
@@ -284,19 +284,23 @@ export default function BannerOrderServi(props) {
     useCallback(() => {
       (async () => {
         if (form.status == 304) {
+          //este se ejecuta cuando se actualiza una orden de servicio
           dispatch(resetStatusTool());
           await ActualizarOrdenLocal();
+          await Dispatcher();
         }
         if (form.status == 300) {
+          //este se ejecuta cuando se crea una orden de servicio
           dispatch(resetStatusTool());
           await CrearOrdenLocal();
+          await Dispatcher();
         }
       })();
     }, [form.status == 304 || form.status == 300])
   );
 
   const CrearOrdenLocal = async () => {
-    const { OrdenServicioID, equipo_id, contrato_id } = form.ordenServicio;
+    const { OrdenServicioID, equipo_id, contrato_id, evento_id } = form.ordenServicio;
     dispatch(loadingCargando(true));
     await isCheckedCancelar();
     console.log("OrdenServicioID", OrdenServicioID);
@@ -304,7 +308,7 @@ export default function BannerOrderServi(props) {
     console.log("contrato_id", contrato_id);
     console.log("form.ordenServicio", form.ordenServicio);
     await InserOSOrdenServicioIDLocal(form.ordenServicio, OrdenServicioID);
-    // await InsertEventosLocalesUpadte(form.ordenServicio, OrdenServicioID);
+    await EditareventoLocal("PROCESO", OrdenServicioID, evento_id)//actualiza el evento del dia a proceso en elcual se esta trabajando
     await registartEquipoTicket(equipo_id, contrato_id, OrdenServicioID);
     await resetTab();
     dispatch(resetFormMessageTool());
@@ -316,10 +320,10 @@ export default function BannerOrderServi(props) {
   };
 
   const ActualizarOrdenLocal = async () => {
-    const { OrdenServicioID } = form.ordenServicio;
+    const { OrdenServicioID, evento_id } = form.ordenServicio;
     dispatch(loadingCargando(true));
     await isCheckedCancelar();
-    await EditareventoLocal("PROCESO", OrdenServicioID);
+    await EditareventoLocal("PROCESO", OrdenServicioID, evento_id)//actualiza el evento del dia a proceso en elcual se esta trabajando
     await ActualizarOrdenServicioLocal(form.ordenServicio);
     await resetTab();
     dispatch(resetFormMessageTool());

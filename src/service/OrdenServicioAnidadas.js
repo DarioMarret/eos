@@ -183,6 +183,12 @@ export async function InsertOrdenServicioAnidadasLocal(data) {
     })
 }
 
+/**
+ * 
+ * @param {*} estado 
+ * @param {*} OrdenServicioID 
+ * @returns 
+ */
 export const ActualizaEstadoOrdenServicioAnidadas = (estado, OrdenServicioID) => {
     return new Promise((resolve, reject) => {
         db.exec([{

@@ -24,13 +24,9 @@ import {
 import { AntDesign, Fontisto } from "@expo/vector-icons";
 import React, { useCallback, useState } from "react";
 import moment from "moment";
-import { time, TrucateUpdate, TrucateUpdateHoy } from "../service/CargaUtil";
 import { ExisteHistorialEquipoClienteNombre } from "../service/historiaEquipo";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { OS, ticketID } from "../utils/constantes";
 
 import { PostOS, PutOS } from "../service/OS";
-import { useIsConnected } from "react-native-offline";
 import { BuscarOrdenServicioLocales } from "../service/ServicioLoca";
 import { useSelector, useDispatch } from "react-redux";
 import {

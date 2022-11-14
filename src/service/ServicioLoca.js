@@ -35,16 +35,19 @@ export const registartEquipoTicket = async (id_equipo, id_contrato, ticket_id) =
  * 
  * @param {*} ev_estado 
  * @param {*} OrdenServicioID 
+ * @param {*} evento_id 
  * @returns 
  */
-export const EditareventoLocal = async (ev_estado, OrdenServicioID) => {
+export const EditareventoLocal = async (ev_estado, OrdenServicioID, evento_id) => {
+    console.log("EditareventoLocal", ev_estado, OrdenServicioID, evento_id)
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
-            tx.executeSql(`UPDATE OrdenesServicio SET ev_estado = ? WHERE OrdenServicioID = ?`, [
+            tx.executeSql(`UPDATE OrdenesServicio SET ev_estado = ?, OrdenServicioID = ? WHERE evento_id = ?`, [
                 ev_estado,
-                OrdenServicioID
+                OrdenServicioID,
+                evento_id
             ], (tx, results) => {
-                console.log("results -- EditareventoLocal", results.rowsAffected);
+                console.log("results -- EditareventoLocal", results);
             })
         })
         resolve(true)

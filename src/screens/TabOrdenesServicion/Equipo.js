@@ -17,6 +17,8 @@ import { GetClienteClienteName } from "../../service/clientes"
 import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion"
 import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, SetByOrdenServicioID, setEquipoTool } from "../../redux/formulario"
+import { time } from "../../service/CargaUtil"
+import isEmpty from "is-empty"
 
 export default function Equipo(props) {
     const { navigation } = props
@@ -49,6 +51,58 @@ export default function Equipo(props) {
     const EquipoStor = useSelector(s => s.formulario)
     const dispatch = useDispatch()
 
+/*
+    useEffect(() =>{
+        (async () => {
+            setHistorial([])
+            setTipo("Tipo")
+            setModel("Modelo")
+            setSerie("")
+            var equipoCheck = await getHistorialEquiposStorageChecked()
+            console.log("equipoCheck", equipoCheck)
+            if (equipoCheck.length > 1) {
+                const itenSelect = await AsyncStorage.getItem(ticketID)
+                console.log("itenSelect", itenSelect)
+                await time(90000)
+                if (itenSelect != null) {
+                    const item = JSON.parse(itenSelect)
+                    const { equipo } = item
+                    console.log("equipo", equipo)
+                    equipo.map((item, index) => {
+                        if (equipoCheck[0].equipo_id == equipo[index].equipo_id) {
+                            setTipo(item.tipo)
+                            setSerie(item.equ_serie)
+                            setModel(item.modelo)
+                            GuadadoOS(item)
+                            equipo[index].isChecked = "true"
+                        }
+                    })
+                    setHistorial(equipo)
+                }
+            } else {
+                const itenSelect = await AsyncStorage.getItem(ticketID)
+                if (itenSelect != null) {
+                    const item = JSON.parse(itenSelect)
+                    const { equipo } = item
+                    if (equipo != null) {
+                        equipo.map((item, index) => {
+                            if(item.isChecked == "true"){
+                                setTipo(item.tipo)
+                                setSerie(item.equ_serie)
+                                setModel(item.modelo)
+                                GuadadoOS(item)
+                                item.isChecked = "true"
+                            }
+                        })
+                        await isChecked(equipo[0].equipo_id)
+                        setHistorial(equipo)
+                    }
+                }
+            }
+        })()
+    },[])
+*/
+
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -58,8 +112,9 @@ export default function Equipo(props) {
                 setSerie("")
                 var equipoCheck = await getHistorialEquiposStorageChecked()
                 console.log("equipoCheck", equipoCheck)
-                if (equipoCheck.length > 1) {
+                if (!isEmpty(equipoCheck)) {
                     const itenSelect = await AsyncStorage.getItem(ticketID)
+                    await time(200)
                     if (itenSelect != null) {
                         const item = JSON.parse(itenSelect)
                         const { equipo } = item
@@ -69,7 +124,7 @@ export default function Equipo(props) {
                                 setSerie(item.equ_serie)
                                 setModel(item.modelo)
                                 GuadadoOS(item)
-                                item.isChecked = "true"
+                                equipo[index].isChecked = "true"
                             }
                         })
                         setHistorial(equipo)
@@ -86,7 +141,7 @@ export default function Equipo(props) {
                                     setSerie(item.equ_serie)
                                     setModel(item.modelo)
                                     GuadadoOS(item)
-                                    // item.isChecked = "true"
+                                    item.isChecked = "true"
                                 }
                             })
                             await isChecked(equipo[0].equipo_id)
@@ -97,7 +152,9 @@ export default function Equipo(props) {
             })()
         }, [])
     )
+    
 
+        
     useFocusEffect(
         useCallback(() => {
             (async () => {
@@ -160,6 +217,7 @@ export default function Equipo(props) {
             })()
         }, [])
     )
+  
 
 
     async function onChangeTipo(tipo) {

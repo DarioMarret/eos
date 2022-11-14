@@ -5,7 +5,7 @@ import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "rea
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { os_firma, ticketID } from "../../utils/constantes";
 import BannerTicket from "../../components/BannerTicket";
-import { DeleteAnidada, getOrdenServicioAnidadasTicket_id, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
+import { ActualizaEstadoOrdenServicioAnidadas, DeleteAnidada, getOrdenServicioAnidadasTicket_id, OrdenServicioAnidadas } from "../../service/OrdenServicioAnidadas";
 import db from "../../service/Database/model";
 import {
     Menu,
@@ -201,101 +201,103 @@ export default function TicketsOS(props) {
      * @param {*} OSClone 
      * @param {*} accion string
      */
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
-        console.log("Rutes",
-            equipo,
-            ticket_id,
-            evento_id,
-            OrdenServicioID,
-            accion,
-            tck_tipoTicket,
-            tipoIncidencia,
-            tck_tipoTicketCod)
-        var clon;
-        var equipo_id = []
-        if (accion == "PENDIENTE" || accion == "FINALIZADO" || accion == "PROCESO" || accion == "PENDIENTE DE APROBAR") {
-            clon = await SelectOSOrdenServicioID(OrdenServicioID)
-            dispatch(SetByOrdenServicioID(OrdenServicioID))
-            clon[0].ticket_id = ticket_id,
-                clon[0].evento_id = evento_id,
-                clon[0].tipoIncidencia = tipoIncidencia,
-                clon[0].TipoVisita = tck_tipoTicketCod,
-                clon[0].OrdenServicioID = OrdenServicioID,
-                dispatch(setEquipoTool(clon[0]))
-            dispatch(setClienteTool(clon[0]))
-            dispatch(setdatosTool(clon[0]))
-            dispatch(setComponenteTool(JSON.parse(clon[0].OS_PartesRepuestos)))
-            dispatch(setAdjuntosTool(JSON.parse(clon[0].OS_Anexos)))
-            dispatch(setTiemposTool(JSON.parse(clon[0].OS_Tiempos)))
-            dispatch(setFirmasTool(JSON.parse(clon[0].OS_Firmas)))
-            dispatch(setChecklistTool(JSON.parse(clon[0].OS_CheckList)))
-            dispatch(actualizarClienteTool({
-                name: 'ticket_id',
-                value: ticket_id
-            }))
-            dispatch(actualizarClienteTool({
-                name: 'evento_id',
-                value: evento_id
-            }))
-            dispatch(actualizarDatosTool({
-                name: 'tipoIncidencia',
-                value: tipoIncidencia
-            }))
-            dispatch(actualizarDatosTool({
-                name: 'TipoVisita',
-                value: tck_tipoTicketCod
-            }))
-            await isChecked(clon[0].equipo_id)
-            dispatch(loadingCargando(false))
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({
-                evento_id,
-                ticket_id,
+    async function Rutes(equipo_id, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
+        try {
+            console.log("Rutes",
                 equipo,
+                ticket_id,
+                evento_id,
                 OrdenServicioID,
-                Accion: accion,
+                accion,
                 tck_tipoTicket,
                 tipoIncidencia,
-                tck_tipoTicketCod,
-            }))
-            await AsyncStorage.setItem("SCREMS", "Ticket")
-            dispatch(loadingCargando(false))
-            navigation.navigate("Ordenes")
-        }
-        if (accion == "clonar") {
-            clon = await SelectOSOrdenServicioID(OrdenServicioID)
-            clon[0].ticket_id = ticket_id,
-                clon[0].evento_id = evento_id,
-                clon[0].tipoIncidencia = tipoIncidencia,
-                clon[0].TipoVisita = tck_tipoTicketCod,
-                clon[0].OrdenServicioID = 0,
-                dispatch(setEquipoTool(clon[0]))
-            dispatch(setClienteTool(clon[0]))
-            dispatch(setdatosTool(clon[0]))
-            dispatch(setComponenteTool(JSON.parse(clon[0].OS_PartesRepuestos)))
-            dispatch(setAdjuntosTool(JSON.parse(clon[0].OS_Anexos)))
-            dispatch(setTiemposTool(JSON.parse(clon[0].OS_Tiempos)))
-            dispatch(setFirmasTool(JSON.parse(clon[0].OS_Firmas)))
-            dispatch(setChecklistTool(JSON.parse(clon[0].OS_CheckList)))
-            equipo_id = await isChecked(clon[0].equipo_id)
-            console.log("equipo_id", equipo_id)
-            equipo_id[0]['isChecked'] = 'true'
-            dispatch(loadingCargando(false))
-            await AsyncStorage.removeItem(ticketID)
-            await AsyncStorage.setItem(ticketID, JSON.stringify({
-                OrdenServicioID: 0,
-                evento_id,
-                ticket_id,
-                equipo,
-                Accion: accion,
-                tck_tipoTicket,
-                tipoIncidencia,
-                tck_tipoTicketCod,
-            }))
-            await AsyncStorage.setItem("SCREMS", "Ticket")
-            await isChecked(equipo[0].equipo_id)
-            dispatch(loadingCargando(false))
-            navigation.navigate("Ordenes")
+                tck_tipoTicketCod)
+            var clon;
+            var equipo = await ValidarEquipos()
+            if (accion == "PENDIENTE" || accion == "FINALIZADO" || accion == "PROCESO" || accion == "PENDIENTE DE APROBAR") {
+                clon = await SelectOSOrdenServicioID(OrdenServicioID)
+                dispatch(SetByOrdenServicioID(OrdenServicioID))
+                clon[0].ticket_id = ticket_id,
+                    clon[0].evento_id = evento_id,
+                    clon[0].tipoIncidencia = tipoIncidencia,
+                    clon[0].TipoVisita = tck_tipoTicketCod,
+                    clon[0].OrdenServicioID = OrdenServicioID,
+                    dispatch(setEquipoTool(clon[0]))
+                dispatch(setClienteTool(clon[0]))
+                dispatch(setdatosTool(clon[0]))
+                dispatch(setComponenteTool(JSON.parse(clon[0].OS_PartesRepuestos)))
+                dispatch(setAdjuntosTool(JSON.parse(clon[0].OS_Anexos)))
+                dispatch(setTiemposTool(JSON.parse(clon[0].OS_Tiempos)))
+                dispatch(setFirmasTool(JSON.parse(clon[0].OS_Firmas)))
+                dispatch(setChecklistTool(JSON.parse(clon[0].OS_CheckList)))
+                dispatch(actualizarClienteTool({
+                    name: 'ticket_id',
+                    value: ticket_id
+                }))
+                dispatch(actualizarClienteTool({
+                    name: 'evento_id',
+                    value: evento_id
+                }))
+                dispatch(actualizarDatosTool({
+                    name: 'tipoIncidencia',
+                    value: tipoIncidencia
+                }))
+                dispatch(actualizarDatosTool({
+                    name: 'TipoVisita',
+                    value: tck_tipoTicketCod
+                }))
+                await isChecked(equipo_id[0].equipo_id)
+                dispatch(loadingCargando(false))
+                await AsyncStorage.removeItem(ticketID)
+                await AsyncStorage.setItem(ticketID, JSON.stringify({
+                    evento_id,
+                    ticket_id,
+                    equipo,
+                    OrdenServicioID,
+                    Accion: accion,
+                    tck_tipoTicket,
+                    tipoIncidencia,
+                    tck_tipoTicketCod,
+                }))
+                await AsyncStorage.setItem("SCREMS", "Ticket")
+                dispatch(loadingCargando(false))
+                navigation.navigate("Ordenes")
+            }
+            if (accion == "clonar") {
+                clon = await SelectOSOrdenServicioID(OrdenServicioID)
+                clon[0].ticket_id = ticket_id,
+                    clon[0].evento_id = evento_id,
+                    clon[0].tipoIncidencia = tipoIncidencia,
+                    clon[0].TipoVisita = tck_tipoTicketCod,
+                    clon[0].OrdenServicioID = 0,
+                    dispatch(setEquipoTool(clon[0]))
+                dispatch(setClienteTool(clon[0]))
+                dispatch(setdatosTool(clon[0]))
+                dispatch(setComponenteTool(JSON.parse(clon[0].OS_PartesRepuestos)))
+                dispatch(setAdjuntosTool(JSON.parse(clon[0].OS_Anexos)))
+                dispatch(setTiemposTool(JSON.parse(clon[0].OS_Tiempos)))
+                dispatch(setFirmasTool(JSON.parse(clon[0].OS_Firmas)))
+                dispatch(setChecklistTool(JSON.parse(clon[0].OS_CheckList)))
+                equipo_id = await isChecked(equipo_id[0].equipo_id)
+                dispatch(loadingCargando(false))
+                await AsyncStorage.removeItem(ticketID)
+                await AsyncStorage.setItem(ticketID, JSON.stringify({
+                    OrdenServicioID: 0,
+                    evento_id,
+                    ticket_id,
+                    equipo,
+                    Accion: accion,
+                    tck_tipoTicket,
+                    tipoIncidencia,
+                    tck_tipoTicketCod,
+                }))
+                await AsyncStorage.setItem("SCREMS", "Ticket")
+                dispatch(loadingCargando(false))
+                navigation.navigate("Ordenes")
+            }
+        } catch (error) {
+            console.log(error)   
+            dispatch(loadingCargando(false))         
         }
     }
 
@@ -446,98 +448,28 @@ export default function TicketsOS(props) {
                 OrdenServicioI.push(item.OrdenServicioID)
             }
         }
-              
-    }
-
-
-    async function Finalizar() {
-        dispatch(loadingCargando(true))
-        var OrdenServicioI = []
-        for (let index = 0; index < eventosAnidados.length; index++) {
-            const item = eventosAnidados[index];
+        console.log("OrdenServicioI", OrdenServicioI)
+        await time(200)
+        OrdenServicioI.forEach(async (item) => {
+            await ActualizaEstadoOrdenServicioAnidadas("FINALIZADO", item)
+        })
+        await time(200)
+        let new_anidados = eventosAnidados.map((item) => {
             if (item.check == true) {
-                OrdenServicioI.push(item.OrdenServicioID)
-            }
-        }
-        try {
-            const { data } = await isConnection.get()
-            if (data) {
-                const respuesta = await FinalizarOS(OrdenServicioI)
-                if (respuesta == 200) {
-                    setFini(false)
-                    let event = eventosAnidados.map((item, index) => {
-                        if (item.OrdenServicioID == OrdenServicioI[index]) {
-                            return {
-                                ...item,
-                                ev_estado: "FINALIZADO"
-                            }
-                        } else {
-                            return item
-                        }
-                    })
-                    var hoy = moment().format('YYYY-MM-DD');
-                    const ticket = await GetEventosByTicketHoy(hoy)
-                    // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
-                    let evento_id = []
-                    for (let index = 0; index < ticket.length; index++) {
-                        let item = ticket[index];
-                        evento_id.push(item.evento_id)
-                    }
-            
-                    await DeleteAnidada(evento_id)
-                    //Para buscar eventos anidadas a la orden
-                    for (let index = 0; index < evento_id.length; index++) {
-                        let item = evento_id[index];
-                        await OrdenServicioAnidadas(item)
-                    }
-
-                    const { ticket_id } = JSON.parse(await AsyncStorage.getItem(ticketID))
-                    const promisa_anidacion = dispatch(getAnidacionesTicket(ticket_id))
-                    promisa_anidacion.then((res) => {
-                        if (res.payload.length > 0) {
-                            dispatch(listarTicket(res.payload))
-                        }
-                    })
-
-                    seteventosAnidados(event)
-                    dispatch(loadingCargando(false))
-                } else {
-                    alert("Error al finalizar uno o mas OS")
-                    dispatch(loadingCargando(false))
+                return {
+                    ...item,
+                    ev_estado:"FINALIZADO"
                 }
-            } else {
-
-                await FinalizarOSLocal(OrdenServicioI)
-                setFini(false)
-                let event = eventosAnidados.map((item, index) => {
-                    if (item.OrdenServicioID == OrdenServicioI[index]) {
-                        return {
-                            ...item,
-                            ev_estado: "FINALIZADO"
-                        }
-                    } else {
-                        return item
-                    }
-                })
-                seteventosAnidados(event)
-                dispatch(loadingCargando(false))
+            }else{
+                return item
             }
-        } catch (error) {
-            await FinalizarOSLocal(OrdenServicioI)
-            setFini(false)
-            let event = eventosAnidados.map((item, index) => {
-                if (item.OrdenServicioID == OrdenServicioI[index]) {
-                    return {
-                        ...item,
-                        ev_estado: "FINALIZADO"
-                    }
-                } else {
-                    return item
-                }
-            })
-            seteventosAnidados(event)
-            dispatch(loadingCargando(false))
-        }
+        })
+        await time(200)
+        seteventosAnidados(new_anidados)
+        setFini(false)
+        dispatch(loadingCargando(false))
+        alert("Se finalizo correctamente")
+              
     }
 
     return (
@@ -758,7 +690,7 @@ export default function TicketsOS(props) {
 
                                 Fini ?
                                     <TouchableOpacity
-                                        onPress={async () => await Finalizar()}
+                                        onPress={FINALIZADOLOCAL}
                                         style={{ ...styles.opacity, backgroundColor: '#FFFFFF', }}>
                                         <Text style={{ ...styles.text4, color: '#FF6B00' }}>FINALIZAR OS SELECCIONADO</Text>
                                     </TouchableOpacity>
