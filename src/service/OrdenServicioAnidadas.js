@@ -17,12 +17,14 @@ export const OrdenServicioAnidadas = async (idEvento) => {
 
         const { Response } = data;
         if (!isEmpty(Response)) {
+            let idorden = []
             for (let index = 0; index < Response.length; index++) {
                 let item = Response[index];
                 console.log("anidacion-->", item)
+                idorden.push(item.OrdenServicioID)
                 await InsertOrdenServicioAnidadas(item)
             }
-            return true
+            return idorden
         }
 
     } catch (error) {
@@ -31,8 +33,7 @@ export const OrdenServicioAnidadas = async (idEvento) => {
     }
 }
 
-async function InsertOrdenServicioAnidadas(data) {
-    console.log("OSOrdenServicioID", data.OrdenServicioID)
+export async function InsertOrdenServicioAnidadas(data) {
     return new Promise((resolve, reject) => {
         db.exec([{
             sql:
@@ -63,8 +64,9 @@ async function InsertOrdenServicioAnidadas(data) {
                     ingeniero,
                     tipoIncidencia,
                     OrdenServicioID,
-                    tck_tipoTicketCod
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    tck_tipoTicketCod,
+                    estado_local
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             args: [
                 data.evento_id,
                 data.ticket_id,
@@ -92,13 +94,14 @@ async function InsertOrdenServicioAnidadas(data) {
                 data.ingeniero,
                 data.tipoIncidencia,
                 data.OrdenServicioID,
-                data.tck_tipoTicketCod
+                data.tck_tipoTicketCod,
+                "SIN"
             ],
         }], false, (err, results) => {
             if (err) {
-                console.log("InsertOrdenServicioAnidadas", err);
+                console.log("InsertOrdenServicioAnidadas", err)
             } else {
-                console.log("insert ordenesAnidadas", results);
+                console.log("insert ordenesAnidadas", results)
             }
         })
         resolve(true)
@@ -106,19 +109,37 @@ async function InsertOrdenServicioAnidadas(data) {
 }
 
 export async function DeleteAnidada(evento_id) {
+
+    console.log("evento_id------>", evento_id)
+
     evento_id.map(async (id) => {
         db.exec([{
-            sql: `DELETE FROM ordenesAnidadas WHERE evento_id = ?`,
+            sql: `SELECT * FROM ordenesAnidadas WHERE evento_id = ?`,
             args: [id],
         }], false, (err, results) => {
             if (err) {
                 console.log("error", err);
             } else {
-                console.log("delete results ordenesAnidadas-->", results);
+                const { rows } = results[0];
+                console.log("delete results ordenesAnidadas-->", rows, "id-->", id);
             }
         })
     })
-    return true
+
+
+    // evento_id.map(async (id) => {
+    //     db.exec([{
+    //         sql: `DELETE FROM ordenesAnidadas WHERE evento_id = ?`,
+    //         args: [id],
+    //     }], false, (err, results) => {
+    //         if (err) {
+    //             console.log("error", err);
+    //         } else {
+    //             console.log("delete results ordenesAnidadas-->", results, "id-->", id);
+    //         }
+    //     })
+    // })
+    // return true
 }
 
 async function selectOrdenServicioAnidadas(OrdenServicioID) {

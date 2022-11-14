@@ -69,6 +69,18 @@ export default function Ayer(props) {
             return calwait
         }
     }
+
+
+    /**
+     * 
+     * @param {*} ticket_id 
+     * @param {*} evento_id 
+     * @param {*} estado 
+     * @param {*} OrdenServicioID 
+     * @param {*} tck_tipoTicket 
+     * @param {*} tipoIncidencia 
+     * @param {*} tck_tipoTicketCod 
+     */
     async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         dispatch(loadingCargando(true))
@@ -90,45 +102,43 @@ export default function Ayer(props) {
         }
     }
 
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
+    /**
+     * @param {*} equipo 
+     * @param {*} ticket_id 
+     * @param {*} evento_id 
+     * @param {*} OrdenServicioID 
+     * @param {*} estado 
+     * @param {*} tck_tipoTicket
+     */
+     async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         if (equipo.length > 0) {
-            console.log("equipo", equipo)
+            // console.log("equipo", equipo)
             console.log("estado", estado)
             console.log("ticket_id", ticket_id)
             console.log("evento_id", evento_id)
             console.log("OrdenServicioID", OrdenServicioID)
             console.log("tck_tipoTicket", tck_tipoTicket)
+            console.log("tipoIncidencia", tipoIncidencia)
+            console.log("tck_tipoTicketCod", tck_tipoTicketCod)
+            
             try {
                 dispatch(resetFormularioTool())
                 const parse = await ConsultaOSOrdenServicioID(OrdenServicioID)
+                console.log("parse--->",parse)
                 if (OrdenServicioID != 0) {
                     if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
                         await AsyncStorage.removeItem(ticketID)
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            ClienteID: parse[0].ClienteID,
                             evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
-                        dispatch(actualizarClienteTool({
-                            name: 'ticket_id',
-                            value: ticket_id
-                        }))
-                        dispatch(actualizarClienteTool({
-                            name: 'evento_id',
-                            value: evento_id
-                        }))
-                        dispatch(actualizarDatosTool({
-                            name: 'tipoIncidencia',
-                            value: tipoIncidencia
-                        }))
-                        dispatch(actualizarDatosTool({
-                            name: 'TipoVisita',
-                            value: tck_tipoTicketCod
-                        }))
-
                         dispatch(loadingCargando(false))
                         navigation.navigate("Ticket")
                     } else {
@@ -148,14 +158,6 @@ export default function Ayer(props) {
                         dispatch(setTiemposTool(JSON.parse(parse[0].OS_Tiempos)))
                         dispatch(setFirmasTool(JSON.parse(parse[0].OS_Firmas)))
                         dispatch(setChecklistTool(JSON.parse(parse[0].OS_CheckList)))
-                        dispatch(actualizarClienteTool({
-                            name: 'ticket_id',
-                            value: ticket_id
-                        }))
-                        dispatch(actualizarClienteTool({
-                            name: 'evento_id',
-                            value: evento_id
-                        }))
                         dispatch(actualizarDatosTool({
                             name: 'tipoIncidencia',
                             value: tipoIncidencia
@@ -165,26 +167,33 @@ export default function Ayer(props) {
                             value: tck_tipoTicketCod
                         }))
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            ClienteID: parse[0].ClienteID,
+                            evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         await isChecked(equipo[0].equipo_id)
                         dispatch(loadingCargando(false))
                         navigation.navigate("Ordenes")
                     }
                 } else {
+                    dispatch(resetFormularioTool())
                     if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "01") {
                         await AsyncStorage.removeItem(ticketID)
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
                             evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         dispatch(actualizarClienteTool({
                             name: 'ticket_id',
@@ -226,11 +235,14 @@ export default function Ayer(props) {
                         dispatch(setOrdenServicioID(OrdenServicioID))
 
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         await isChecked(equipo[0].equipo_id)
                         dispatch(loadingCargando(false))
@@ -238,11 +250,11 @@ export default function Ayer(props) {
                     }
                 }
             } catch (error) {
-                dispatch(loadingCargando(false))
                 console.log("error", error)
+                dispatch(loadingCargando(false))
             }
         } else {
-            alert("Equipo no se encuentra detro de su base instalada Sincrónice nuevamente, si el problema persiste comuniquese con el administrador")
+            Alert.alert("Error", "Equipo no se encuentra dentro de su base instalada Sincrónice nuevamente, si el problema persiste comuniquese con el administrador")
             dispatch(loadingCargando(false))
         }
     }

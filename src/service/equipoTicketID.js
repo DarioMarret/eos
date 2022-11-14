@@ -36,9 +36,6 @@ export const EquipoTicket = async (ticket_id) => {
 }
 
 async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id, id_equipo) {
-    // const existe = await SelectEquipoID(id_equipo)
-    // console.log("existe SelectEquipoID", existe);
-    // if (!existe) {
         return new Promise((resolve, reject) => {
             db.exec([{
                 sql: `INSERT INTO equipoTicket (
@@ -152,18 +149,14 @@ async function SelectEquipoTicket(r, con_ClienteNombre, ticket_id, id_equipo) {
                     console.log("error", err);
                     resolve(true)
                 } else {
-                    console.log("sincronizacion results SelectEquipoTicket-->", results);
+                    console.log("results SelectEquipoTicket-->", results);
                     resolve(true)
                 }
             })
         })
-    // } else {
-    //     await ActualizarEquipoTicketStorage(ticket_id, id_equipo)
-    //     return true
-    // }
 }
 
-export const deleteEquipoIDTicketArray = (ticket_id) => {
+export const deleteEquipoIDTicketArray = async (ticket_id) => {
     ticket_id.map(async (id) => {
         db.exec([{
             sql: `DELETE FROM equipoTicket WHERE ticket_id = ?`,
@@ -172,7 +165,7 @@ export const deleteEquipoIDTicketArray = (ticket_id) => {
             if (err) {
                 console.log("error", err);
             } else {
-                console.log("sincronizacion results deleteEquipoIDTicketArray-->", results);
+                console.log("results deleteEquipoIDTicketArray-->", results);
             }
         })
     })

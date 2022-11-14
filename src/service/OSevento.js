@@ -54,6 +54,18 @@ export const GetEventosDelDiaHoy = async () => {
     }
 }
 
+export const DeleteEventos = async () => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`DELETE FROM OrdenesServicio`,
+                [], (_, { rows: { _array } }) => {
+                    console.log("sincronizacion results DeleteEventos-->", _array);
+                })
+        });
+    })
+}
+
+
 export async function DeleteEventes(ticket_id) {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {

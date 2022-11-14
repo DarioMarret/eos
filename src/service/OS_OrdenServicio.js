@@ -2,7 +2,6 @@ import { host } from "../utils/constantes";
 import { getToken } from "./usuario";
 import db from './Database/model';
 import isEmpty from "is-empty";
-import moment from "moment";
 
 //Consulta Orden de servicio por ID (CONSULTA SOLO SI EL ID ES MAYOR A 0)
 export const OSOrdenServicioID = async (OrdenServicioID) => {
@@ -38,7 +37,6 @@ export const OSOrdenServicioID = async (OrdenServicioID) => {
  * } OrdenServicioID 
  */
 export const UpdateOSOrdenServicioID = async (OrdenServicioID) => {
-    await DeleteOrdenServicioID(OrdenServicioID)
     try {
         const { token, userId } = await getToken()
         OrdenServicioID.map(async (item) => {
@@ -61,7 +59,6 @@ export const UpdateOSOrdenServicioID = async (OrdenServicioID) => {
 }
 
 export const InserOSOrdenServicioID = async (r) => {
-    // await InsertDeleteOrdenServicioID(fechas)
     return new Promise((resolve, reject) => {
         db.exec([{
             sql: `INSERT INTO OS_OrdenServicio (
@@ -674,6 +671,7 @@ export const ListarOrdenServicioLocal = async () => {
         });
     })
 }
+
 export const ListarFirmas = async (OrdenServicioID) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -688,6 +686,81 @@ export const ListarFirmas = async (OrdenServicioID) => {
         })
     })
 }
+
+export const SacarFirmas = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_Firmas FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(JSON.parse(_array[0].OS_Firmas))
+                    } else {
+                        resolve([])
+                    }
+                })
+        })
+    })
+}
+export const SacarCheckList = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_CheckList FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(JSON.parse(_array[0].OS_CheckList))
+                    } else {
+                        resolve([])
+                    }
+                })
+        })
+    })
+}
+
+export const SacarAnexo = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_Anexos FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(JSON.parse(_array[0].OS_Anexos))
+                    } else {
+                        resolve([])
+                    }
+                })
+        })
+    })
+}
+
+export const SacarParte = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_PartesRepuestos FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(JSON.parse(_array[0].OS_PartesRepuestos))
+                    } else {
+                        resolve([])
+                    }
+                })
+        })
+    })
+}
+
+export const SacarTiempos = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT OS_Tiempos FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(JSON.parse(_array[0].OS_Tiempos))
+                    } else {
+                        resolve([])
+                    }
+                })
+        })
+    })
+}
+
 //para actualizarla firma
 export async function ActualizarOrdenServicioFirmas(Firmas, OrdenServicioID) {
     console.log("ActualizarOrdenServicioFirmas", OrdenServicioID)
@@ -792,6 +865,11 @@ export async function ActualizarOrdenServicioCheckList(CheckList, OrdenServicioI
     })
 }
 
+/**
+ * 
+ * @param {*} OS objecto de la orden de servicio
+ * @param {*} OrdenServicioID 
+ */
 export async function ActualizarOrdenServicioOS(OS, OrdenServicioID) {
     console.log("ActualizarOrdenServicioOS", OS, OrdenServicioID)
     db.transaction((tx) => {
@@ -811,4 +889,43 @@ export async function ActualizarOrdenServicioOS(OS, OrdenServicioID) {
                 }
             })
     })
+}
+
+/**
+ * 
+ * @param {*} OrdenServicioID 
+ * @param {*} Estado 
+ */
+export async function ActualizarEstadoOS(OrdenServicioID, Estado) {
+    console.log("ActualizarEstadoOS", OrdenServicioID, Estado)
+    if(typeof OrdenServicioID == 'object'){
+
+        OrdenServicioID.forEach(async (element) => {
+            db.transaction((tx) => {
+                tx.executeSql(
+                    `UPDATE OS_OrdenServicio SET OS_Estado = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`,
+                    [Estado, 'UPDATE', element], (_, { rowsAffected }) => {
+                        if (rowsAffected > 0) {
+                            console.log("actualizado", rowsAffected)
+                            return true
+                        }
+                    })
+            })
+        })
+
+    }else{
+        db.transaction((tx) => {
+            tx.executeSql(
+                `UPDATE OS_OrdenServicio SET OS_Estado = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`,
+                [Estado, 'UPDATE',OrdenServicioID,
+                ], (_, { rowsAffected }) => {
+                    if (rowsAffected > 0) {
+                        console.log("actualizado", rowsAffected)
+                        return true
+                    } else {
+                        return false
+                    }
+                })
+        })
+    }
 }

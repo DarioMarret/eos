@@ -73,8 +73,8 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS ordenesAnidadas
         (
-            evento_id INTEGER,
-            ticket_id INTEGER,
+            evento_id INTEGER NOT NULL,
+            ticket_id INTEGER NOT NULL,
             codOS TEXT NULL,
             codeTicket TEXT NULL,
             tck_cliente TEXT NULL,
@@ -98,8 +98,9 @@ function InitDB() {
             ingenieroId INTEGER NULL,
             ingeniero TEXT NULL,
             tipoIncidencia TEXT NULL,
-            OrdenServicioID INTEGER NULL,
-            tck_tipoTicketCod TEXT NULL
+            OrdenServicioID INTEGER UNIQUE NOT NULL,
+            tck_tipoTicketCod TEXT NULL,
+            estado_local TEXT NULL
         );`)
         })
 
@@ -120,7 +121,7 @@ function InitDB() {
                 cantonId INTEGER NULL,
                 localidad TEXT NULL,
                 tipoIncidencia TEXT NULL,
-                OrdenServicioID INTEGER UNIQUE NOT NULL,
+                OrdenServicioID UNIQUE NOT NULL,
                 TipoVisita TEXT NULL,
                 Fecha TEXT NULL,
                 Estado TEXT NULL,
@@ -237,10 +238,10 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS OrdenesServicio 
         (
-            evento_id INTEGER NULL,
-            ticket_id INTEGER NULL,
+            evento_id INTEGER UNIQUE NOT NULL,
+            ticket_id INTEGER UNIQUE NOT NULL,
             codOS TEXT NULL,
-            codTicket TEXT UNIQUE NOT NULL,
+            codTicket TEXT NULL,
             tck_cliente TEXT NULL,
             tck_tipoTicket TEXT NULL,
             tck_tipoTicketDesc TEXT NULL,
@@ -334,6 +335,7 @@ function InitDB() {
             );`)
         })
 
+
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS estadoEquipo 
             (
@@ -342,6 +344,7 @@ function InitDB() {
             );`)
         })
 
+
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS tipoComponente 
             (
@@ -349,6 +352,7 @@ function InitDB() {
                 descripcion TEXT NULL
             );`)
         })
+
 
         //TABLA DE ACTUALIZACION EVENTUAL
         db.transaction(tx => {

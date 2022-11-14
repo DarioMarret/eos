@@ -35,6 +35,7 @@ var initialState = {
         codOS: 0,
         ticket_id: 0,
         contrato_id: 0,
+        evento_id: 0,
         CodigoEquipoCliente: "",
     },
     datos: {

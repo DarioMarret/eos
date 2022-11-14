@@ -182,8 +182,14 @@ export default function TicketsOS(props) {
 
     async function VisualizarPdf(item) {
         const base64 = await PDFVisializar(item)
-        setPdfurl(base64)
-        setPdfview(false)
+        if (base64 != null) {
+            setPdfurl(base64)
+            setPdfview(false)
+        }else{
+            alert("No se pudo generar el PDF")
+        }
+        // setPdfurl(base64)
+        // setPdfview(false)
     }
 
     /**
@@ -326,13 +332,16 @@ export default function TicketsOS(props) {
                 }
             }
             console.log("equipo IngresarNuevoOsTicket_", equipo)
-            const { ticket_id, evento_id, OrdenServicioID } = JSON.parse(await AsyncStorage.getItem(ticketID))
+            const { ticket_id, evento_id, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod } = JSON.parse(await AsyncStorage.getItem(ticketID))
             await AsyncStorage.setItem(ticketID, JSON.stringify({
                 evento_id,
                 ticket_id,
                 equipo,
                 OrdenServicioID: 0,
-                Accion: "NUEVO OS TICKET"
+                Accion: "NUEVO OS TICKET",
+                tipoIncidencia,
+                tck_tipoTicket,
+                tck_tipoTicketCod
             }))
             dispatch(actualizarClienteTool({
                 name: 'ticket_id',
@@ -344,11 +353,11 @@ export default function TicketsOS(props) {
             }))
             dispatch(actualizarDatosTool({
                 name: 'tipoIncidencia',
-                value: eventosAnidados[0].tipoIncidencia
+                value: tipoIncidencia
             }))
             dispatch(actualizarDatosTool({
                 name: 'TipoVisita',
-                value: eventosAnidados[0].tck_tipoTicketCod
+                value: tck_tipoTicketCod
             }))
             await AsyncStorage.setItem("SCREMS", "Ticket")
             dispatch(loadingCargando(false))
@@ -364,13 +373,16 @@ export default function TicketsOS(props) {
         var equipo = await ValidarEquipos()
         console.log("equipo IngresarNuevoOsTicket_", equipo)
         console.log("IngresarNuevoOsTicket_", eventosAnidados)
-        const { ticket_id, evento_id, OrdenServicioID } = JSON.parse(await AsyncStorage.getItem(ticketID))
+        const { ticket_id, evento_id, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod } = JSON.parse(await AsyncStorage.getItem(ticketID))
         await AsyncStorage.setItem(ticketID, JSON.stringify({
             evento_id,
             ticket_id,
             equipo,
             OrdenServicioID: 0,
-            Accion: "NUEVO OS TICKET"
+            Accion: "NUEVO OS TICKET",
+            tipoIncidencia,
+            tck_tipoTicket,
+            tck_tipoTicketCod
         }))
         dispatch(actualizarClienteTool({
             name: 'ticket_id',
@@ -380,11 +392,20 @@ export default function TicketsOS(props) {
             name: 'evento_id',
             value: evento_id
         }))
-        // dispatch(setOrdenServicioID(OrdenServicioID))
+        dispatch(actualizarDatosTool({
+            name: 'tipoIncidencia',
+            value: tipoIncidencia
+        }))
+        dispatch(actualizarDatosTool({
+            name: 'TipoVisita',
+            value: tck_tipoTicketCod
+        }))
+        dispatch(setOrdenServicioID(OrdenServicioID))
         await AsyncStorage.setItem("SCREMS", "Ticket")
         dispatch(loadingCargando(false))
         navigation.navigate("Ordenes")
     }
+
 
     async function ColorCheckt(itemIndex, index) {
         var check = [...eventosAnidados]
@@ -399,6 +420,20 @@ export default function TicketsOS(props) {
         })
         even.length > 0 ? setFini(true) : setFini(false)
     }
+
+
+    async function FINALIZADOLOCAL(){
+        dispatch(loadingCargando(true))
+        var OrdenServicioI = []
+        for (let index = 0; index < eventosAnidados.length; index++) {
+            const item = eventosAnidados[index];
+            if (item.check == true) {
+                OrdenServicioI.push(item.OrdenServicioID)
+            }
+        }
+              
+    }
+
 
     async function Finalizar() {
         dispatch(loadingCargando(true))
@@ -622,7 +657,7 @@ export default function TicketsOS(props) {
                                                                 }}
                                                             >
                                                                 {
-                                                                    item.ev_estado !== "PENDIENTE" && item.ev_estado !== "PROCESO" ?
+                                                                    item.ev_estado !== "PENDIENTE" && item.ev_estado !== "PROCESO" && item.ev_estado !== "PENDIENTE DE APROBAR" ?
                                                                         <MenuOption
                                                                             onSelect={() => AgregarFirma(item.OrdenServicioID)}
                                                                             text='Agregar Firma'
@@ -640,15 +675,16 @@ export default function TicketsOS(props) {
                                                                         <MenuOption
                                                                             onSelect={() => {
                                                                                 console.log(item);
-                                                                                ClonarOS(
-                                                                                    String(item.ticket_id),
-                                                                                    String(item.evento_id),
-                                                                                    item.ev_estado,
-                                                                                    item.OrdenServicioID,
-                                                                                    item.tck_tipoTicket,
-                                                                                    item.tipoIncidencia,
-                                                                                    item.tck_tipoTicketCod
-                                                                                )
+                                                                                IngresarNuevoOsTicket()
+                                                                                // ClonarOS(
+                                                                                //     String(item.ticket_id),
+                                                                                //     String(item.evento_id),
+                                                                                //     item.ev_estado,
+                                                                                //     item.OrdenServicioID,
+                                                                                //     item.tck_tipoTicket,
+                                                                                //     item.tipoIncidencia,
+                                                                                //     item.tck_tipoTicketCod
+                                                                                // )
                                                                             }}
                                                                             text='Clonar OS'
                                                                             customStyles={{

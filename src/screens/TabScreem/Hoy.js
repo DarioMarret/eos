@@ -78,6 +78,16 @@ export default function Hoy(props) {
                 // await DeleteTicket(850479200)
                 // await DeleteEventes(850479200)
 
+                // db.transaction(tx => {
+                //     tx.executeSql(
+                //         `SELECT * FROM ordenesAnidadas`,
+                //         [],
+                //         (tx, results) => {
+                //             console.log("results.rows.length", results)
+                //         }
+                //     );
+                // });
+
                 await isCheckedCancelar()
                 var date = moment().format('YYYY-MM-DD');
                 const promisa = dispatch(getEventosByDate(`${date}T00:00:00`))
@@ -109,14 +119,18 @@ export default function Hoy(props) {
         }
     }
 
+
     /**
      * 
      * @param {*} ticket_id 
      * @param {*} evento_id 
      * @param {*} estado 
      * @param {*} OrdenServicioID 
+     * @param {*} tck_tipoTicket 
+     * @param {*} tipoIncidencia 
+     * @param {*} tck_tipoTicketCod 
      */
-    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_direccion, tipoIncidencia, tck_tipoTicketCod) {
+    async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         dispatch(loadingCargando(true))
         try {
@@ -126,8 +140,8 @@ export default function Hoy(props) {
                 tx.executeSql(`SELECT * FROM equipoTicket WHERE ticket_id = ?`, [ticket_id], (_, { rows }) => {
                     db.transaction(tx => {
                         tx.executeSql(`SELECT * FROM historialEquipo WHERE equipo_id = ?`, [rows._array[0].id_equipo], (_, { rows }) => {
-                            console.log("equipo selecionado hoy row", rows._array)
-                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_direccion, tipoIncidencia, tck_tipoTicketCod)
+                            // console.log("equipo selecionado hoy row", rows._array)
+                            Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
                         })
                     })
                 })
@@ -147,14 +161,17 @@ export default function Hoy(props) {
      * @param {*} estado 
      * @param {*} tck_tipoTicket
      */
-    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_direccion, tipoIncidencia, tck_tipoTicketCod) {
+    async function Rutes(equipo, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         if (equipo.length > 0) {
-            console.log("equipo", equipo)
+            // console.log("equipo", equipo)
             console.log("estado", estado)
             console.log("ticket_id", ticket_id)
             console.log("evento_id", evento_id)
             console.log("OrdenServicioID", OrdenServicioID)
-            console.log("tck_direccion", tck_direccion)
+            console.log("tck_tipoTicket", tck_tipoTicket)
+            console.log("tipoIncidencia", tipoIncidencia)
+            console.log("tck_tipoTicketCod", tck_tipoTicketCod)
+            
             try {
                 dispatch(resetFormularioTool())
                 const parse = await ConsultaOSOrdenServicioID(OrdenServicioID)
@@ -167,9 +184,11 @@ export default function Hoy(props) {
                             evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         dispatch(loadingCargando(false))
                         navigation.navigate("Ticket")
@@ -200,11 +219,14 @@ export default function Hoy(props) {
                         }))
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
                             ClienteID: parse[0].ClienteID,
+                            evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         await isChecked(equipo[0].equipo_id)
                         dispatch(loadingCargando(false))
@@ -218,9 +240,11 @@ export default function Hoy(props) {
                             evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         dispatch(actualizarClienteTool({
                             name: 'ticket_id',
@@ -262,11 +286,14 @@ export default function Hoy(props) {
                         dispatch(setOrdenServicioID(OrdenServicioID))
 
                         await AsyncStorage.setItem(ticketID, JSON.stringify({
+                            evento_id,
                             ticket_id,
                             equipo,
-                            OrdenServicioID: OrdenServicioID,
-                            OSClone: null,
-                            Accion: estado
+                            OrdenServicioID,
+                            Accion: estado,
+                            tck_tipoTicket,
+                            tipoIncidencia,
+                            tck_tipoTicketCod,
                         }))
                         await isChecked(equipo[0].equipo_id)
                         dispatch(loadingCargando(false))

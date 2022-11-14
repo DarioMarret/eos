@@ -1,9 +1,9 @@
 import "react-native-gesture-handler";
 import React, { useCallback, useState } from 'react';
-import { Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
-import { CommonActions, NavigationContainer, useFocusEffect, useNavigation } from "@react-navigation/native";
-import { AntDesign, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { NavigationContainer, useFocusEffect, useNavigation } from "@react-navigation/native";
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import Firmador from "../components/Firmador"
 
 import {
@@ -22,18 +22,15 @@ import useUser from "../hook/useUser";
 import TicketsOS from "../screens/TabScreem/TicketsOS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID, os_firma } from "../utils/constantes";
-import { FinalizarOS_ } from "../service/OS";
 import VisualizadorPDF from "../components/VisualizadorPDF";
-import { PDFVisializar, getRucCliente, UpdateOSOrdenServicioID, EstadoOSLOCAL } from "../service/OS_OrdenServicio";
+import { PDFVisializar, ActualizarEstadoOS } from "../service/OS_OrdenServicio";
 import { getToken } from "../service/usuario";
 import ModalGenerico from "../components/ModalGenerico";
 import { useDispatch } from "react-redux";
 import moment from "moment";
-import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn, loadingCargando } from "../redux/sincronizacion";
+import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn } from "../redux/sincronizacion";
 import { EditareventoLocal } from "../service/ServicioLoca";
 import { getIngenierosStorageById } from "../service/ingenieros";
-import axios from "axios";
-import { useIsConnected } from "react-native-offline";
 
 
 const Drawer = createDrawerNavigator();
@@ -96,8 +93,6 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
     const [estado, setEstado] = useState(null)
     const [orderID, setOrderID] = useState(null)
 
-    const isConnected = useIsConnected()
-
     const navigation = useNavigation()
 
     const handleBack = () => {
@@ -109,30 +104,33 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
         const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
         const { OrdenServicioID } = itenSelect
         if (OrdenServicioID != null && OrdenServicioID != 0) {
-            let estadoLocal = await EstadoOSLOCAL(OrdenServicioID)
-            if (estadoLocal == "UPDATE") {
+            // let estadoLocal = await EstadoOSLOCAL(OrdenServicioID)
+            // if (estadoLocal == "UPDATE") {
                 await EditareventoLocal("FINALIZADO", OrdenServicioID)
+
+                await ActualizarEstadoOS(OrdenServicioID, "FINA")
+                // await UpdateOSOrdenServicioID([OrdenServicioID])
                 await Dispatcher()
-                alert("Se actualizo el estado de la OS en local asta que se sincronice")
+                alert("Se actualizo el estado de la OS en local hasta que se sincronice")
                 handleBack()
-            }else{
-                if(isConnected){
-                    dispatch(loadingCargando(true))
-                    let respuesta = await FinalizarOS_(OrdenServicioID)
-                    await UpdateOSOrdenServicioID([OrdenServicioID])
-                    await EditareventoLocal("FINALIZADO", OrdenServicioID)
-                    await Dispatcher()
-                    alert("Orden de Servicio Finalizada Correctamente")
-                    handleBack()
-                    dispatch(loadingCargando(false))
-                    console.log("FinalizarOS", respuesta)
-                }else{
-                    await EditareventoLocal("FINALIZADO", OrdenServicioID)
-                    await Dispatcher()
-                    alert("Se actualizo el estado de la OS en local asta que se sincronice")
-                    handleBack()
-                }
-            }
+            // }
+            // else{
+            //     if(isConnected){
+            //         dispatch(loadingCargando(true))
+            //         let respuesta = await FinalizarOS_(OrdenServicioID)
+            //         await EditareventoLocal("FINALIZADO", OrdenServicioID)
+            //         await Dispatcher()
+            //         alert("Orden de Servicio Finalizada Correctamente")
+            //         handleBack()
+            //         dispatch(loadingCargando(false))
+            //         console.log("FinalizarOS", respuesta)
+            //     }else{
+            //         await EditareventoLocal("FINALIZADO", OrdenServicioID)
+            //         await Dispatcher()
+            //         alert("Se actualizo el estado de la OS en local asta que se sincronice")
+            //         handleBack()
+            //     }
+            // }
         }
     }
 
@@ -173,99 +171,101 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
         }, [])
     );
 
-    return (
-        <Menu>
-            <MenuTrigger
-                text={<FontAwesome5 name="ellipsis-v" size={24} color="#FFFFFF" />}
-                customStyles={{
-                    triggerText: {
-                        fontSize: 35,
-                        color: '#FFFFFF',
-                        fontWeight: 'bold',
-                        padding: 15,
-                    },
-                }} />
-            <MenuOptions
-                customStyles={{
-                    optionsContainer: {
-                        width: 150,
-                        backgroundColor: '#FFFFFF',
-                        borderRadius: 3,
-                        padding: 10,
-                        shadowColor: "#000",
-                        shadowOffset: {
-                            width: 0,
-                            height: 2,
+    if(estado !== "PENDIENTE"){
+        return (
+            <Menu>
+                <MenuTrigger
+                    text={<FontAwesome5 name="ellipsis-v" size={24} color="#FFFFFF" />}
+                    customStyles={{
+                        triggerText: {
+                            fontSize: 35,
+                            color: '#FFFFFF',
+                            fontWeight: 'bold',
+                            padding: 15,
                         },
-                        shadowOpacity: 0.25,
-                        shadowRadius: 3.84,
-                        elevation: 5,
-                    },
-                }}
-            >
-                {
-                    estado == "FINALIZADO" ? <>
-                        <MenuOption
-                            onSelect={() => setModalSignature(true)}
-                            text='Agregar firma'
-                            customStyles={{
-                                optionText: {
-                                    fontSize: 16,
-                                    color: '#000000',
-                                    fontWeight: 'bold',
-                                    paddingBottom: 10,
-                                },
-                            }} />
-                        <MenuOption
-                            onSelect={() => setModalEmails(true)}
-                            text='Enviar OS'
-                            customStyles={{
-                                optionText: {
-                                    fontSize: 16,
-                                    color: '#000000',
-                                    fontWeight: 'bold',
-                                    paddingBottom: 10,
-                                },
-                            }} />
-                        <MenuOption
-                            onSelect={() => VisualizarPdf(orderID)}
-                            text='Vizualizar PDF'
-                            customStyles={{
-                                optionText: {
-                                    fontSize: 16,
-                                    color: '#000000',
-                                    fontWeight: 'bold',
-                                    paddingBottom: 10,
-                                },
-                            }} />
-                    </> : <>
-                        <MenuOption
-                            onSelect={() => VisualizarPdf(orderID)}
-                            text='Vizualizar PDF'
-                            customStyles={{
-                                optionText: {
-                                    fontSize: 16,
-                                    color: '#000000',
-                                    fontWeight: 'bold',
-                                    paddingBottom: 10,
-                                },
-                            }} />
-                        <MenuOption
-                            onSelect={() => FinalizarOS()}
-                            text='Finalizar OS'
-                            customStyles={{
-                                optionText: {
-                                    fontSize: 16,
-                                    color: '#000000',
-                                    fontWeight: 'bold',
-                                },
-                            }} />
-                    </>
-                }
+                    }} />
+                <MenuOptions
+                    customStyles={{
+                        optionsContainer: {
+                            width: 150,
+                            backgroundColor: '#FFFFFF',
+                            borderRadius: 3,
+                            padding: 10,
+                            shadowColor: "#000",
+                            shadowOffset: {
+                                width: 0,
+                                height: 2,
+                            },
+                            shadowOpacity: 0.25,
+                            shadowRadius: 3.84,
+                            elevation: 5,
+                        },
+                    }}
+                >
+                    {
+                        estado == "FINALIZADO" ? <>
+                            <MenuOption
+                                onSelect={() => setModalSignature(true)}
+                                text='Agregar firma'
+                                customStyles={{
+                                    optionText: {
+                                        fontSize: 16,
+                                        color: '#000000',
+                                        fontWeight: 'bold',
+                                        paddingBottom: 10,
+                                    },
+                                }} />
+                            <MenuOption
+                                onSelect={() => setModalEmails(true)}
+                                text='Enviar OS'
+                                customStyles={{
+                                    optionText: {
+                                        fontSize: 16,
+                                        color: '#000000',
+                                        fontWeight: 'bold',
+                                        paddingBottom: 10,
+                                    },
+                                }} />
+                            <MenuOption
+                                onSelect={() => VisualizarPdf(orderID)}
+                                text='Vizualizar PDF'
+                                customStyles={{
+                                    optionText: {
+                                        fontSize: 16,
+                                        color: '#000000',
+                                        fontWeight: 'bold',
+                                        paddingBottom: 10,
+                                    },
+                                }} />
+                        </> : <>
+                            <MenuOption
+                                onSelect={() => VisualizarPdf(orderID)}
+                                text='Vizualizar PDF'
+                                customStyles={{
+                                    optionText: {
+                                        fontSize: 16,
+                                        color: '#000000',
+                                        fontWeight: 'bold',
+                                        paddingBottom: 10,
+                                    },
+                                }} />
+                            <MenuOption
+                                onSelect={() => FinalizarOS()}
+                                text='Finalizar OS'
+                                customStyles={{
+                                    optionText: {
+                                        fontSize: 16,
+                                        color: '#000000',
+                                        fontWeight: 'bold',
+                                    },
+                                }} />
+                        </>
+                    }
 
-            </MenuOptions>
-        </Menu>
-    )
+                </MenuOptions>
+            </Menu>
+        )
+    }
 }
 
 function NavigatioGotBack() {
@@ -302,6 +302,7 @@ function NavigatioGotBack2() {
     const enviarFirma = () => {
         setModalSignature(false)
     }
+    /*
     async function EnviarOS(item) {
         console.log("EnviarOS", item)
 
@@ -321,6 +322,7 @@ function NavigatioGotBack2() {
         setIdOrdenServicio(item)
         setModalEmails(!modalEmails)
     }
+    */
 
 
     async function VisualizarPdf(item) {
@@ -452,7 +454,6 @@ function NavigatioGotBack2() {
                     </View>
                 </View>
             </Modal>
-
         </View>
     )
 }
