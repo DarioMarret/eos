@@ -689,6 +689,20 @@ export const ListarFirmas = async (OrdenServicioID) => {
     })
 }
 
+export const SacarClienteID = async (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT ClienteID FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(_array[0].ClienteID)
+                    } else {
+                        resolve([])
+                    }
+                })
+        })
+    })
+}
 export const SacarFirmas = async (OrdenServicioID) => {
     return new Promise((resolve, reject) => {
         db.transaction((tx) => {
@@ -772,9 +786,7 @@ export async function ActualizarOrdenServicioFirmas(Firmas, OrdenServicioID) {
             OS_Firmas = ?,
             OS_LOCAL = ?
             WHERE OrdenServicioID = ?`,
-            [JSON.stringify(Firmas), 'UPDATE',
-                OrdenServicioID,
-            ], (_, { rowsAffected }) => {
+            [JSON.stringify(Firmas), 'UPDATE', OrdenServicioID], (_, { rowsAffected }) => {
                 if (rowsAffected > 0) {
                     console.log("actualizado", rowsAffected)
                     return true
@@ -900,36 +912,63 @@ export async function ActualizarOrdenServicioOS(OS, OrdenServicioID) {
  */
 export async function ActualizarEstadoOS(OrdenServicioID, Estado) {
     console.log("ActualizarEstadoOS", OrdenServicioID, Estado)
-    if(typeof OrdenServicioID == 'object'){
+    db.exec([{
+        sql: `UPDATE OS_OrdenServicio SET Estado = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`,
+        args: [Estado, 'UPDATE', OrdenServicioID]
+    }], false, (err, results) => {
+        if (err) {
+            console.log("ActualizaEstadoOrdenServicioAnidadas", err)
+        } else {
+            console.log("ActualizaEstadoOrdenServicioAnidadas", results)
+        }
+    })
+}
 
-        OrdenServicioID.forEach(async (element) => {
-            db.transaction((tx) => {
-                tx.executeSql(
-                    `UPDATE OS_OrdenServicio SET OS_Estado = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`,
-                    [Estado, 'UPDATE', element], (_, { rowsAffected }) => {
-                        if (rowsAffected > 0) {
-                            console.log("actualizado", rowsAffected)
-                            return true
-                        }
-                    })
-            })
-        })
 
-    }else{
-        db.transaction((tx) => {
-            tx.executeSql(
-                `UPDATE OS_OrdenServicio SET OS_Estado = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`,
-                [Estado, 'UPDATE',OrdenServicioID,
-                ], (_, { rowsAffected }) => {
-                    if (rowsAffected > 0) {
-                        console.log("actualizado", rowsAffected)
-                        return true
-                    } else {
-                        return false
-                    }
-                })
+export async function ActualizarObservacioCliente(OrdenServicioID, ObservacionCliente) {
+    console.log("ActualizarObservacioCliente", OrdenServicioID, ObservacionCliente)
+    db.exec([{
+        sql: `UPDATE OS_OrdenServicio SET ObservacionCliente = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`,
+        args: [ObservacionCliente, 'UPDATE', OrdenServicioID]
+    }], false, (err, results) => {
+        if (err) {
+            console.log("ActualizarObservacioCliente", err)
+        } else {
+            console.log("ActualizarObservacioCliente", results)
+        }
+    })
+}
+/**
+ * 
+ * @param {*} OrdenServicioID 
+ * @param {*} EstadoEquipo 
+ * @param {*} OS_FINALIZADA 
+ * @param {*} Estado 
+ * @param {*} id 
+ */
+export const ActualizarOrdenServicioRespuesta = async (OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, id) => {
+    console.log("ActualizarOrdenServicioRespuesta", OrdenServicioID, EstadoEquipo, Estado, id)
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `UPDATE OS_OrdenServicio SET 
+            EstadoEquipo = ?, 
+            OS_FINALIZADA = ?, 
+            Estado = ?, 
+            OS_LOCAL = ?, 
+            OrdenServicioID = ?, 
+            codOS = ? 
+            WHERE id = ?`,
+            args: [EstadoEquipo, OS_FINALIZADA, Estado, 'SIN', OrdenServicioID, `OSO${OrdenServicioID}`, id]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("ActualizaEstadoOrdenServicioAnidadas", err)
+                resolve(err)
+            } else {
+                console.log("ActualizaEstadoOrdenServicioAnidadas", results)
+                resolve(results)
+            }
         })
-    }
+    })
 }
 
 /**
@@ -938,28 +977,27 @@ export async function ActualizarEstadoOS(OrdenServicioID, Estado) {
  * @param {*} EstadoEquipo 
  * @param {*} OS_FINALIZADA 
  * @param {*} Estado 
- * @param {*} idorden 
+ * @param {*} id 
  */
-export const ActualizarOrdenServicioRespuesta = async (OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, idorden) => {
-    console.log("ActualizarOrdenServicioRespuesta", OrdenServicioID, EstadoEquipo, Estado, idorden)
-    db.transaction((tx) => {
-        tx.executeSql(
-            `UPDATE OS_OrdenServicio SET 
+ export const ActualizarOrdenServicioRespuestaPUT = async (OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado) => {
+    console.log("ActualizarOrdenServicioRespuesta", OrdenServicioID, EstadoEquipo, Estado)
+    return new Promise((resolve, reject) => {
+        db.exec([{
+            sql: `UPDATE OS_OrdenServicio SET 
             EstadoEquipo = ?, 
             OS_FINALIZADA = ?, 
             Estado = ?, 
-            OS_LOCAL = ?, 
-            OrdenServicioID = ? 
-            codOS = ?
+            OS_LOCAL = ?
             WHERE OrdenServicioID = ?`,
-            [EstadoEquipo, OS_FINALIZADA, Estado, 'SIN', OrdenServicioID, `OSO${OrdenServicioID}`, idorden],
-            (_, { rowsAffected }) => {
-                if (rowsAffected > 0) {
-                    console.log("actualizado", rowsAffected)
-                    return true
-                } else {
-                    return false
-                }
-            })
+            args: [EstadoEquipo, OS_FINALIZADA, Estado, 'SIN', OrdenServicioID]
+        }], false, (err, results) => {
+            if (err) {
+                console.log("ActualizarOrdenServicioRespuestaPUT", err)
+                resolve(err)
+            } else {
+                console.log("ActualizarOrdenServicioRespuestaPUT", results)
+                resolve(results)
+            }
+        })
     })
 }

@@ -211,18 +211,21 @@ export const ActualizaEstadoOrdenServicioAnidadas = (estado, OrdenServicioID) =>
  * @param {*} estado 
  * @param {*} estado_local //SIN, UPDATE
  * @param {*} OrdenServicioID 
- * @param {*} evento_id 
+ * @param {*} idorden 
  * @returns 
  */
-export const ActualizaOrdenServicioIDOrdenServicioAnidadas = (estado, estado_local, OrdenServicioID, evento_id) => {
+export const ActualizaOrdenServicioIDOrdenServicioAnidadas = async(estado, estado_local, OrdenServicioID, idorden) => {
+    
+    const id_evento = await SacarIdOrdenServicioAnidadas(idorden)
+
     return new Promise((resolve, reject) => {
         db.exec([{
             sql: `UPDATE ordenesAnidadas SET 
             ev_estado = ?, 
             estado_local = ? 
             OrdenServicioID = ?
-            WHERE evento_id = ?`,
-            args: [estado, estado_local,OrdenServicioID, evento_id]
+            WHERE id = ?`,
+            args: [estado, estado_local,OrdenServicioID, id_evento]
         }], false, (err, results) => {
             if (err) {
                 console.log("ActualizaEstadoOrdenServicioAnidadas", err)
@@ -233,6 +236,27 @@ export const ActualizaOrdenServicioIDOrdenServicioAnidadas = (estado, estado_loc
         resolve(true)
     })
 }
+
+export const SacarIdOrdenServicioAnidadas = (evento_id) => {
+    return new Promise((resolve, reject) => {
+        db.transaction(tx => {
+            tx.executeSql(
+                `SELECT id FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
+                [evento_id],
+                (tx, results) => {
+                    const { rows } = results
+                    if(rows.length > 0){
+                        resolve(rows._array[0].id)
+                    }else{
+                        resolve(false)
+                    }
+                }
+            )
+        })
+    })
+}
+
+
 
 export async function DeleteAnidada(evento_id) {
 
@@ -247,25 +271,24 @@ export async function DeleteAnidada(evento_id) {
                 console.log("error", err);
             } else {
                 const { rows } = results[0];
-                console.log("delete results ordenesAnidadas-->", rows, "id-->", id);
+                console.log("delete results ordenesAnidadas-->", rows);
+                rows.map(async (row) => {
+                    if(row.OrdenServicioID.toString().length > 4){
+                        db.exec([{
+                            sql: `DELETE FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
+                            args: [row.OrdenServicioID],
+                            }], false, (err, results) => {
+                                if (err) {
+                                    console.log("error", err);
+                                } else {
+                                    console.log("delete results ordenesAnidadas-->", results, "id-->", id);
+                                }
+                        })
+                    }
+                });
             }
         })
     })
-
-
-    // evento_id.map(async (id) => {
-    //     db.exec([{
-    //         sql: `DELETE FROM ordenesAnidadas WHERE evento_id = ?`,
-    //         args: [id],
-    //     }], false, (err, results) => {
-    //         if (err) {
-    //             console.log("error", err);
-    //         } else {
-    //             console.log("delete results ordenesAnidadas-->", results, "id-->", id);
-    //         }
-    //     })
-    // })
-    // return true
 }
 
 async function selectOrdenServicioAnidadas(OrdenServicioID) {
@@ -337,4 +360,19 @@ export const getOrdenServicioAnidadasTicket_id = async (ticket_id) => {
             );
         })
     })
+}
+
+
+export const EliminarEventoAnidado = async (OrdenServicioID) => {
+    db.exec([{
+        sql: `DELETE FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
+        args: [OrdenServicioID],
+    }], false, (err, results) => {
+        if (err) {
+            console.log("error", err);
+        } else {
+            console.log("delete results ordenesAnidadas-->", results, "id-->", OrdenServicioID);
+        }
+    })
+    return true
 }

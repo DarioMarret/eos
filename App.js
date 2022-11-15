@@ -32,7 +32,7 @@ import {
 import { GetEventosByTicket, GetEventosDelDia } from "./src/service/OSevento";
 import moment from "moment";
 import { deleteEquipoIDTicketArray, EquipoTicket } from "./src/service/equipoTicketID";
-import {  OrdenServicioAnidadas } from "./src/service/OrdenServicioAnidadas";
+import {  DeleteAnidada, OrdenServicioAnidadas } from "./src/service/OrdenServicioAnidadas";
 import { DeleteOrdenServicioID, OSOrdenServicioID } from "./src/service/OS_OrdenServicio";
 import { GetClienteClienteName } from "./src/service/clientes";
 import axios from "axios";
@@ -123,7 +123,7 @@ export default function App() {
           }
           
           //Para buscar eventos anidadas a la orden
-          // await DeleteAnidada(evento_id)
+          await DeleteAnidada(evento_id)
           for (let index = 0; index < evento_id.length; index++) {
             let item = evento_id[index];
             let respOs = await OrdenServicioAnidadas(item);

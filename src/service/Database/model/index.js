@@ -73,6 +73,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS ordenesAnidadas
         (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             evento_id INTEGER NOT NULL,
             ticket_id INTEGER NOT NULL,
             codOS TEXT NULL,
@@ -110,6 +111,7 @@ function InitDB() {
         db.exec([{
             sql: `CREATE TABLE IF NOT EXISTS OS_OrdenServicio 
             (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 OS_CheckList BLOB NULL,
                 OS_Encuesta TEXT NULL,
                 OS_Firmas BLOB NULL,
@@ -239,6 +241,7 @@ function InitDB() {
         db.transaction(tx => {
             tx.executeSql(`CREATE TABLE IF NOT EXISTS OrdenesServicio 
         (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             evento_id INTEGER UNIQUE NOT NULL,
             ticket_id INTEGER UNIQUE NOT NULL,
             codOS TEXT NULL,

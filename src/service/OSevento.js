@@ -240,10 +240,15 @@ export const InsertEventosLocales = async (r) => {
  */
 export const AactualizarEventos = async (estado, OrdenServicioID, evento_id) => {
     console.log("AactualizarEventos-->", estado, OrdenServicioID, evento_id);
+
+    const id = await SacarIdOrdenServicio(OrdenServicioID);
     return new Promise((resolve, reject) => {
         db.exec([{
-            sql: `UPDATE OrdenesServicio SET ev_estado = ? WHERE OrdenServicioID = ? AND evento_id = ?`,
-            args: [estado, OrdenServicioID, evento_id]
+            sql: `UPDATE OrdenesServicio SET 
+            ev_estado = ?,
+            OrdenServicioID = ?
+            WHERE id = ?`,
+            args: [estado, OrdenServicioID, id]
         }], false, (err, results) => {
             if (err) {
                 console.log("error", err);
@@ -255,6 +260,24 @@ export const AactualizarEventos = async (estado, OrdenServicioID, evento_id) => 
     })
 }
 
+export const SacarIdOrdenServicio = (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction(tx => {
+            tx.executeSql(
+                `SELECT id FROM ordenesAnidadas WHERE OrdenServicioID = ?`,
+                [OrdenServicioID],
+                (tx, results) => {
+                    const { rows } = results
+                    if(rows.length > 0){
+                        resolve(rows._array[0].id)
+                    }else{
+                        resolve(false)
+                    }
+                }
+            );
+        });
+    })
+}
 
 export const DeleteEventesDiaHoy = async () => {
     return new Promise((resolve, reject) => {

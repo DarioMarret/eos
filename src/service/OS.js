@@ -1,9 +1,9 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { OS } from "../utils/constantes";
-import { ActualizaOrdenServicioIDOrdenServicioAnidadas } from "./OrdenServicioAnidadas";
+import { ActualizaOrdenServicioIDOrdenServicioAnidadas, EliminarEventoAnidado, OrdenServicioAnidadas } from "./OrdenServicioAnidadas";
 import { AactualizarEventos } from "./OSevento";
-import { ActualizarOrdenServicioRespuesta, InserOSOrdenServicioID, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
+import { ActualizarOrdenServicioRespuesta, ActualizarOrdenServicioRespuestaPUT, InserOSOrdenServicioID, SelectOSOrdenServicioID, UpdateOSOrdenServicioID } from "./OS_OrdenServicio";
 import { getToken } from "./usuario";
 
 const isConnectionPOST = axios.create({
@@ -15,12 +15,13 @@ const isConnectionPOST = axios.create({
   /**
    * 
    * @param {*} data 
+   * @param {*} id 
    * @param {*} idorden 
    * @param {*} evento_id 
    * @param {*} es 
    * @returns 
    */
-export const PostOS = async (data, idorden, evento_id, es) => {
+export const PostOS = async (data, id, idorden, evento_id, es) => {
     try {
         console.log("data", data)
         const { token } = await getToken()
@@ -41,13 +42,19 @@ export const PostOS = async (data, idorden, evento_id, es) => {
             const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado } = result.Response
             var estado = Estado == "FINA" ? "FINALIZADO" : "PROCESO"
             //inserta el id de la orden de servicio
-            await ActualizarOrdenServicioRespuesta(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, idorden)
+            await ActualizarOrdenServicioRespuesta(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, id)
             if(es == "ANI"){
+
+                await EliminarEventoAnidado(idorden)
+
+
+                await OrdenServicioAnidadas(evento_id)
                 //acualizar el vento de la orden de servicio anidada
-                await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, evento_id)
+
+                // await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, idorden)
             }else{
                 //actualiza el id de la orden de servicio en los eventos
-                await AactualizarEventos(estado, OrdenServicioID, evento_id)
+                await AactualizarEventos(estado, OrdenServicioID, idorden)
             }
 
             return OrdenServicioID
@@ -58,6 +65,12 @@ export const PostOS = async (data, idorden, evento_id, es) => {
     }
 }
 
+/**
+ * 
+ * @param {*} datos 
+ * @param {*} OrdenServicioID 
+ * @returns 
+ */
 export const PutOS = async (datos, OrdenServicioID) => {
     const { token } = await getToken()
     console.log("\n")
@@ -76,14 +89,16 @@ export const PutOS = async (datos, OrdenServicioID) => {
             const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado } = data.Response
             var estado = Estado == "FINA" ? "FINALIZADO" : "PROCESO"
             //inserta el id de la orden de servicio
-            await ActualizarOrdenServicioRespuesta(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, idorden)
-            if(es == "ANI"){
+            await ActualizarOrdenServicioRespuestaPUT(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado)
+            // if(es == "ANI"){
+                // await EliminarEventoAnidado(idorden)
+                // await OrdenServicioAnidadas(item)
                 //acualizar el vento de la orden de servicio anidada
-                await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, evento_id)
-            }else{
+                // await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, evento_id)
+            // }else{
                 //actualiza el id de la orden de servicio en los eventos
-                await AactualizarEventos(estado, OrdenServicioID, evento_id)
-            }
+                // await AactualizarEventos(estado, OrdenServicioID, evento_id)
+            // }
 
             return OrdenServicioID
         }

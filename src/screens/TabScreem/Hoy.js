@@ -50,13 +50,18 @@ export default function Hoy(props) {
     
                     db.transaction(tx => {
                         tx.executeSql(
-                            `SELECT * FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
-                            [10200],
+                            `SELECT OS_Firmas FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                            [10210],
                             (tx, results) => {
-                                console.log("results.rows.length", results.rows._array)
+                                const { rows } = results
+                                if (rows.length > 0) {
+                                    console.log("results.rows.length", JSON.parse(rows._array[0].OS_Firmas).length)
+                                }else{
+                                    console.log("results.rows.length", 0)
+                                }
                             }
-                        );
-                    });
+                        )
+                    })
     
                     await isCheckedCancelar()
                     var date = moment().format('YYYY-MM-DD');

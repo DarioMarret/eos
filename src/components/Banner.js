@@ -1,10 +1,12 @@
 import {
   DeleteEventesDiaHoy,
+  GetEventosByTicket,
   GetEventosByTicketHoy,
   GetEventosDelDia,
   GetEventosDelDiaHoy,
 } from "../service/OSevento";
 import {
+  DeleteAnidada,
   ExisteAnidacion,
   OrdenServicioAnidadas,
 } from "../service/OrdenServicioAnidadas";
@@ -23,7 +25,7 @@ import {
 import { AntDesign, Fontisto } from "@expo/vector-icons";
 import React, { useCallback, useState } from "react";
 import moment from "moment";
-import { ExisteHistorialEquipoClienteNombre } from "../service/historiaEquipo";
+import { ExisteHistorialEquipoClienteNombre, HistorialEquipoPorCliente } from "../service/historiaEquipo";
 
 import { PostOS, PutOS } from "../service/OS";
 import { BuscarOrdenServicioLocales } from "../service/ServicioLoca";
@@ -37,15 +39,17 @@ import {
   loadingProcesando,
 } from "../redux/sincronizacion";
 import { useFocusEffect } from "@react-navigation/native";
-import { OSOrdenServicioID, SacarAnexo, SacarCheckList, SacarFirmas, SacarParte, SacarTiempos } from "../service/OS_OrdenServicio";
+import { DeleteOrdenServicioID, OSOrdenServicioID, SacarAnexo, SacarCheckList, SacarFirmas, SacarParte, SacarTiempos } from "../service/OS_OrdenServicio";
 import isEmpty from "is-empty";
 import { GetClienteClienteName } from "../service/clientes";
 import axios from "axios";
+import { getToken } from "../service/usuario";
+import { time } from "../service/CargaUtil";
 
 const isConnection = axios.create({
   baseURL: "https://technical.eos.med.ec/MSOrdenServicio/getVerificaLlegada",
-  timeout: 60,
-});
+  timeout: 30,
+})
 
 export default function Banner() {
 
@@ -135,14 +139,12 @@ export default function Banner() {
 
   async function AsyncAwait() {
     //eliminda los eventos del dia hoy
-    // await DeleteEventesDiaHoy();
-    //consulta para traer los eventos del dia ayer hoy y mañana
-    // await GetEventosDelDiaHoy();
     await GetEventosDelDia();
-
+    var ayer = moment().add(-1, "days").format("YYYY-MM-DD");
     var hoy = moment().format("YYYY-MM-DD");
-    const ticket_id = await GetEventosByTicketHoy(hoy);
-    // const ticket_id = await GetEventosByTicket(ayer, hoy, manana)
+    var manana = moment().add(1, "days").format("YYYY-MM-DD");
+    const ticket_id = await GetEventosByTicket(ayer, hoy, manana);
+    console.log("ticket_id", ticket_id);
     let id_ticket = [];
     let evento_id = [];
     let OrdenServicioID = [];
@@ -154,8 +156,14 @@ export default function Banner() {
       OrdenServicioID.push(item.OrdenServicioID);
       tck_cliente.push(item.tck_cliente);
     }
-    //para guardar los equipos por ticket
+    // await DeleteOrdenServicioID(OrdenServicioID);
+
+    console.log("id_ticket", id_ticket);
+    console.log("evento_id", evento_id);
+    console.log("OrdenServicioID", OrdenServicioID);
+
     await deleteEquipoIDTicketArray(id_ticket);
+    //para guardar los equipos por ticket
     console.log("guardar equipos por ticket", id_ticket.length);
     for (let index = 0; index < id_ticket.length; index++) {
       let item = id_ticket[index];
@@ -164,13 +172,21 @@ export default function Banner() {
       console.log("\n");
       await EquipoTicket(item);
     }
-
+    
     //Para buscar eventos anidadas a la orden
+    await DeleteAnidada(evento_id)
     for (let index = 0; index < evento_id.length; index++) {
       let item = evento_id[index];
-      let existe = await ExisteAnidacion(item);
-      if (existe == false) {
-        await OrdenServicioAnidadas(item);
+      let respOs = await OrdenServicioAnidadas(item);
+      console.log("respOs", respOs);
+      if (typeof respOs === "object") {
+        // await DeleteOrdenServicioID(respOs);
+        for (let index = 0; index < respOs.length; index++) {
+          let item = respOs[index];
+          console.log("item", item);
+
+          await OSOrdenServicioID(item);
+        }
       }
     }
 
@@ -193,10 +209,8 @@ export default function Banner() {
         // const sacarRuc = await GetClienteClienteName("COMPAÑIA ANONIMA CLINICA GUAYAQUIL SERVICIOS MEDICOS S.A.")
         console.log("sacarRuc", sacarRuc[0].CustomerID);
         arrayRuc += sacarRuc[0].CustomerID + "|";
-        // arrayRuc.push(item)
       }
     }
-
     if (!isEmpty(arrayRuc)) {
       console.log("arrayRuc", arrayRuc);
       await HistorialEquipoPorCliente(arrayRuc);
@@ -209,7 +223,7 @@ export default function Banner() {
       if (res) {
         for (let index = 0; index < res.length; index++) {
           let el = res[index];
-          var OrdenServicioID = el.OrdenServicioID;
+          var idorden = el.OrdenServicioID;
           var evento_id = el.evento_id;
           if (el.OrdenServicioID.toString().length == 4) {
             var OS_PartesRepuestos = JSON.parse(el.OS_PartesRepuestos);
@@ -233,13 +247,12 @@ export default function Banner() {
             delete el.OS_Colaboradores;
             delete el.OS_Encuesta;
   
-            el.OS_PartesRepuestos = await SacarParte(OrdenServicioID);;
-            el.OS_Tiempos = await SacarTiempos(OrdenServicioID);
-            el.OS_Firmas = await SacarFirmas(OrdenServicioID);
-            el.OS_CheckList = await SacarCheckList(OrdenServicioID);
-  
-            let P = await PostOS(el, OrdenServicioID, evento_id, el.es);
-            // console.log("P", P);
+            el.OS_PartesRepuestos = await SacarParte(idorden);;
+            el.OS_Tiempos = await SacarTiempos(idorden);
+            el.OS_Firmas = await SacarFirmas(idorden);
+            el.OS_CheckList = await SacarCheckList(idorden);
+            await time(100)
+            let P = await PostOS(el, el.id, idorden, evento_id, el.es);
             if(el.Estado == "FINA"){
               const { token } = await getToken()
               const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {
@@ -251,11 +264,13 @@ export default function Banner() {
               console.log("status", status);
             }
           } else {
-            var OS_PartesRepuestos = await SacarParte(OrdenServicioID);
-            var OS_Tiempos = await SacarTiempos(OrdenServicioID);
-            var OS_Firmas = await SacarFirmas(OrdenServicioID);
-            var OS_CheckList = await SacarCheckList(OrdenServicioID);
-            var OS_Anexos =  await SacarAnexo(OrdenServicioID);
+            console.log("id-------------------->",el.id)
+            var OS_PartesRepuestos = await SacarParte(idorden);
+            var OS_Tiempos = await SacarTiempos(idorden);
+            var OS_Firmas = await SacarFirmas(idorden);
+            console.log("OS_Firmas", OS_Firmas);
+            var OS_CheckList = await SacarCheckList(idorden);
+            var OS_Anexos =  await SacarAnexo(idorden);
             delete el.OS_Colaboradores;
             delete el.OS_Encuesta;
             el.OS_PartesRepuestos = OS_PartesRepuestos;
@@ -263,8 +278,8 @@ export default function Banner() {
             el.OS_Firmas = OS_Firmas;
             el.OS_CheckList = OS_CheckList;
             el.OS_Anexos = OS_Anexos;
-            let P = await PutOS(el, OrdenServicioID, evento_id, el.es);
-            // console.log("P", P);
+            await time(100)
+            let P = await PutOS(el, el.OrdenServicioID);
             if(el.Estado == "FINA"){
               const { token } = await getToken()
               const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {

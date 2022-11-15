@@ -14,12 +14,12 @@ import {
     MenuTrigger,
 } from 'react-native-popup-menu';
 import VisualizadorPDF from "../../components/VisualizadorPDF";
-import { getRucCliente, PDFVisializar, SelectOSOrdenServicioID, SelectOSOrdenServicioIDEquipo } from "../../service/OS_OrdenServicio";
+import { ActualizarEstadoOS, getRucCliente, OSOrdenServicioID, PDFVisializar, SelectOSOrdenServicioID, SelectOSOrdenServicioIDEquipo } from "../../service/OS_OrdenServicio";
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
 import { AntDesign } from "@expo/vector-icons";
-import { getEquipoID, HistorialEquipoIngeniero, isChecked } from "../../service/historiaEquipo";
+import { getEquipoID, getHistorialEquiposStoragId, HistorialEquipoIngeniero, isChecked } from "../../service/historiaEquipo";
 import { FinalizarOS, FinalizarOS_, ParseOS } from "../../service/OS";
 import moment from "moment";
 import { GetEventosByTicket, GetEventosByTicketHoy, GetEventosDelDia } from "../../service/OSevento";
@@ -109,6 +109,7 @@ export default function TicketsOS(props) {
         }
     }
 
+    var equipos = []
     async function Ordene(ticket_id, evento_id, estado, OrdenServicioID, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
         console.log("ticket_id", ticket_id)
         console.log("estado", estado)
@@ -118,6 +119,8 @@ export default function TicketsOS(props) {
             console.log("ordenservicio", ordenservicio_equipo)
             db.transaction(tx => {
                 tx.executeSql(`SELECT * FROM historialEquipo where equipo_id = ?`, [ordenservicio_equipo], (_, { rows }) => {
+                    console.log("historialEquipo", rows._array)
+                    equipos = rows._array
                     Rutes(rows._array, ticket_id, evento_id, OrdenServicioID, estado, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
                 })
             })
@@ -183,6 +186,7 @@ export default function TicketsOS(props) {
 
     async function VisualizarPdf(item) {
         const base64 = await PDFVisializar(item)
+        console.log("base64", base64)
         if (base64 != null) {
             setPdfurl(base64)
             setPdfview(false)
@@ -296,8 +300,101 @@ export default function TicketsOS(props) {
                 navigation.navigate("Ordenes")
             }
         } catch (error) {
-            console.log(error)   
+            const { message, code } = error;
+            console.log("message", message)   
+            console.log("code", code)   
+            await OSOrdenServicioID(OrdenServicioID)
+            const ordenservicio_equipo = await SelectOSOrdenServicioIDEquipo(OrdenServicioID)
+            const equi = await getHistorialEquiposStoragId(ordenservicio_equipo)
+            await RuteCatch(equi, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod)
             dispatch(loadingCargando(false))         
+        }
+    }
+
+    async function RuteCatch(equipo_id, ticket_id, evento_id, OrdenServicioID, accion, tck_tipoTicket, tipoIncidencia, tck_tipoTicketCod) {
+        console.log("RuteCatch",equipo_id)
+        var clon;
+        var equipo = await ValidarEquipos()
+        if (accion == "PENDIENTE" || accion == "FINALIZADO" || accion == "PROCESO" || accion == "PENDIENTE DE APROBAR") {
+            clon = await SelectOSOrdenServicioID(OrdenServicioID)
+            dispatch(SetByOrdenServicioID(OrdenServicioID))
+            clon[0].ticket_id = ticket_id,
+                clon[0].evento_id = evento_id,
+                clon[0].tipoIncidencia = tipoIncidencia,
+                clon[0].TipoVisita = tck_tipoTicketCod,
+                clon[0].OrdenServicioID = OrdenServicioID,
+                dispatch(setEquipoTool(clon[0]))
+            dispatch(setClienteTool(clon[0]))
+            dispatch(setdatosTool(clon[0]))
+            dispatch(setComponenteTool(JSON.parse(clon[0].OS_PartesRepuestos)))
+            dispatch(setAdjuntosTool(JSON.parse(clon[0].OS_Anexos)))
+            dispatch(setTiemposTool(JSON.parse(clon[0].OS_Tiempos)))
+            dispatch(setFirmasTool(JSON.parse(clon[0].OS_Firmas)))
+            dispatch(setChecklistTool(JSON.parse(clon[0].OS_CheckList)))
+            dispatch(actualizarClienteTool({
+                name: 'ticket_id',
+                value: ticket_id
+            }))
+            dispatch(actualizarClienteTool({
+                name: 'evento_id',
+                value: evento_id
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'tipoIncidencia',
+                value: tipoIncidencia
+            }))
+            dispatch(actualizarDatosTool({
+                name: 'TipoVisita',
+                value: tck_tipoTicketCod
+            }))
+            await isChecked(equipo_id[0].equipo_id)
+            dispatch(loadingCargando(false))
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({
+                evento_id,
+                ticket_id,
+                equipo,
+                OrdenServicioID,
+                Accion: accion,
+                tck_tipoTicket,
+                tipoIncidencia,
+                tck_tipoTicketCod,
+            }))
+            await AsyncStorage.setItem("SCREMS", "Ticket")
+            dispatch(loadingCargando(false))
+            navigation.navigate("Ordenes")
+        }
+        if (accion == "clonar") {
+            clon = await SelectOSOrdenServicioID(OrdenServicioID)
+            clon[0].ticket_id = ticket_id,
+                clon[0].evento_id = evento_id,
+                clon[0].tipoIncidencia = tipoIncidencia,
+                clon[0].TipoVisita = tck_tipoTicketCod,
+                clon[0].OrdenServicioID = 0,
+                dispatch(setEquipoTool(clon[0]))
+            dispatch(setClienteTool(clon[0]))
+            dispatch(setdatosTool(clon[0]))
+            dispatch(setComponenteTool(JSON.parse(clon[0].OS_PartesRepuestos)))
+            dispatch(setAdjuntosTool(JSON.parse(clon[0].OS_Anexos)))
+            dispatch(setTiemposTool(JSON.parse(clon[0].OS_Tiempos)))
+            dispatch(setFirmasTool(JSON.parse(clon[0].OS_Firmas)))
+            dispatch(setChecklistTool(JSON.parse(clon[0].OS_CheckList)))
+            equipo_id = await isChecked(equipo_id[0].equipo_id)
+            dispatch(loadingCargando(false))
+            await AsyncStorage.removeItem(ticketID)
+            await AsyncStorage.setItem(ticketID, JSON.stringify({
+                OrdenServicioID: 0,
+                evento_id,
+                ticket_id,
+                equipo,
+                Accion: accion,
+                tck_tipoTicket,
+                tipoIncidencia,
+                tck_tipoTicketCod,
+            }))
+            await AsyncStorage.setItem("SCREMS", "Ticket")
+            dispatch(loadingCargando(false))
+            navigation.navigate("Ordenes")
         }
     }
 
@@ -451,7 +548,10 @@ export default function TicketsOS(props) {
         console.log("OrdenServicioI", OrdenServicioI)
         await time(200)
         OrdenServicioI.forEach(async (item) => {
+            console.log("item", item)
+            await ActualizarEstadoOS(item, "FINA")
             await ActualizaEstadoOrdenServicioAnidadas("FINALIZADO", item)
+
         })
         await time(200)
         let new_anidados = eventosAnidados.map((item) => {

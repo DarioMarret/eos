@@ -4,15 +4,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import React, { useCallback, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, Pressable, View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import { Alert, Modal, StyleSheet, Text, Pressable, View, ScrollView, TouchableOpacity, TextInput, FlatList } from 'react-native';
 import { useIsConnected } from 'react-native-offline';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadingCargando } from '../redux/sincronizacion';
 import { EnviarCorreo } from '../service/enviarCorreo';
-import { getRucCliente } from '../service/OS_OrdenServicio';
+import { getRucCliente, SacarClienteID } from '../service/OS_OrdenServicio';
 import { getToken } from '../service/usuario';
 import { ticketID } from '../utils/constantes';
 import LoadingActi from './LoadingActi';
+import { GetCorreos } from '../service/getCorreos';
 
 
 var DatosEmail = []
@@ -51,25 +52,15 @@ export default function ModalGenerico(props) {
                 try {
                     if (isConnected) {
                         dispatch(loadingCargando(true))
-                        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-                        const { OrdenServicioID } = itenSelect
-                        const { ClienteID } = await getRucCliente(OrdenServicioID)
-                        const { token } = await getToken()
-                        const { data } = await axios.get(`https://technical.eos.med.ec/MSOrdenServicio/correos?ruc=${ClienteID}&ordServ=${OrdenServicioID}`, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            }
-                        })
-                        if (data.length > 0) {
-                            setlistadoEmails(data)
-                            DatosEmail = data.filter(listC => listC.Correo != "" && listC.Correo != null)
-                            dispatch(loadingCargando(false))
+                        const ClienteID = await SacarClienteID(formulario.OrdenServicioID)
+                        const listCorreos = await GetCorreos(ClienteID, formulario.OrdenServicioID)
+                        if (listCorreos.length > 0) {
+                            let correos = listCorreos.filter(c => c.Correo != "")
+                            setlistadoEmails(correos)
+                        }else{
+                            setlistadoEmails([])
                         }
-                        if (contenflex.length > 0) {
-                            setCorreosEmail(contenflex)
-                        }
+              
                         dispatch(loadingCargando(false))
                     }
                 } catch (error) {
@@ -168,11 +159,11 @@ export default function ModalGenerico(props) {
         setlistadoEmails("")
     }
 
-    useEffect(() => {
-        if (modalVisible) {
-            setCorreosEmail(contenflex)
-        }
-    }, [modalVisible == false])
+    // useEffect(() => {
+    //     if (modalVisible) {
+    //         setCorreosEmail(contenflex)
+    //     }
+    // }, [modalVisible == false])
 
 
     return (
@@ -217,37 +208,32 @@ export default function ModalGenerico(props) {
                                 width: '100%',
                             }}
                         >
-                            {
-                                CorreosEmail.length > 0 ?
-                                    CorreosEmail.map((item, index) => {
-                                        return (
-                                            <View key={index}
-                                                style={{
-                                                    width: '100%',
-                                                    height: 50,
-                                                    flexDirection: 'row',
-                                                    justifyContent: 'space-between',
-                                                    alignItems: 'flex-start',
-                                                    borderBottomWidth: 0.3,
-                                                    borderBottomColor: '#B2B2AF',
-                                                    marginBottom: 15
-                                                }}>
-                                                <Text style={{ ...styles.modalText, fontSize: 14, width: "90%", textAlign: "left" }}>{item.Correo}</Text>
-                                                <TouchableOpacity onPress={() => handleChangelocal(item.id_correoCliente)}>
-                                                    <MaterialCommunityIcons
-                                                        name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
-                                                        size={24}
-                                                        color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
-                                                    />
-                                                </TouchableOpacity>
-                                            </View>
-                                        )
-                                    })
-                                    :
-                                    <View style={{ width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10 }}>
-                                        <Text style={{ ...styles.modalText, fontSize: 12 }}>No hay datos</Text>
+                            <FlatList
+                                data={CorreosEmail}
+                                renderItem={({ item, index }) => (
+                                    <View key={index}
+                                        style={{
+                                            width: '100%',
+                                            height: 50,
+                                            flexDirection: 'row',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'flex-start',
+                                            borderBottomWidth: 0.3,
+                                            borderBottomColor: '#B2B2AF',
+                                            marginBottom: 15
+                                        }}>
+                                        <Text style={{ ...styles.modalText, fontSize: 14, width: "90%", textAlign: "left" }}>{item.Correo}</Text>
+                                        <TouchableOpacity onPress={() => handleChangelocal(item.id_correoCliente)}>
+                                            <MaterialCommunityIcons
+                                                name={item.isChecked == "true" ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+                                                size={24}
+                                                color={item.isChecked == "true" ? "#FF6B00" : "#858583"}
+                                            />
+                                        </TouchableOpacity>
                                     </View>
-                            }
+                                )}
+
+                            />
                         </ScrollView>
                         <View
                             style={{

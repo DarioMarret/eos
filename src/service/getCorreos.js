@@ -7,7 +7,7 @@ export const GetCorreos = async (ClienteID, OrdenServicioID) => {
         const { token } = await getToken()
         const InstanceAxios = axios.create({
             baseURL: "https://technical.eos.med.ec/MSOrdenServicio/correos",
-            timeout: 10000,
+            timeout: 1000,
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
