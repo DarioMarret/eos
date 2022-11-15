@@ -211,10 +211,12 @@ export default function Banner() {
         arrayRuc += sacarRuc[0].CustomerID + "|";
       }
     }
+
     if (!isEmpty(arrayRuc)) {
       console.log("arrayRuc", arrayRuc);
       await HistorialEquipoPorCliente(arrayRuc);
     }
+    
   }
 
   const UpdateLocal = async () => {

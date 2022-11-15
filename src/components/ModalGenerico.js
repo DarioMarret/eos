@@ -1,22 +1,17 @@
-import { useEffect } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import axios from 'axios';
 import React, { useCallback, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, Pressable, View, ScrollView, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import { Alert, Modal, StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, FlatList } from 'react-native';
 import { useIsConnected } from 'react-native-offline';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadingCargando } from '../redux/sincronizacion';
 import { EnviarCorreo } from '../service/enviarCorreo';
-import { getRucCliente, SacarClienteID } from '../service/OS_OrdenServicio';
-import { getToken } from '../service/usuario';
-import { ticketID } from '../utils/constantes';
+import { SacarClienteID } from '../service/OS_OrdenServicio';
 import LoadingActi from './LoadingActi';
 import { GetCorreos } from '../service/getCorreos';
 
 
-var DatosEmail = []
 export default function ModalGenerico(props) {
 
     const { modalVisible, setModalVisible,
@@ -60,7 +55,6 @@ export default function ModalGenerico(props) {
                         }else{
                             setlistadoEmails([])
                         }
-              
                         dispatch(loadingCargando(false))
                     }
                 } catch (error) {

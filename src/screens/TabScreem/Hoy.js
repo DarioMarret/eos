@@ -51,11 +51,11 @@ export default function Hoy(props) {
                     db.transaction(tx => {
                         tx.executeSql(
                             `SELECT OS_Firmas FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
-                            [10210],
+                            [10211],
                             (tx, results) => {
                                 const { rows } = results
                                 if (rows.length > 0) {
-                                    console.log("results.rows.length", JSON.parse(rows._array[0].OS_Firmas).length)
+                                    console.log("results.rows.length", JSON.parse(rows._array[0].OS_Firmas))
                                 }else{
                                     console.log("results.rows.length", 0)
                                 }

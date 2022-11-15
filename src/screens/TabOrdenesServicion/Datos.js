@@ -17,6 +17,7 @@ import { useDispatch } from "react-redux"
 import { useSelector } from "react-redux"
 import { actualizarDatosTool, setChecklistTool } from "../../redux/formulario"
 import isEmpty from "just-is-empty"
+import { SacarFirmas } from "../../service/OS_OrdenServicio"
 
 export default function Datos(props) {
     const { navigation } = props
@@ -92,23 +93,24 @@ export default function Datos(props) {
     }
 
     async function ActivarChecklist(equipo_id) {
-        var checklist = DatosStor.checklist
+        var checklist = await SacarFirmas(DatosStor.OrdenServicioID)
         if (checklist.length > 0) {
-            console.log("checklist")
-            dispatch(loadingCargando(true))
-            var list_ = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
-            var listCheck = []
+            // console.log("checklist")
+            // dispatch(loadingCargando(true))
+            // var list_ = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
+            // var listCheck = []
 
-            checklist.map((item, index) => {
-                let obj = {
-                    ...item,
-                    check_actividad: list_[index].check_actividad
-                }
-                listCheck.push(obj)
-            })
+            // checklist.map((item, index) => {
+            //     let obj = {
+            //         ...item,
+            //         check_actividad: list_[index].check_actividad
+            //     }
+            //     listCheck.push(obj)
+            // })
 
-            console.log("list",listCheck)
-            setListCheck(listCheck)
+            // console.log("list",listCheck)
+            // setListCheck(listCheck)
+            setListCheck(checklist)
             setOfCheck(true)
             dispatch(loadingCargando(false))
         } else {

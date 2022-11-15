@@ -88,7 +88,7 @@ export default function App() {
           await RefresLogin();
           // await TrucateUpdate();
           // await HistorialEquipoIngeniero()
-          await GetEventosDelDia();//
+          await GetEventosDelDia();
           var ayer = moment().add(-1, "days").format("YYYY-MM-DD");
           var hoy = moment().format("YYYY-MM-DD");
           var manana = moment().add(1, "days").format("YYYY-MM-DD");
