@@ -41,7 +41,7 @@ import isEmpty from "is-empty";
 const isConnection = axios.create({
   baseURL:
     "https://technical.eos.med.ec/MSOrdenServicio/getVerificaLlegada",
-  timeout: 60,
+  timeout: 100,
 });
 
 const theme = {

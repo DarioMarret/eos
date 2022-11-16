@@ -110,6 +110,7 @@ export default function Adjuntos(props) {
           if (itenSelect != null) {
             const item = JSON.parse(itenSelect)
             const { Accion, OrdenServicioID } = item
+            console.log("Accion", Accion)
             setOrdenServicioID(OrdenServicioID)
             if (Accion == "FINALIZADO") {
 
@@ -117,6 +118,7 @@ export default function Adjuntos(props) {
 
             } else if (Accion == "PENDIENTE") {
 
+              setFini(true)
               setListAdjuntos([])
 
             } else if (Accion == "OrdenSinTicket") {
@@ -126,12 +128,14 @@ export default function Adjuntos(props) {
             } else if (Accion == "NUEVO OS TICKET") {
 
               setListAdjuntos([])
+              setFini(true)
 
             } else if (Accion == "PROCESO") {
-
+              setFini(true)
 
             } else if (Accion == "clonar") {
-
+              setFini(true)
+              
               setListAdjuntos([])
 
             }

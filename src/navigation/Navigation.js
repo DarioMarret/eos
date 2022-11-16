@@ -29,7 +29,7 @@ import ModalGenerico from "../components/ModalGenerico";
 import { useDispatch } from "react-redux";
 import moment from "moment";
 import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn } from "../redux/sincronizacion";
-import { EditareventoLocal } from "../service/ServicioLoca";
+import { EditareventoLocal, FinalizarOSLocal } from "../service/ServicioLoca";
 import { getIngenierosStorageById } from "../service/ingenieros";
 import { ActualizaEstadoOrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
 
@@ -101,47 +101,6 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
         navigation.goBack()
     }
 
-    const FinalizarOS = async () => {
-        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
-        const { OrdenServicioID, tck_tipoTicketCod } = itenSelect
-        if (OrdenServicioID != null && OrdenServicioID != 0) {
-            // let estadoLocal = await EstadoOSLOCAL(OrdenServicioID)
-            // if (estadoLocal == "UPDATE") {
-                console.log("tck_tipoTicketCod", tck_tipoTicketCod)
-                if (tck_tipoTicketCod == "01" || tck_tipoTicketCod == "09") {
-                    //actualiza el estado del evento anidado
-                    await ActualizaEstadoOrdenServicioAnidadas("FINALIZADO", OrdenServicioID)
-                }else{
-                    //actualiza el estado del evento a finalizado
-                    await EditareventoLocal("FINALIZADO", OrdenServicioID)
-                }
-
-                await ActualizarEstadoOS(OrdenServicioID, "FINA")
-                // await UpdateOSOrdenServicioID([OrdenServicioID])
-                await Dispatcher()
-                alert("Se actualizo el estado de la OS en local hasta que se sincronice")
-                handleBack()
-            // }
-            // else{
-            //     if(isConnected){
-            //         dispatch(loadingCargando(true))
-            //         let respuesta = await FinalizarOS_(OrdenServicioID)
-            //         await EditareventoLocal("FINALIZADO", OrdenServicioID)
-            //         await Dispatcher()
-            //         alert("Orden de Servicio Finalizada Correctamente")
-            //         handleBack()
-            //         dispatch(loadingCargando(false))
-            //         console.log("FinalizarOS", respuesta)
-            //     }else{
-            //         await EditareventoLocal("FINALIZADO", OrdenServicioID)
-            //         await Dispatcher()
-            //         alert("Se actualizo el estado de la OS en local asta que se sincronice")
-            //         handleBack()
-            //     }
-            // }
-        }
-    }
-
     const dispatch = useDispatch()
 
     async function Dispatcher() {
@@ -167,6 +126,21 @@ function MenuFinal({ setModalEmails, setModalSignature, VisualizarPdf, item }) {
             }
         })
     }
+
+    const FinalizarOS = async () => {
+        console.log("FinalizarOS")
+        const itenSelect = JSON.parse(await AsyncStorage.getItem(ticketID))
+        const { OrdenServicioID, tck_tipoTicketCod } = itenSelect
+        if (OrdenServicioID != null && OrdenServicioID != 0) {
+            console.log("tck_tipoTicketCod", tck_tipoTicketCod)
+            await FinalizarOSLocal([OrdenServicioID])
+            await Dispatcher()
+            alert("Se actualizo el estado de la OS en local hasta que se sincronice")
+            handleBack()
+        }
+    }
+
+
 
     useFocusEffect(
         useCallback(() => {

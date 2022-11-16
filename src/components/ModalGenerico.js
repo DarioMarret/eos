@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, Modal, StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import { Alert, Modal, StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, FlatList, SafeAreaView } from 'react-native';
 import { useIsConnected } from 'react-native-offline';
 import { useSelector, useDispatch } from 'react-redux';
 import { loadingCargando } from '../redux/sincronizacion';
@@ -20,6 +20,7 @@ export default function ModalGenerico(props) {
     } = props;
 
     const [CorreosEmail, setCorreosEmail] = useState([]);
+
 
     const Events = useSelector(s => s.sincronizacion)
     const formulario = useSelector(s => s.formulario)
@@ -49,11 +50,12 @@ export default function ModalGenerico(props) {
                         dispatch(loadingCargando(true))
                         const ClienteID = await SacarClienteID(formulario.OrdenServicioID)
                         const listCorreos = await GetCorreos(ClienteID, formulario.OrdenServicioID)
+                        console.log(listCorreos)
                         if (listCorreos.length > 0) {
-                            let correos = listCorreos.filter(c => c.Correo != "")
-                            setlistadoEmails(correos)
+                            let correos = listCorreos.filter(c => c.Correo != "" && c.Correo != null)
+                            setCorreosEmail(correos)
                         }else{
-                            setlistadoEmails([])
+                            setCorreosEmail([])
                         }
                         dispatch(loadingCargando(false))
                     }
@@ -62,7 +64,7 @@ export default function ModalGenerico(props) {
                     console.log(error)                    
                 }
             })()
-        }, [modalVisible])
+        }, [])
     );
 
     const handleEnviarCorreo = async () => {
@@ -196,25 +198,24 @@ export default function ModalGenerico(props) {
                                 onChangeText={text => BuscarCorreoLocal(text)}
                             />
                         </View>
-                        <ScrollView
-                            showsVerticalScrollIndicator={false}
-                            style={{
-                                width: '100%',
-                            }}
-                        >
+                        <View style={{ width: '100%', height: '60%' }}>
+                            <SafeAreaView>
                             <FlatList
+                            style={{
+                                paddingHorizontal: 10
+                            }}
                                 data={CorreosEmail}
                                 renderItem={({ item, index }) => (
                                     <View key={index}
                                         style={{
                                             width: '100%',
-                                            height: 50,
+                                            // height: 50,
                                             flexDirection: 'row',
                                             justifyContent: 'space-between',
                                             alignItems: 'flex-start',
                                             borderBottomWidth: 0.3,
                                             borderBottomColor: '#B2B2AF',
-                                            marginBottom: 15
+                                            marginBottom: 10
                                         }}>
                                         <Text style={{ ...styles.modalText, fontSize: 14, width: "90%", textAlign: "left" }}>{item.Correo}</Text>
                                         <TouchableOpacity onPress={() => handleChangelocal(item.id_correoCliente)}>
@@ -226,15 +227,16 @@ export default function ModalGenerico(props) {
                                         </TouchableOpacity>
                                     </View>
                                 )}
-
                             />
-                        </ScrollView>
+                            </SafeAreaView>
+                        </View>
                         <View
                             style={{
                                 flexDirection: 'row',
-                                justifyContent: 'flex-end',
+                                justifyContent: 'space-between',
                                 alignItems: 'center',
                                 width: '100%',
+                                marginTop: 10
                             }}
                         >
                             <TouchableOpacity onPress={handleEnviarCorreo}>

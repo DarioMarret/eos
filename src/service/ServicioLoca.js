@@ -67,9 +67,19 @@ export const FinalizarOSLocal = async (OrdenServicioID) => {
     return new Promise((resolve, reject) => {
         OrdenServicioID.map(async (id) => {
             db.transaction((tx) => {
+                tx.executeSql(`UPDATE ordenesAnidadas SET ev_estado = ? WHERE OrdenServicioID = ?`, [
+                    "FINALIZADO",
+                    id
+                ], (tx, results) => {
+                    console.log("results -- FinalizarOSLocal", results.rowsAffected);
+                })
+            })
+        })
+        OrdenServicioID.map(async (id) => {
+            db.transaction((tx) => {
                 tx.executeSql(`UPDATE OrdenesServicio SET ev_estado = ? WHERE OrdenServicioID = ?`, [
                     "FINALIZADO",
-                    OrdenServicioID
+                    id
                 ], (tx, results) => {
                     console.log("results -- FinalizarOSLocal", results.rowsAffected);
                 })
@@ -80,7 +90,7 @@ export const FinalizarOSLocal = async (OrdenServicioID) => {
                 tx.executeSql(`UPDATE OS_OrdenServicio SET Estado = ?, OS_LOCAL = ? WHERE OrdenServicioID = ?`, [
                     "FINA",
                     "UPDATE",
-                    OrdenServicioID,
+                    id,
                 ], (tx, results) => {
                     console.log("results -- FinalizarOSLocal", results.rowsAffected);
                 })

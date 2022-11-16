@@ -1,5 +1,6 @@
 import {
   DeleteEventesDiaHoy,
+  DeletetEventosByTicket,
   GetEventosByTicket,
   GetEventosByTicketHoy,
   GetEventosDelDia,
@@ -39,7 +40,7 @@ import {
   loadingProcesando,
 } from "../redux/sincronizacion";
 import { useFocusEffect } from "@react-navigation/native";
-import { DeleteOrdenServicioID, OSOrdenServicioID, SacarAnexo, SacarCheckList, SacarFirmas, SacarParte, SacarTiempos } from "../service/OS_OrdenServicio";
+import { ActualizarOrdenServicioFirmas, ActualizarOrdenServicioRespuestaPUT, OSOrdenServicioID, SacarAnexo, SacarCheckList, SacarFirmas, SacarParte, SacarTiempos } from "../service/OS_OrdenServicio";
 import isEmpty from "is-empty";
 import { GetClienteClienteName } from "../service/clientes";
 import axios from "axios";
@@ -48,7 +49,7 @@ import { time } from "../service/CargaUtil";
 
 const isConnection = axios.create({
   baseURL: "https://technical.eos.med.ec/MSOrdenServicio/getVerificaLlegada",
-  timeout: 30,
+  timeout: 100,
 })
 
 export default function Banner() {
@@ -57,6 +58,7 @@ export default function Banner() {
   const [message, setMessage] = useState("Actualizando...");
 
   const [modal, setModal] = useState(false);
+  const [messageModal, setMessageModal] = useState("");
 
 
   const dispatch = useDispatch();
@@ -124,6 +126,7 @@ export default function Banner() {
       dispatch(loadingCargando(false));
       setupdate(false);
     }
+    setModal(false);
   }
   const Events = useSelector((s) => s.sincronizacion);
 
@@ -138,12 +141,19 @@ export default function Banner() {
   );
 
   async function AsyncAwait() {
-    //eliminda los eventos del dia hoy
-    await GetEventosDelDia();
+    setModal(true);
     var ayer = moment().add(-1, "days").format("YYYY-MM-DD");
     var hoy = moment().format("YYYY-MM-DD");
     var manana = moment().add(1, "days").format("YYYY-MM-DD");
+    await DeletetEventosByTicket(ayer, hoy, manana);
+
+
+    //eliminda los eventos del dia hoy
+    setMessageModal("Validando si existen nuevos eventos...");
+    await GetEventosDelDia();
+    setMessageModal("Recreando los eventos del dia...");
     const ticket_id = await GetEventosByTicket(ayer, hoy, manana);
+    setMessageModal("Listando los eventos del dia...");
     console.log("ticket_id", ticket_id);
     let id_ticket = [];
     let evento_id = [];
@@ -171,13 +181,15 @@ export default function Banner() {
       console.log("index", index);
       console.log("\n");
       await EquipoTicket(item);
+      setMessageModal("recuperando los equipos por ticket...");
     }
-    
+
     //Para buscar eventos anidadas a la orden
     await DeleteAnidada(evento_id)
     for (let index = 0; index < evento_id.length; index++) {
       let item = evento_id[index];
       let respOs = await OrdenServicioAnidadas(item);
+      setMessageModal("recuperando los eventos anidadas...");
       console.log("respOs", respOs);
       if (typeof respOs === "object") {
         // await DeleteOrdenServicioID(respOs);
@@ -186,6 +198,7 @@ export default function Banner() {
           console.log("item", item);
 
           await OSOrdenServicioID(item);
+          setMessageModal("recuperando los os anidadas...");
         }
       }
     }
@@ -205,6 +218,7 @@ export default function Banner() {
         console.log("existe", existe);
       } else {
         console.log("existe", existe);
+        setMessageModal("recuperando los clientes no registrados...");
         const sacarRuc = await GetClienteClienteName(item);
         // const sacarRuc = await GetClienteClienteName("COMPAÑIA ANONIMA CLINICA GUAYAQUIL SERVICIOS MEDICOS S.A.")
         console.log("sacarRuc", sacarRuc[0].CustomerID);
@@ -215,14 +229,19 @@ export default function Banner() {
     if (!isEmpty(arrayRuc)) {
       console.log("arrayRuc", arrayRuc);
       await HistorialEquipoPorCliente(arrayRuc);
+      setMessageModal("registrando los equipos del nuevo cliente...");
     }
-    
+
+    setModal(true);
+
   }
 
   const UpdateLocal = async () => {
     try {
       const res = await BuscarOrdenServicioLocales();
       if (res) {
+        setMessageModal("Se detectaron " + res.length + " cambios locales.");
+        setModal(true);
         for (let index = 0; index < res.length; index++) {
           let el = res[index];
           var idorden = el.OrdenServicioID;
@@ -236,91 +255,166 @@ export default function Banner() {
             for (let index = 0; index < OS_Tiempos.length; index++) {
               OS_Tiempos[index].OrdenServicioID = 0;
             }
-            var OS_Firmas = JSON.parse(el.OS_Firmas);
-            for (let index = 0; index < OS_Firmas.length; index++) {
-              OS_Firmas[index].OrdenServicioID = 0;
-            }
+
             var OS_CheckList = JSON.parse(el.OS_CheckList);
             for (let index = 0; index < OS_CheckList.length; index++) {
               OS_CheckList[index].OrdenServicioID = 0;
             }
             el.OrdenServicioID = 0;
-            delete el.OS_Anexos;
             delete el.OS_Colaboradores;
             delete el.OS_Encuesta;
-  
+
+            el.OS_Firmas = []
             el.OS_PartesRepuestos = await SacarParte(idorden);;
             el.OS_Tiempos = await SacarTiempos(idorden);
-            el.OS_Firmas = await SacarFirmas(idorden);
+            el.OS_Anexos = await SacarAnexo(idorden);
             el.OS_CheckList = await SacarCheckList(idorden);
             await time(100)
-            let P = await PostOS(el, el.id, idorden, evento_id, el.es);
-            if(el.Estado == "FINA"){
-              const { token } = await getToken()
-              const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {
-                headers: {
+            //CREAR ORDEN DE SERVICIO EN EL SERVIDOR
+            var P = await PostOS(el, el.id, idorden, evento_id, el.es);
+            if (P != false) {
+              setMessageModal("OS Creando #" + P);
+              if (el.Estado == "FINA") {
+                const { token } = await getToken()
+                const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {
+                  headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
+                  }
+                })
+                setMessageModal("Finalizando OS " + P);
+                if (status == 200 || status == 201) {
+                  setMessageModal("OS Finalizado" + P);
+                  let fimas = await SacarFirmas(P);
+                  var firmasId = fimas.filter((fir) => fir.IdFirma == 0);
+                  if (el.Estado == "FINA" && firmasId.length > 0) {
+                    setMessageModal("Se Encontradas Firmas el OS " + P + "#" + firmasId.length);
+                    var OS_F = firmasId
+                    for (let index = 0; index < OS_F.length; index++) {
+                      setMessageModal("Limpiando Firmas de id local" + P + "#" + OS_F[index].OrdenServicioID);
+                      OS_F[index].OrdenServicioID = P;
+                      await time(100)
+                    }
+                    await time(100)
+                    setMessageModal("Enviando Firmas al Servidor" + P + "#" + OS_F.length);
+                    console.log("envio de firmas Creatd firmasId---> ", OS_F);
+                    const { token } = await getToken()
+                    const { data, status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/FirmasAppM?id=${P}`, OS_F, {
+                      headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                      }
+                    })
+
+                    if (status == 200 || status <= 204) {
+
+                      const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, OS_Firmas } = data.Response
+                      setMessageModal("Firmas Enviadas " + OrdenServicioID)
+                      await time(100)
+                      console.log("status", status);
+                      await ActualizarOrdenServicioRespuestaPUT(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado)
+                      await ActualizarOrdenServicioFirmas(OS_Firmas, OrdenServicioID)
+                      console.log("status", OrdenServicioID, EstadoEquipo, Estado, OS_Firmas);
+
+                    } else {
+                      setMessageModal("Error al enviar firmas del OS: " + U)
+                      await time(500)
+                    }
+                  }
+                } else {
+                  setMessageModal("Error al Crear OS: " + idorden)
+                  await time(500)
                 }
-              })
-              console.log("status", status);
+              }
+            } else {
+              setMessageModal("Error al Crear OS: " + idorden)
+              await time(500)
             }
+
+
           } else {
-            console.log("id-------------------->",el.id)
+
+            //ACTUALIZA UNA ORDEN DE SERVICIO QUE YA EXISTE EN EL SERVIDOR
+            console.log("id-------------------->", el.id)
             var OS_PartesRepuestos = await SacarParte(idorden);
             var OS_Tiempos = await SacarTiempos(idorden);
-            var OS_Firmas = await SacarFirmas(idorden);
-            console.log("OS_Firmas", OS_Firmas);
+            var OS_FirmasLocal = await SacarFirmas(idorden);
+            // console.log("OS_Firmas", OS_Firmas.length);
             var OS_CheckList = await SacarCheckList(idorden);
-            var OS_Anexos =  await SacarAnexo(idorden);
+            var OS_Anexos = await SacarAnexo(idorden);
             delete el.OS_Colaboradores;
             delete el.OS_Encuesta;
+            delete el.OS_Firmas;
             el.OS_PartesRepuestos = OS_PartesRepuestos;
             el.OS_Tiempos = OS_Tiempos;
-            el.OS_Firmas = OS_Firmas;
             el.OS_CheckList = OS_CheckList;
             el.OS_Anexos = OS_Anexos;
             await time(100)
-            let P = await PutOS(el, el.OrdenServicioID);
-            if(el.Estado == "FINA"){
-              const { token } = await getToken()
-              const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${P}`, {}, {
-                headers: {
+            var U = await PutOS(el, el.OrdenServicioID);
+            if (U == false) {
+              setMessageModal("Actualizando OS " + P);
+              //FINALIZAR ORDEN DE SERVICIO
+              if (el.Estado == "FINA") {
+                const { token } = await getToken()
+                const { status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/finalizar?idOrdenServicio=${U}`, {}, {
+                  headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${token}`
+                  }
+                })
+                console.log("status", status);
+                setMessageModal("Finalizando " + P);
+              }
+
+              var firmasId = OS_FirmasLocal.filter((fir) => fir.IdFirma == 0);
+              //AÑADE FIRMAS A UNA ORDEN DE SERVICIO
+              if (el.Estado == "FINA" && firmasId.length > 0) {
+                setMessageModal("Se encontro " + firmasId.length + " firmas sin enviar");
+                const { token } = await getToken()
+                console.log("firmasId", firmasId);
+                const { data, status } = await axios.put(`https://technical.eos.med.ec/MSOrdenServicio/FirmasAppM?id=${U}`, firmasId, {
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                  }
+                })
+                if (status == 200 || status < 201) {
+
+                  const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado, OS_Firmas } = data.Response
+                  var firmasId = OS_FirmasLocal.filter((fir) => fir.IdFirma != 0);
+                  firmasId.push(...OS_Firmas)
+                  setMessageModal("Firmas Enviadas " + OrdenServicioID)
+                  await time(100)
+                  console.log("status", status);
+                  await ActualizarOrdenServicioRespuestaPUT(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado)
+                  await ActualizarOrdenServicioFirmas(firmasId, OrdenServicioID)
+                  console.log("status", OrdenServicioID, EstadoEquipo, Estado, OS_Firmas);
+
+                } else {
+                  setMessageModal("Error al enviar firmas del OS: " + idorden)
+                  await time(500)
                 }
-              })
-              console.log("status", status);
+              }
+            } else {
+              setMessageModal("Error al Crear OS: " + idorden)
+              await time(500)
             }
           }
         }
-  
+
         return true;
       } else {
         return true;
       }
     } catch (error) {
       console.log("error", error);
-      return false;      
+      setMessageModal("Error en la peticion " + error)
+      return false;
     }
   };
 
   return (
     <>
-      {/* <View style={styles.circlePrimary}>
-        <View style={styles.circleSecond}>
-          <TouchableOpacity
-            style={{
-              ...styles.circleTercer,
-              opacity: 1,
-            }}
-            onPress={() => CrearNuevoOrdenServicioSinTiket()}
-          >
-            <Text style={{ color: "#FFF", fontSize: 30 }}>+</Text>
-          </TouchableOpacity>
-        </View>
-      </View> */}
-
       <View style={{ ...styles.banner, paddingLeft: 20 }}>
         <TouchableOpacity onPress={ActualizarEventos}>
           <Fontisto
@@ -359,7 +453,7 @@ export default function Banner() {
             <View
               style={{
                 width: "80%",
-                height: "35%",
+                height: "30%",
                 backgroundColor: "#FFF",
                 borderRadius: 5,
               }}
@@ -368,7 +462,7 @@ export default function Banner() {
                 style={{
                   flex: 1,
                   justifyContent: "flex-start",
-                  alignItems: "flex-start",
+                  alignItems: "center",
                   padding: 10,
                   paddingHorizontal: 20,
                   shadowOffset: {
@@ -416,17 +510,10 @@ export default function Banner() {
                   </Text>
                 </View>
 
-                <Text style={{ fontSize: 15, fontWeight: "normal" }}>
-                  Por favor espere mientras se sincronizan los datos.
+                <Text style={{ fontSize: 15, fontWeight: "normal", textAlign: "center" }}>
+                  {messageModal}
                 </Text>
 
-                <Text style={{ fontSize: 15, fontWeight: "normal" }}>
-                  Estado consultado si hay datos nuevos para descargar.
-                </Text>
-
-                <Text style={{ fontSize: 15, fontWeight: "normal" }}>
-                  Se encontraron #{5} OS locales para sincronizar.
-                </Text>
                 {/* <LoadingActi loading={reloadInt} /> */}
               </View>
             </View>

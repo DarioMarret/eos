@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import { getCantonesStorageBy } from '../service/cantones';
 import { useDispatch } from 'react-redux';
 import { actualizarClienteTool } from '../redux/formulario';
+import moment from 'moment';
 
 export default function PickerSelect(props) {
 
@@ -31,6 +32,7 @@ export default function PickerSelect(props) {
 
 
     const handleSelectCliente = async (cliente) => {
+        console.log(cliente)
         const pro = await getCantonesStorageBy(cliente.CantonID)
         dispatch(actualizarClienteTool({
             name:'Ciudad',
@@ -47,7 +49,8 @@ export default function PickerSelect(props) {
         setCliente({
             ...cliente,
             Sucursal: JSON.parse(cliente.Sucursal),
-            Ciudad: pro[0].descripcion
+            Ciudad: pro[0].descripcion,
+            FechaCreacion: `${moment().format('YYYY-MM-DD')}T00:00:00`,
         })
         setDirecciones(JSON.parse(cliente.Sucursal))
         setModalVisible(!modalVisible)

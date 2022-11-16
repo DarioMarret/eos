@@ -1,4 +1,4 @@
-import { getHistorialEquiposStorage, getHistorialEquiposStorageChecked, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
+import { getHistorialEquiposStorage, getHistorialEquiposStorageChecked, getHistorialEquiposStorageModelo, getHistorialEquiposStorageSerie, getHistorialEquiposStorageTipo, isChecked, isCheckedCancelar, isCheckedCancelaReturn } from "../../service/historiaEquipo"
 import { FlatList, Pressable, ScrollView, SafeAreaView, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal } from "react-native"
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons'
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { loadingCargando } from "../../redux/sincronizacion"
 import { actualizarClienteTool, actualizarDatosTool, resetFormularioTool, SetByOrdenServicioID, setEquipoTool } from "../../redux/formulario"
 import { time } from "../../service/CargaUtil"
+import { Dropdown } from 'react-native-element-dropdown';
 import isEmpty from "is-empty"
 
 export default function Equipo(props) {
@@ -111,23 +112,32 @@ export default function Equipo(props) {
                 setModel("Modelo")
                 setSerie("")
                 var equipoCheck = await getHistorialEquiposStorageChecked()
-                console.log("equipoCheck", equipoCheck)
                 if (!isEmpty(equipoCheck)) {
                     const itenSelect = await AsyncStorage.getItem(ticketID)
                     await time(200)
                     if (itenSelect != null) {
                         const item = JSON.parse(itenSelect)
                         const { equipo } = item
-                        equipo.map((item, index) => {
-                            if (equipoCheck[0].equipo_id == equipo[index].equipo_id) {
-                                setTipo(item.tipo)
-                                setSerie(item.equ_serie)
-                                setModel(item.modelo)
-                                GuadadoOS(item)
-                                equipo[index].isChecked = "true"
-                            }
-                        })
-                        setHistorial(equipo)
+                        console.log("equipo", equipo)
+                        if (equipo.length > 1) {
+                            equipo.map((item, index) => {
+                                if (equipoCheck[0].equipo_id == equipo[index].equipo_id) {
+                                    setTipo(item.tipo)
+                                    setSerie(item.equ_serie)
+                                    setModel(item.modelo)
+                                    GuadadoOS(item)
+                                    // equipo[index].isChecked = "true"
+                                }
+                            })
+                            equipo.push(equipoCheck[0])
+                            setHistorial(equipo)
+                        }else{
+                            setHistorial(equipoCheck)
+                            setTipo(equipoCheck[0].tipo)
+                            setSerie(equipoCheck[0].equ_serie)
+                            setModel(equipoCheck[0].modelo)
+                            GuadadoOS(equipoCheck[0])
+                        }
                     }
                 } else {
                     const itenSelect = await AsyncStorage.getItem(ticketID)
@@ -160,9 +170,26 @@ export default function Equipo(props) {
             (async () => {
                 dispatch(loadingCargando(true))
                 const response = await getEquiposStorage()
-                setEquipo(response.sort((a, b) => a.tipo_descripcion.localeCompare(b.tipo_descripcion)))
+                let eq = []
+                response.map((item, index) => {
+                    let inf = {
+                        label: item.tipo_descripcion,
+                        value: item.tipo_id
+                    }
+                    eq.push(inf)
+                })
+                setEquipo(eq.sort((a, b) => a.label.localeCompare(b.label)))
                 const modelos = await getModeloEquiposStorage()
-                setModelo(modelos.sort((a, b) => a.modelo_descripcion.localeCompare(b.modelo_descripcion)))
+                let mod = []
+                modelos.map((item, index) => {
+                    let inf = {
+                        label: item.modelo_descripcion,
+                        value: item.tipo_id
+                    }
+                    mod.push(inf)
+                })
+                // console.log("item", mod)
+                setModelo(mod.sort((a, b) => a.label.localeCompare(b.label)))
 
                 const itenSelect = await AsyncStorage.getItem(ticketID)
                 if (itenSelect != null) {
@@ -223,19 +250,22 @@ export default function Equipo(props) {
     async function onChangeTipo(tipo) {
         dispatch(loadingCargando(true))
         setTipo(tipo)
-        let result = await getHistorialEquiposStorage(tipo, null, null)
+        console.log("tipo", tipo)
+        let result = await getHistorialEquiposStorageTipo(tipo)
         console.log("onChangeTipo", result)
         if (result.length > 0) {
-            const respuesta = modelo.filter(e => e.tipo_id === tipo)
+            const respuesta = modelo.filter(e => e.value == tipo)
+            // console.log("respuesta-->", modelo)
             setModeloSub(respuesta)
             setHistorial(result)
         }
         dispatch(loadingCargando(false))
     }
+
     async function onChangeModelo(model) {
         dispatch(loadingCargando(true))
         setModel(model)
-        let result = await getHistorialEquiposStorage(tipo, model, null)
+        let result = await getHistorialEquiposStorageModelo(tipo, model)
         console.log("onChangeModelo", result)
         if (result.length > 0) {
             setHistorial(result)
@@ -245,7 +275,7 @@ export default function Equipo(props) {
 
     async function onChangeSerie(text) {
         setSerie(text)
-        let result = await getHistorialEquiposStorage(null, null, text)
+        let result = await getHistorialEquiposStorageSerie(text)
         console.log("onChangeSerie", result)
         if (result.length > 0) {
             setHistorial(result)
@@ -291,7 +321,7 @@ export default function Equipo(props) {
                 Serie: item.equ_serie, //#
                 Marca: item.marca, //#
                 ClienteID: !empty(EquipoStor.cliente.ClienteID) ? EquipoStor.cliente.ClienteID : cliente[0].CustomerID, //#
-                ClienteNombre: !empty(EquipoStor.cliente.ClienteNombre) ? EquipoStor.cliente.ClienteNombre : item.con_ClienteNombre, //#
+                ClienteNombre: EquipoStor.cliente.ClienteNombre,//!empty(EquipoStor.cliente.ClienteNombre) ? EquipoStor.cliente.ClienteNombre : item.con_ClienteNombre, //#
                 ObservacionCliente: "", //#
                 IdEquipoContrato: Number(item.id_equipoContrato), //#
                 EstadoEqPrevio: item.equ_estado, //#
@@ -467,6 +497,10 @@ export default function Equipo(props) {
         // navigation.goBack()
     }
 
+    const [value, setValue] = useState(null);
+    const [isFocus, setIsFocus] = useState(false);
+
+
     return (
         <View style={styles.container}>
             <Modal
@@ -495,7 +529,9 @@ export default function Equipo(props) {
                                 <View style={styles.ContainetBuscador}>
                                     <View style={styles.ContainetTipoModelo}>
 
-                                        <Picker
+   
+
+                                        {/* <Picker
                                             style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                             selectedValue={tipo}
                                             onValueChange={(itemValue) => onChangeTipo(itemValue)}
@@ -509,7 +545,7 @@ export default function Equipo(props) {
                                                     ))
                                                     : null
                                             }
-                                        </Picker>
+                                        </Picker> */}
                                     </View>
                                     <View style={{ paddingHorizontal: 10 }} />
                                     <View style={styles.ContainetTipoModelo}>
@@ -628,26 +664,75 @@ export default function Equipo(props) {
                 <View style={styles.ContainetEquipo}>
                     <View style={styles.ContainetBuscador}>
                         <View style={styles.ContainetTipoModelo}>
-
-                            <Picker
-                                style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
-                                selectedValue={tipo}
-                                onValueChange={(itemValue) => onChangeTipo(itemValue)}
-                                enabled={isdisabelsub}
-                            >
-                                <Picker.Item label={tipo} value={""} />
-                                {
-                                    equipo ?
-                                        equipo.map((item, index) => (
-                                            <Picker.Item key={index + 1} label={item.tipo_descripcion} value={item.tipo_id} />
-                                        ))
-                                        : null
-                                }
-                            </Picker>
+                        
+                            <Dropdown
+                                style={[selec.dropdown, isFocus && { borderColor: 'orange' }]}
+                                placeholderStyle={selec.placeholderStyle}
+                                selectedTextStyle={selec.selectedTextStyle}
+                                inputSearchStyle={selec.inputSearchStyle}
+                                iconStyle={selec.iconStyle}
+                                data={equipo}
+                                disable={false}
+                                search={false}
+                                maxHeight={"70%"}
+                                labelField="label"
+                                valueField="value"
+                                placeholder={tipo}
+                                searchPlaceholder="Search..."
+                                value={tipo}
+                                onFocus={() => setIsFocus(true)}
+                                onBlur={() => setIsFocus(false)}
+                                onChange={item => {
+                                    console.log("console.log",item)
+                                    onChangeTipo(item.value)
+                                    setValue(item.value);
+                                    setIsFocus(false);
+                                }}
+                                renderLeftIcon={() => (
+                                    <AntDesign
+                                    style={selec.icon}
+                                    color={'black'}
+                                    name="Safety"
+                                    size={20}
+                                    />
+                                )}
+                            />
                         </View>
                         <View style={{ paddingHorizontal: 10 }} />
                         <View style={styles.ContainetTipoModelo}>
-                            <Picker
+
+                        <Dropdown
+                                style={[selec.dropdown, isFocus && { borderColor: 'blue' }]}
+                                placeholderStyle={selec.placeholderStyle}
+                                selectedTextStyle={selec.selectedTextStyle}
+                                inputSearchStyle={selec.inputSearchStyle}
+                                iconStyle={selec.iconStyle}
+                                data={modelosub}
+                                search={false}
+                                maxHeight={"70%"}
+                                labelField="label"
+                                valueField="value"
+                                placeholder={model}
+                                disable={isdisabelsub}
+                                searchPlaceholder="Search..."
+                                value={model}
+                                onFocus={() => setIsFocus(true)}
+                                onBlur={() => setIsFocus(false)}
+                                onChange={item => {
+                                    onChangeModelo(item.value)
+                                    setValue(item.value);
+                                    setIsFocus(false);
+                                }}
+                                renderLeftIcon={() => (
+                                    <AntDesign
+                                    style={selec.icon}
+                                    color={'black'}
+                                    name="Safety"
+                                    size={20}
+                                    />
+                                )}
+                            />
+                            {/* <Picker
                                 style={{ ...styles.input, borderWidth: 1, borderColor: '#CECECA' }}
                                 selectedValue={model}
                                 enabled={isdisabelsub}
@@ -661,7 +746,7 @@ export default function Equipo(props) {
                                         ))
                                         : null
                                 }
-                            </Picker>
+                            </Picker> */}
                         </View>
                     </View>
                     <View style={{
@@ -988,3 +1073,45 @@ const styles = StyleSheet.create({
         padding: 5,
     },
 })
+const selec = StyleSheet.create({
+    container: {
+      backgroundColor: 'black',
+      padding: 16,
+    },
+    dropdown: {
+      height: 50,
+      width: '100%',
+      borderColor: 'gray',
+      borderWidth: 0.5,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+    },
+    icon: {
+      marginRight: 5,
+    },
+    label: {
+      position: 'absolute',
+      backgroundColor: 'black',
+      left: 22,
+      top: 8,
+      zIndex: 999,
+      paddingHorizontal: 8,
+      fontSize: 14,
+    },
+    placeholderStyle: {
+      fontSize: 16,
+      color: 'black',
+    },
+    selectedTextStyle: {
+      fontSize: 16,
+      color: 'black',
+    },
+    iconStyle: {
+      width: 20,
+      height: 20,
+    },
+    inputSearchStyle: {
+      height: 40,
+      fontSize: 16,
+    },
+  });

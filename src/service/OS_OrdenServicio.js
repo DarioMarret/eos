@@ -511,6 +511,22 @@ export const EstadoOSLOCAL = (OrdenServicioID) => {
     })
 }
 
+export const SacarDatosClienteOS = (OrdenServicioID) => {
+    return new Promise((resolve, reject) => {
+        db.transaction((tx) => {
+            tx.executeSql(`SELECT ClienteNombre, Direccion, Ciudad, CodigoEquipoCliente, ClienteID FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
+                [OrdenServicioID], (_, { rows: { _array } }) => {
+                    if (_array.length > 0) {
+                        resolve(_array[0])
+                    } else {
+                        resolve(false)
+                    }
+                })
+        });
+    })
+}
+
+
 export const InserOSOrdenServicioIDLocal = async (r, rando) => {
     console.log("InserOSOrdenServicioIDLocal-->", r.OrdenServicioID)
     return new Promise((resolve, reject) => {

@@ -203,6 +203,71 @@ export async function getEquipoID(equipo_id) {
     })
 }
 
+export const getHistorialEquiposStorageTipo = async (tipo) => {
+    try {
+        console.log("tipo", tipo)
+            return new Promise((resolve, reject) => {
+                db.transaction(tx => {
+                    ////label={item.tipo_descripcion} value={item.tipo_id}
+                    tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? ', [tipo], (_, { rows }) => {
+                        console.log("rows", rows._array);
+                        if (rows._array.length > 0) {
+                            resolve(rows._array)
+                        } else {
+                            resolve([])
+                        }
+                    });
+                })
+            })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return [];
+    }
+}
+
+export const getHistorialEquiposStorageModelo = async (tipo, modelo) => {
+    try {
+        console.log("tipo", tipo)
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                
+                tx.executeSql('select * from historialEquipo where equ_tipoEquipo = ? and modelo = ?', [tipo, modelo], (_, { rows }) => {
+                    if (rows._array.length > 0) {
+                        resolve(rows._array)
+                    } else {
+                        resolve([])
+                    }
+
+                });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return [];
+    }
+}
+
+export const getHistorialEquiposStorageSerie = async (serie) => {
+    try {
+        console.log("tipo", tipo)
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql(`select * from historialEquipo where equ_serie like '%${serie}%' limit 10`, [], (_, { rows }) => {
+                    if (rows._array.length > 0) {
+                        resolve(rows._array)
+                    } else {
+                        resolve([])
+                    }
+                });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return [];
+    }
+}
+
+
 export const getHistorialEquiposStorage = async (tipo, modelo, serie) => {
     try {
         console.log("tipo", tipo)

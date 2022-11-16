@@ -34,7 +34,7 @@ export const PostOS = async (data, id, idorden, evento_id, es) => {
                 "Authorization": `Bearer ${token}`
             },
             body: JSON.stringify(data),
-            timeout: 100,
+            timeout: 1000,
         }
         let response = await fetch(url, params);
         let result = await response.json()
@@ -58,6 +58,8 @@ export const PostOS = async (data, id, idorden, evento_id, es) => {
             }
 
             return OrdenServicioID
+        }else{
+            return false
         }
     } catch (error) {
         console.log("error en el post", error)
@@ -73,7 +75,6 @@ export const PostOS = async (data, id, idorden, evento_id, es) => {
  */
 export const PutOS = async (datos, OrdenServicioID) => {
     const { token } = await getToken()
-    console.log("\n")
     try {
         const { data, status } = await axios.put(
             // `https://technical.eos.med.ec/MSOrdenServicio/api/OS_OrdenServicio/${datos.OrdenServicioID}`,
@@ -83,29 +84,15 @@ export const PutOS = async (datos, OrdenServicioID) => {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${token}`
             },
-            timeout: 100,
+            timeout: 1000,
         })
         if (data.Code == "200") {
             const { OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado } = data.Response
-            var estado = Estado == "FINA" ? "FINALIZADO" : "PROCESO"
-            //inserta el id de la orden de servicio
             await ActualizarOrdenServicioRespuestaPUT(OrdenServicioID, EstadoEquipo, OS_FINALIZADA, Estado)
-            // if(es == "ANI"){
-                // await EliminarEventoAnidado(idorden)
-                // await OrdenServicioAnidadas(item)
-                //acualizar el vento de la orden de servicio anidada
-                // await ActualizaOrdenServicioIDOrdenServicioAnidadas(estado,"UPDATE", OrdenServicioID, evento_id)
-            // }else{
-                //actualiza el id de la orden de servicio en los eventos
-                // await AactualizarEventos(estado, OrdenServicioID, evento_id)
-            // }
-
             return OrdenServicioID
+        }else{
+            return false
         }
-
-
-
-        return status
     } catch (error) {
         console.log("PutOS", error)
         return false

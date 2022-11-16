@@ -362,6 +362,22 @@ export const GetEventosByTicket = async (ayer, hoy, manana) => {
     }
 }
 
+export const DeletetEventosByTicket = async (ayer, hoy, manana) => {
+    try {
+        return new Promise((resolve, reject) => {
+            db.transaction(tx => {
+                tx.executeSql('delete from OrdenesServicio where ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ? or ev_fechaAsignadaHasta = ?',
+                    [`${ayer}T00:00:00`, `${hoy}T00:00:00`, `${manana}T00:00:00`], (_, { rows }) => {
+                        resolve(rows._array)
+                    });
+            })
+        })
+    } catch (error) {
+        console.log("getHistorialEquiposStorage-->", error);
+        return null;
+    }
+}
+
 export const GetEventosByTicketHoy = async (hoy) => {
     try {
         return new Promise((resolve, reject) => {

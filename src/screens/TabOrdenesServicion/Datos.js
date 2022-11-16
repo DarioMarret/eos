@@ -95,29 +95,15 @@ export default function Datos(props) {
     async function ActivarChecklist(equipo_id) {
         var checklist = await SacarFirmas(DatosStor.OrdenServicioID)
         if (checklist.length > 0) {
-            // console.log("checklist")
-            // dispatch(loadingCargando(true))
-            // var list_ = JSON.parse(await getHistorialEquiposStorageChecklist(equipo_id))
-            // var listCheck = []
-
-            // checklist.map((item, index) => {
-            //     let obj = {
-            //         ...item,
-            //         check_actividad: list_[index].check_actividad
-            //     }
-            //     listCheck.push(obj)
-            // })
-
-            // console.log("list",listCheck)
-            // setListCheck(listCheck)
+            
             setListCheck(checklist)
             setOfCheck(true)
             dispatch(loadingCargando(false))
+
         } else {
             console.log("no hay checklist")
             let lista = await getHistorialEquiposStorageChecklist(equipo_id)
             const list = JSON.parse(lista)
-            // console.log("LISTA",list)
             if (list != null && list.length > 0) {
                 const { userId } = await getToken()
                 var l = list.map(item => {

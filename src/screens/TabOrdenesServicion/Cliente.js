@@ -16,6 +16,8 @@ import isEmpty from "just-is-empty"
 import { actualizarClienteTool } from "../../redux/formulario"
 import { loadingCargando } from "../../redux/sincronizacion"
 import { getCantonesStorageBy } from "../../service/cantones"
+import moment from "moment"
+import { SacarDatosClienteOS } from "../../service/OS_OrdenServicio"
 
 
 export default function Cliente(props) {
@@ -40,7 +42,7 @@ export default function Cliente(props) {
         ClienteID: "",
         ClienteNombre: "",
         Direccion: "",
-        FechaCreacion: "",
+        FechaCreacion: `${moment().format('YYYY-MM-DD')}T00:00:00`,
         codOS: 0,
         ticket_id: 0,
         contrato_id: 0,
@@ -67,26 +69,8 @@ export default function Cliente(props) {
     const Events = useSelector(s => s.sincronizacion)
     const dispatch = useDispatch()
 
-    async function getCliente() {
-        const cliente = await SelectCliente(ClienteStor.cliente.ClienteID)
-        console.log(cliente)
-        dispatch(actualizarClienteTool({
-            name:'ClienteNombre',
-            value: cliente.CustomerName
-        }))
-        dispatch(actualizarClienteTool({
-            name:'Direccion',
-            value: !isEmpty(ClienteStor.cliente.Direccion) ? ClienteStor.cliente.Direccion : cliente.Direccion
-        }))
-        const pro = await getCantonesStorageBy(cliente.CantonID)
-        dispatch(actualizarClienteTool({
-            name:'Ciudad',
-            value: !isEmpty(ClienteStor.cliente.Ciudad) ? ClienteStor.cliente.Ciudad : pro[0].descripcion
-        }))
-        if (!isEmpty(cliente)) {
-            setDirecciones(JSON.parse(cliente.Sucursal))
-        }
-    }
+
+
     useFocusEffect(
         useCallback(() => {
             limpiaCliente()
@@ -94,7 +78,7 @@ export default function Cliente(props) {
                 // if (!isEmpty(ClienteStor.cliente.CantonID)) {
                     setCliente(ClienteStor.cliente)
                     getCliente()
-                    console.log("useEffect",ClienteStor.cliente)
+                    // console.log("useEffect",ClienteStor.cliente)
                 // }
             }
         }, [ClienteStor.cliente])
@@ -119,6 +103,10 @@ export default function Cliente(props) {
                             setEstado("FINA")
                             setDisableSub(false)
                             setIsEnabled(false)
+                            if(OrdenServicioID !== null && OrdenServicioID !== 0){
+                                const dCli = await SacarDatosClienteOS(OrdenServicioID)
+                                console.log("dCli", dCli)
+                            }
                             // await getCliente()
 
                         } else if (Accion == "clonar") {// para ver y poder edidar una orden de servicio clone
@@ -149,12 +137,20 @@ export default function Cliente(props) {
                             setEstado("PROC")
                             setIsEnabled(true)
                             setDisableSub(true)
+                            if(OrdenServicioID !== null && OrdenServicioID !== 0){
+                                const dCli = await SacarDatosClienteOS(OrdenServicioID)
+                                console.log("dCli", dCli)
+                            }
                             // await getCliente()
 
                         }else if (Accion == "PENDIENTE DE APROBAR") {
                             setEstado("PROC")
                             setIsEnabled(true)
                             setDisableSub(true)
+                            if(OrdenServicioID !== null && OrdenServicioID !== 0){
+                                const dCli = await SacarDatosClienteOS(OrdenServicioID)
+                                console.log("dCli", dCli)
+                            }
                             // await getCliente()
 
                         }
@@ -186,6 +182,26 @@ export default function Cliente(props) {
         }))
     }
 
+    async function getCliente() {
+        const cliente = await SelectCliente(ClienteStor.cliente.ClienteID)
+        console.log(cliente)
+        dispatch(actualizarClienteTool({
+            name:'ClienteNombre',
+            value: cliente.CustomerName
+        }))
+        dispatch(actualizarClienteTool({
+            name:'Direccion',
+            value: !isEmpty(ClienteStor.cliente.Direccion) ? ClienteStor.cliente.Direccion : cliente.Direccion
+        }))
+        const pro = await getCantonesStorageBy(cliente.CantonID)
+        dispatch(actualizarClienteTool({
+            name:'Ciudad',
+            value: !isEmpty(ClienteStor.cliente.Ciudad) ? ClienteStor.cliente.Ciudad : pro[0].descripcion
+        }))
+        if (!isEmpty(cliente)) {
+            setDirecciones(JSON.parse(cliente.Sucursal))
+        }
+    }
     return (
         <View style={styles.container}>
 
@@ -215,7 +231,7 @@ export default function Cliente(props) {
                         </View>
                         <View>
                             <Text style={styles.text}>Contrato: {!isEmpty(ClienteStor.equipo) ? ClienteStor.equipo.contrato_id : ''}</Text>
-                            <Text style={styles.text}>Fecha Crea.: {cliente.FechaCreacion.split('T')[0]}</Text>
+                            <Text style={styles.text}>Fecha Crea.: {cliente.FechaCreacion.split("T")[0]}</Text>
                             <Text style={styles.text}>Ingeniero: {ingeniero.NombreUsuario}</Text>
                         </View>
 

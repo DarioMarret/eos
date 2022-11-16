@@ -257,7 +257,7 @@ export default function Manana(props) {
             <View key={index}>
                 <TouchableOpacity
                     onPress={() =>
-                        alert(`Eventos desabilitado hasta el dia ${moment().add(-1,'days').format("DD/MM/YYYY")}`)
+                        alert(`Eventos desabilitado hasta el dia ${moment().add(1,'days').format("DD/MM/YYYY")}`)
                         // Ordene(
                         //     String(item.ticket_id),
                         //     String(item.evento_id),
