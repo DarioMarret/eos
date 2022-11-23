@@ -67,6 +67,8 @@ export default function TicketsOS(props) {
     const [modalSignature, setModalSignature] = useState(false);
     const [userData, setUserData] = useState(os_firma)
 
+    const [isActivePDF, setIsActivePDF] = useState(true)
+
     const [pdfview, setPdfview] = useState(true)
     const [pdfurl, setPdfurl] = useState("")
 
@@ -191,7 +193,8 @@ export default function TicketsOS(props) {
             setPdfurl(base64)
             setPdfview(false)
         }else{
-            alert("No se pudo generar el PDF")
+            console.log("No se pudo generar el PDF");
+            setIsActivePDF(true);
         }
         // setPdfurl(base64)
         // setPdfview(false)
@@ -839,11 +842,29 @@ export default function TicketsOS(props) {
                     navigation={navigation}
                 />
             </View>) :
-            <VisualizadorPDF
-                url={pdfurl}
-                setPdfview={setPdfview}
-                setPdfurl={setPdfurl}
-            />
+            !isActivePDF ?
+                <VisualizadorPDF
+                    url={pdfurl}
+                    setPdfview={setPdfview}
+                    setPdfurl={setPdfurl}
+                />
+                :
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={isActivePDF}
+                    onRequestClose={() => {
+                        setIsActivePDF(!isActivePDF);
+                    }}
+                >
+                    <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        <Text style={{ marginTop: 16, marginBottom: 32 }}>
+                        Aqui va datos
+                        </Text>
+                    </View>
+                    </View>
+                </Modal>
     )
 }
 
@@ -964,5 +985,22 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         marginTop: 22,
+    },
+    modalView: {
+        margin: 10,
+        width: "80%",
+        height: "20%",
+        backgroundColor: "white",
+        borderRadius: 3,
+        padding: 15,
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 1,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
     },
 });
