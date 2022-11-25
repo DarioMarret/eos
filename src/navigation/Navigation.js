@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 import React, { useCallback, useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { NavigationContainer, useFocusEffect, useNavigation } from "@react-navigation/native";
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
@@ -23,7 +23,9 @@ import TicketsOS from "../screens/TabScreem/TicketsOS";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ticketID, os_firma } from "../utils/constantes";
 import VisualizadorPDF from "../components/VisualizadorPDF";
-import { PDFVisializar, ActualizarEstadoOS } from "../service/OS_OrdenServicio";
+import { PDFVisializar, ActualizarEstadoOS, 
+    SacarDatosClienteOS, DatosOSOrdenServicioID, DatosEquipo, datosClienteOSOrdenServicioID,
+ } from "../service/OS_OrdenServicio";
 import { getToken } from "../service/usuario";
 import ModalGenerico from "../components/ModalGenerico";
 import { useDispatch } from "react-redux";
@@ -32,6 +34,7 @@ import { getEventosByDate, listarEventoAyer, listarEventoHoy, listarEventoMnn } 
 import { EditareventoLocal, FinalizarOSLocal } from "../service/ServicioLoca";
 import { getIngenierosStorageById } from "../service/ingenieros";
 import { ActualizaEstadoOrdenServicioAnidadas } from "../service/OrdenServicioAnidadas";
+
 
 
 const Drawer = createDrawerNavigator();
@@ -276,10 +279,39 @@ function NavigatioGotBack2() {
     const [userData, setUserData] = useState(os_firma)
     const [pdfview, setPdfview] = useState(false)
     const [pdfurl, setPdfurl] = useState("")
-
+    
     const [listadoEmails, setlistadoEmails] = useState([])
     const [idOrdenServicio, setIdOrdenServicio] = useState(null)
     const [modalEmails, setModalEmails] = useState(false);
+
+    const [dataCliente, setDataCliente] = useState({
+        Ciudad:"",
+        ClienteNombre:"",
+        Direccion: ""
+    });
+    const [dataEquipo, setDataEquipo] = useState( {
+        ModeloEquipo:0,
+        Serie:"",
+    },);
+    const [dataOrden, setDataOrden] = useState({
+        Acciones:"",
+        Causas:"",
+        Diagnostico:"",
+        EstadoEqPrevio:"",
+        EstadoEquipo:"",
+        FechaSeguimiento:"",
+        IncluyoUpgrade:null,
+        OS_CheckList:"",
+        ObservacionCheckList:"",
+        ObservacionIngeniero:"",
+        Sintomas:"",
+        SitioTrabajo:"",
+        ticket_id:"",
+        tipoIncidencia:null,
+        TipoVisita: "",
+      },);
+
+    const [isActivePDF, setIsActivePDF] = useState(false)
 
     const enviarFirma = () => {
         setModalSignature(false)
@@ -308,12 +340,19 @@ function NavigatioGotBack2() {
 
 
     async function VisualizarPdf(item) {
+        console.log("item",item)
         const base64 = await PDFVisializar(item)
         if(base64 != null){
             setPdfurl(base64)
             setPdfview(true)
         }else{
-            alert("No se pudo generar el PDF")
+            const cliente = await SacarDatosClienteOS(item);
+            const orden = await DatosOSOrdenServicioID(item);
+            const equipo = await DatosEquipo(item);
+            setDataCliente(cliente)
+            setDataEquipo(equipo[0])
+            setDataOrden(orden[0])
+            setIsActivePDF(true);
         }
     }
 
@@ -365,7 +404,123 @@ function NavigatioGotBack2() {
                     pdfview={pdfview}
                 />
             </Modal>
-
+            <Modal
+                transparent={true}
+                visible={isActivePDF}
+                onRequestClose={() => {
+                    setIsActivePDF(!isActivePDF);
+                }}
+                propagateSwipe={true}
+            >
+                <View style={styles.centeredView}>
+                    <View style={{...styles.modalView, padding: 10}}>
+                        <ScrollView
+                        showsHorizontalScrollIndicator={false}
+                        showsVerticalScrollIndicator={false}
+                        style={{ width: "100%" }}>
+                            <View>
+                                <Text style={styles.titleModal}>
+                                    Datos Cliente
+                                </Text>
+                                <View style = {styles.lineStyle} />
+                                <View style={styles.containerData}>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Nombre: {dataCliente.ClienteNombre}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Ciudad: {dataCliente.Ciudad}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Dirección: {dataCliente.Direccion}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View>
+                                <Text style={styles.titleModal}>
+                                    Datos del Equipo
+                                </Text>
+                                <View style = {styles.lineStyle} />
+                                <View style={styles.containerData}>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Modelo: {dataEquipo.ModeloEquipo}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Serie: {dataEquipo.Serie}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View>
+                                <Text style={styles.titleModal}>
+                                    Datos de la Orden de Servicio
+                                </Text>
+                                <View style = {styles.lineStyle} />
+                                <View style={styles.containerData}>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Tipo de Orden: {dataOrden.tipoIncidencia}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Síntomas: {dataOrden.Sintomas}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Diagnóstico: {dataOrden.Diagnostico}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Acciones a tomar: {dataOrden.Acciones}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Incluyo upgrade: {dataOrden.IncluyoUpgrade!==null?dataOrden.IncluyoUpgrade:"No"}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Causas: {dataOrden.Causas}
+                                        </Text>
+                                    </View>
+                                    <View style={styles.containerTexts}>
+                                        <Text style={styles.subTitleModal}>
+                                            Fecha de Seguimiento: {moment(dataOrden.FechaSeguimiento).format("DD/MM/YYYY")}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </View>
+                            <View style={{width:80}}>
+                                <TouchableOpacity
+                                    onPress={() => setIsActivePDF(false)}
+                                >
+                                    <Text style={{
+                                        color: '#FF6B00',
+                                        fontWeight: 'bold',
+                                        fontSize: 16,
+                                        borderWidth: 1,
+                                        borderColor: '#FF6B00',
+                                        borderRadius: 20,
+                                        padding: 8,
+                                    }}>Cerrar</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -516,5 +671,54 @@ const styles = StyleSheet.create({
         alignItems: "flex-start",
         height: "5%",
         width: "100%",
+    },
+    centeredView: {
+        width: "100%",
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    modalView: {
+        width: "90%",
+        height: "auto",
+        backgroundColor: "white",
+        borderRadius: 3,
+        paddingHorizontal: 20,
+        paddingVertical: 30,
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 1,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    titleModal: {
+        fontSize: 20,
+        fontweight: "bold",
+        color: "#FF6B00"
+    },
+    containerTexts:{ 
+        alignItems: "center",
+        flexDirection: "row", 
+        width: "100%" 
+    },
+    subTitleModal:{
+        fontSize: 18,
+        fontWeight: "normal",
+    },
+    textModal: {
+        fontSize: 16,
+    },
+    lineStyle:{
+        borderWidth: 0.5,
+        borderColor:'#FF6B00',
+        marginBottom: 5,
+    },
+    containerData:{ 
+        flexDirection: "column", 
+        width: "100%",
+        marginBottom: 20,
     },
 })

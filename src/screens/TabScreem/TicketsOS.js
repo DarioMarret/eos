@@ -14,7 +14,8 @@ import {
     MenuTrigger,
 } from 'react-native-popup-menu';
 import VisualizadorPDF from "../../components/VisualizadorPDF";
-import { ActualizarEstadoOS, getRucCliente, OSOrdenServicioID, PDFVisializar, SelectOSOrdenServicioID, SelectOSOrdenServicioIDEquipo } from "../../service/OS_OrdenServicio";
+import { ActualizarEstadoOS, getRucCliente, OSOrdenServicioID, PDFVisializar, SelectOSOrdenServicioID, SelectOSOrdenServicioIDEquipo,
+    SacarDatosClienteOS, DatosOSOrdenServicioID, DatosEquipo } from "../../service/OS_OrdenServicio";
 import ModalGenerico from "../../components/ModalGenerico";
 import axios from "axios";
 import { getToken } from "../../service/usuario";
@@ -67,13 +68,39 @@ export default function TicketsOS(props) {
     const [modalSignature, setModalSignature] = useState(false);
     const [userData, setUserData] = useState(os_firma)
 
-    const [isActivePDF, setIsActivePDF] = useState(true)
-
     const [pdfview, setPdfview] = useState(true)
     const [pdfurl, setPdfurl] = useState("")
 
     const Events = useSelector(s => s.sincronizacion)
     const formulario = useSelector(s => s.formulario)
+
+    const [dataCliente, setDataCliente] = useState({
+        Ciudad:"",
+        ClienteNombre:"",
+        Direccion: ""
+    });
+    const [dataEquipo, setDataEquipo] = useState( {
+        ModeloEquipo:0,
+        Serie:"",
+    },);
+    const [dataOrden, setDataOrden] = useState({
+        Acciones:"",
+        Causas:"",
+        Diagnostico:"",
+        EstadoEqPrevio:"",
+        EstadoEquipo:"",
+        FechaSeguimiento:"",
+        IncluyoUpgrade:null,
+        OS_CheckList:"",
+        ObservacionCheckList:"",
+        ObservacionIngeniero:"",
+        Sintomas:"",
+        SitioTrabajo:"",
+        ticket_id:"",
+        tipoIncidencia:null,
+        TipoVisita: "",
+      },);
+    const [isActivePDF, setIsActivePDF] = useState(false)
     const dispatch = useDispatch()
 
     useFocusEffect(
@@ -193,7 +220,12 @@ export default function TicketsOS(props) {
             setPdfurl(base64)
             setPdfview(false)
         }else{
-            console.log("No se pudo generar el PDF");
+            const cliente = await SacarDatosClienteOS(item);
+            const orden = await DatosOSOrdenServicioID(item);
+            const equipo = await DatosEquipo(item);
+            setDataCliente(cliente)
+            setDataEquipo(equipo[0])
+            setDataOrden(orden[0])
             setIsActivePDF(true);
         }
         // setPdfurl(base64)
@@ -595,6 +627,125 @@ export default function TicketsOS(props) {
                         OrdenServicioID={OrdenServicioID}
                     />
                 </Modal>
+                {/* MODAL SI PDF NO FUNCIONA */}
+                <Modal
+                    transparent={true}
+                    visible={isActivePDF}
+                    onRequestClose={() => {
+                        setIsActivePDF(!isActivePDF);
+                    }}
+                    propagateSwipe={true}
+                >
+                    <View style={styles.centeredView}>
+                        <View style={{...styles.modalView, padding: 10}}>
+                            <ScrollView
+                            showsHorizontalScrollIndicator={false}
+                            showsVerticalScrollIndicator={false}
+                            style={{ width: "100%" }}>
+                                <View>
+                                    <Text style={styles.titleModal}>
+                                        Datos Cliente
+                                    </Text>
+                                    <View style = {styles.lineStyle} />
+                                    <View style={styles.containerData}>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Nombre: {dataCliente.ClienteNombre}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Ciudad: {dataCliente.Ciudad}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Dirección: {dataCliente.Direccion}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                                <View>
+                                    <Text style={styles.titleModal}>
+                                        Datos del Equipo
+                                    </Text>
+                                    <View style = {styles.lineStyle} />
+                                    <View style={styles.containerData}>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Modelo: {dataEquipo.ModeloEquipo}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Serie: {dataEquipo.Serie}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                                <View>
+                                    <Text style={styles.titleModal}>
+                                        Datos de la Orden de Servicio
+                                    </Text>
+                                    <View style = {styles.lineStyle} />
+                                    <View style={styles.containerData}>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Tipo de Orden: {dataOrden.tipoIncidencia}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Síntomas: {dataOrden.Sintomas}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Diagnóstico: {dataOrden.Diagnostico}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Acciones a tomar: {dataOrden.Acciones}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Incluyo upgrade: {dataOrden.IncluyoUpgrade!==null?dataOrden.IncluyoUpgrade:"No"}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Causas: {dataOrden.Causas}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.containerTexts}>
+                                            <Text style={styles.subTitleModal}>
+                                                Fecha de Seguimiento: {moment(dataOrden.FechaSeguimiento).format("DD/MM/YYYY")}
+                                            </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                                <View style={{width:80}}>
+                                <TouchableOpacity
+                                    onPress={() => setIsActivePDF(false)}
+                                >
+                                    <Text style={{
+                                        color: '#FF6B00',
+                                        fontWeight: 'bold',
+                                        fontSize: 16,
+                                        borderWidth: 1,
+                                        borderColor: '#FF6B00',
+                                        borderRadius: 20,
+                                        padding: 8,
+                                    }}>Cerrar</Text>
+                                </TouchableOpacity>
+                            </View>
+                            </ScrollView>
+                        </View>
+                    </View>
+                </Modal>
+                {/* FIN MODAL SI PDF NO FUNCIONA */}
                 {
                     eventosAnidados.length > 0 ?
                         <View style={styles.body}>
@@ -842,29 +993,11 @@ export default function TicketsOS(props) {
                     navigation={navigation}
                 />
             </View>) :
-            !isActivePDF ?
-                <VisualizadorPDF
-                    url={pdfurl}
-                    setPdfview={setPdfview}
-                    setPdfurl={setPdfurl}
-                />
-                :
-                <Modal
-                    animationType="slide"
-                    transparent={true}
-                    visible={isActivePDF}
-                    onRequestClose={() => {
-                        setIsActivePDF(!isActivePDF);
-                    }}
-                >
-                    <View style={styles.centeredView}>
-                    <View style={styles.modalView}>
-                        <Text style={{ marginTop: 16, marginBottom: 32 }}>
-                        Aqui va datos
-                        </Text>
-                    </View>
-                    </View>
-                </Modal>
+            <VisualizadorPDF
+                url={pdfurl}
+                setPdfview={setPdfview}
+                setPdfurl={setPdfurl}
+            />
     )
 }
 
@@ -982,18 +1115,18 @@ const styles = StyleSheet.create({
         color: '#666666'
     },
     centeredView: {
+        width: "100%",
         flex: 1,
         justifyContent: "center",
-        marginTop: 22,
+        alignItems: "center",
     },
     modalView: {
-        margin: 10,
-        width: "80%",
-        height: "20%",
+        width: "90%",
+        height: "auto",
         backgroundColor: "white",
         borderRadius: 3,
-        padding: 15,
-        alignItems: "center",
+        paddingHorizontal: 20,
+        paddingVertical: 30,
         shadowColor: "#000",
         shadowOffset: {
           width: 0,
@@ -1002,5 +1135,32 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+    },
+    titleModal: {
+        fontSize: 20,
+        fontweight: "bold",
+        color: "#FF6B00"
+    },
+    containerTexts:{ 
+        alignItems: "center",
+        flexDirection: "row", 
+        width: "100%" 
+    },
+    subTitleModal:{
+        fontSize: 18,
+        fontWeight: "normal",
+    },
+    textModal: {
+        fontSize: 16,
+    },
+    lineStyle:{
+        borderWidth: 0.5,
+        borderColor:'#FF6B00',
+        marginBottom: 5,
+    },
+    containerData:{ 
+        flexDirection: "column", 
+        width: "100%",
+        marginBottom: 20,
     },
 });

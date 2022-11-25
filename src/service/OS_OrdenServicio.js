@@ -467,7 +467,7 @@ export async function DatosOSOrdenServicioID(OrdenServicioID) {
             EstadoEquipo,
             EstadoEqPrevio,
             FechaSeguimiento, ObservacionIngeniero, FechaSeguimiento,
-            OS_CheckList,ObservacionCheckList, ticket_id
+            OS_CheckList,ObservacionCheckList, ticket_id, TipoVisita
              FROM OS_OrdenServicio WHERE OrdenServicioID = ?`,
                 [OrdenServicioID], (_, { rows: { _array } }) => {
                     if (_array.length > 0) {
